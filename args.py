@@ -75,7 +75,7 @@ def parse_args():
     parser.add_argument('--gcn',  action='store_false', help='...')
     parser.add_argument('--i_complex',  action='store_false', help='...')
 
-    # for quaNet
+    # for QuaNet
     parser.add_argument('--qua_weights', '-W', action='store_true', help='quaternion weights option')
     parser.add_argument('--qua_bias', '-B', action='store_true', help='quaternion bias options')
 
