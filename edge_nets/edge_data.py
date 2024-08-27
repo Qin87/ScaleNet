@@ -563,7 +563,8 @@ def Qin_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
     return edge_index,  edge_weight
 
 def WCJ_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
-    norm = args.inci_norm
+    # norm = args.inci_norm
+    norm = 'sym'
     self_loop = args.First_self_loop
     W_degree = args.W_degree
     # random value to edge weights
