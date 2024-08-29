@@ -1016,7 +1016,8 @@ class DirGCNConv_2(torch.nn.Module):
 
                 # print('edge number(A, At):', sparse_all(self.adj_norm), sparse_all(self.adj_t_norm))
 
-            if self.adj_norm_in_out is None:
+            # if self.adj_norm_in_out is None:
+            if not (self.beta == -1 and self.gama == -1) and self.adj_norm_in_out is None:
 
                 self.adj_norm_in_out = get_norm_adj(adj @ adj_t,norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
                 self.adj_norm_out_in = get_norm_adj(adj_t @ adj, norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
@@ -1067,7 +1068,8 @@ class DirGCNConv_2(torch.nn.Module):
                 out2 = out3 = 0
         elif self.conv_type in ['dir-gat', 'dir-sage']:
             edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
-            if self.edge_in_in is None:
+            # if self.edge_in_in is None:
+            if not (self.beta == -1 and self.gama == -1) and self.edge_in_in is None:
                 self.edge_in_out, self.edge_out_in, self.edge_in_in, self.edge_out_out =get_higher_edge_index(edge_index, num_nodes, rm_gen_sLoop=rm_gen_sLoop)
                 self.Intersect_alpha, self.Union_alpha = edge_index_u_i(edge_index, edge_index_t)
                 self.Intersect_beta, self.Union_beta = edge_index_u_i(self.edge_in_out, self.edge_out_in)
