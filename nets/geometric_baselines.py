@@ -1207,7 +1207,7 @@ def aggregate_index(x, alpha, lin0, index0, lin1, index1,  intersection, union):
     elif alpha == 3:
         out = lin0(x, intersection)
     else:
-        out = (1+alpha)*(alpha * lin0(x, index0) + (1 - alpha) * lin1(x, index1))
+        out = (1+alpha)*((1 - alpha) * lin0(x, index0) +  alpha * lin1(x, index1))
 
     return out
 

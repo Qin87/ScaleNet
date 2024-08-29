@@ -15,13 +15,13 @@ def parse_args():
     parser.add_argument('--patience', type=int, default=80, help='patience to reduce lr,')
 
     # for DirGNN
-    parser.add_argument("--conv_type", type=str, help="DirGNN Model", default="dir-gcn")
+    parser.add_argument("--conv_type", type=str, help="DirGNN Model", default="dir-sage")
     parser.add_argument("--normalize", type=int, help="whether use layer normalization in ScaleNet, model:0/1", default=1)
     parser.add_argument("--jk", type=str, choices=["max", "cat",  0], default=0)
     parser.add_argument("--jk_inner", type=str, choices=["max", "cat", 'lstm', 0], default=0)
     parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row'], default="dir")
     parser.add_argument("--fs", type=str, choices=["sum", "cat", 'weight_sum', 'linear'], default="dir", help='fusion method')
-    parser.add_argument("--alphaDir", type=float, help="Direction convex combination params", default=0)
+    parser.add_argument("--alphaDir", type=float, help="Direction convex combination params", default=1)
     parser.add_argument("--betaDir", type=float, help="Direction convex combination params", default=-1)
     parser.add_argument("--gamaDir", type=float, help="Direction convex combination params", default=-1)
     parser.add_argument("--learn_alpha", action="store_true")
