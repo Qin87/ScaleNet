@@ -1183,13 +1183,7 @@ def get_higher_edge_index(edge_index, num_nodes, rm_gen_sLoop=0):
         adj_in_out[torch.arange(num_nodes), torch.arange(num_nodes)] = 0
         adj_out_in[torch.arange(num_nodes), torch.arange(num_nodes)] = 0
 
-
     return get_index(adj_in_out), get_index(adj_out_in), get_index(adj_aa), get_index(adj_out_out)
-
-
-
-
-
 
 def aggregate(x, alpha, lin0, adj0, lin1, adj1,  intersection, union, inci_norm='inci_norm'):
     if alpha == 2:
