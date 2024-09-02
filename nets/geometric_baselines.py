@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch_sparse
 from torch import triu
+from torch.cuda import device
 from torch.nn import Linear, ModuleList, init
 from torch_geometric.nn import GCNConv, GATConv, SAGEConv, ChebConv, GINConv, APPNP, JumpingKnowledge
 from torch.nn import Parameter
@@ -1017,7 +1018,7 @@ class DirGCNConv_2(torch.nn.Module):
                 # print('edge number(A, At):', sparse_all(self.adj_norm), sparse_all(self.adj_t_norm))
 
             # if self.adj_norm_in_out is None:
-            if not (self.beta == -1 and self.gama == -1) and self.adj_norm_in_out is None:
+            if  self.adj_norm_in_out is None:
 
                 self.adj_norm_in_out = get_norm_adj(adj @ adj_t,norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
                 self.adj_norm_out_in = get_norm_adj(adj_t @ adj, norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
@@ -1068,8 +1069,7 @@ class DirGCNConv_2(torch.nn.Module):
                 out2 = out3 = 0
         elif self.conv_type in ['dir-gat', 'dir-sage']:
             edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
-            # if self.edge_in_in is None:
-            if not (self.beta == -1 and self.gama == -1) and self.edge_in_in is None:
+            if self.edge_in_in is None:
                 self.edge_in_out, self.edge_out_in, self.edge_in_in, self.edge_out_out =get_higher_edge_index(edge_index, num_nodes, rm_gen_sLoop=rm_gen_sLoop)
                 self.Intersect_alpha, self.Union_alpha = edge_index_u_i(edge_index, edge_index_t)
                 self.Intersect_beta, self.Union_beta = edge_index_u_i(self.edge_in_out, self.edge_out_in)
@@ -1136,6 +1136,7 @@ def remove_shared_edges(self_edge_index, edge_index, edge_index_t):
     return filtered_edge_tensor
 
 def edge_index_u_i(edge_index, edge_index_t):
+    device = edge_index.device
     # Convert edge_index and edge_index_t to sets of tuples
     edge_set = set(tuple(edge) for edge in edge_index.t().tolist())
     edge_set_t = set(tuple(edge) for edge in edge_index_t.t().tolist())
@@ -1153,7 +1154,7 @@ def edge_index_u_i(edge_index, edge_index_t):
     intersection_edge_list = list(intersection_edge_set)
     intersection_edge_tensor = torch.tensor(intersection_edge_list).t()
 
-    return intersection_edge_tensor, union_edge_tensor
+    return intersection_edge_tensor.to(device), union_edge_tensor.to(device)
 
 
 def edge_index_to_adj(edge_index, num_nodes):
