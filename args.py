@@ -38,7 +38,7 @@ def parse_args():
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG)'
                         'Sym, 1ym')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='telegram/', help='citeseer_npz/ , cora_ml/, dgl/pubmed, telegram/,  WikiCS/, dgl/cora ,'
+    parser.add_argument('--Dataset', type=str, default='WikipediaNetwork/chameleon', help='citeseer_npz/ , cora_ml/, dgl/pubmed, telegram/,  WikiCS/, dgl/cora ,'
                                                                                 'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon')
     parser.add_argument('--dropout', type=float, default=0.0, help='dropout prob')
     parser.add_argument('--layer', type=int, default=2, help='number of layers (2 or 3), default: 2')
@@ -54,7 +54,7 @@ def parse_args():
     parser.add_argument('--coeflr', type=float, default=2, help='coef lr get multiplied with it')
     parser.add_argument('--wd4coef', type=float, default=5e-2, help='coef change slower with weight decay')
     parser.add_argument('--l2', type=float, default=5e-4, help='l2 regularizer, 5e-4')
-    parser.add_argument('-hds', '--heads', default=8, type=int)
+    parser.add_argument('-hds', '--heads', default=1, type=int)
 
     #  from Magnet
     parser.add_argument('--q', type=float, default=0.15, help='q value for the phase matrix')

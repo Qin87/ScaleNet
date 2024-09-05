@@ -91,9 +91,11 @@ dgl/pubmed:
 
 
 
-# (1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5)
+# (1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5, 79.5±1.4)
 WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5)
+  feat_dim: 128
   conv_type: "dir-gcn"
+  inci_norm: "dir"
   dropout: 0.0  # 0.5(acc65), 0.0(acc75)
   nonlinear: 0   #
 #  net: ScaleNet
@@ -102,11 +104,13 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   normalize: 1
   BN_model: 0  #  without layerNorm, very bad(but Dir-GNN prefer no LN)
   First_self_loop: "remove"
+#  First_self_loop: 0
   jk: 'max'
   jk_inner: 0
   alphaDir: 1
-  betaDir: -1
-  gamaDir: -1
+  betaDir: 1
+  gamaDir: 1
+  seed: 2099
 
 # (1_1_-1) 74.7±2.4,   (1,-1,-1) 75.2±1.7
 WikipediaNetwork/squirrel:

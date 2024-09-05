@@ -1448,7 +1448,7 @@ def directed_norm(adj, rm_gen_sLoop=False):
     out_deg_inv_sqrt.masked_fill_(out_deg_inv_sqrt == float("inf"), 0.0)
 
     out_deg_inv_sqrt = out_deg_inv_sqrt.to(device)
-    in_deg_inv_sqrt = in_deg_inv_sqrt.to(adj.device())
+    in_deg_inv_sqrt = in_deg_inv_sqrt.to(device)
 
     adj0 = mul(adj, out_deg_inv_sqrt.view(-1, 1))
     adj1 = mul(adj0, in_deg_inv_sqrt.view(1, -1))
@@ -1669,15 +1669,6 @@ class GCN_JKNet2(torch.nn.Module):
         # x = F.dropout(x, p=0.5, training=self.training)   # without is better
         return F.log_softmax(x, dim=1)
 
-def create_JK(nfeat, nhid, nclass, dropout, nlayer):
-    if nlayer == 1:
-        model = GCN_JKNet(nfeat, nhid, nclass, dropout,nlayer)
-    elif nlayer == 2:
-        model = StandGCN2BN(nfeat, nhid, nclass, dropout,nlayer)
-    else:
-        model = StandGCNXBN(nfeat, nhid, nclass, dropout,nlayer)
-
-    return model
 from torch_geometric.nn import MessagePassing, APPNP
 class GPR_prop(MessagePassing):
     '''
