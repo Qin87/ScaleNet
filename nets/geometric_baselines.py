@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch_sparse
 from torch import triu
+from torch.cuda import device
 from torch.nn import Linear, ModuleList, init
 from torch_geometric.nn import GCNConv, GATConv, SAGEConv, ChebConv, GINConv, APPNP, JumpingKnowledge
 from torch.nn import Parameter
@@ -1016,7 +1017,8 @@ class DirGCNConv_2(torch.nn.Module):
 
                 # print('edge number(A, At):', sparse_all(self.adj_norm), sparse_all(self.adj_t_norm))
 
-            if self.adj_norm_in_out is None:
+            # if self.adj_norm_in_out is None:
+            if  self.adj_norm_in_out is None:
 
                 self.adj_norm_in_out = get_norm_adj(adj @ adj_t,norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
                 self.adj_norm_out_in = get_norm_adj(adj_t @ adj, norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
@@ -1060,8 +1062,11 @@ class DirGCNConv_2(torch.nn.Module):
                     self.adj_union_in_in = union_adj_norm(self.norm_list[2], self.norm_list[3], self.inci_norm, device)
 
             out1 = aggregate(x, self.alpha, self.lin_src_to_dst, self.adj_norm, self.lin_dst_to_src, self.adj_t_norm, self.adj_intersection, self.adj_union,  inci_norm=self.inci_norm)
-            out2 = aggregate(x, self.beta, self.linx[0], self.norm_list[0], self.linx[1], self.norm_list[1], self.adj_intersection_in_out, self.adj_union_in_out, inci_norm=self.inci_norm)
-            out3 = aggregate(x, self.gama, self.linx[2], self.norm_list[2], self.linx[3], self.norm_list[3], self.adj_intersection_in_in, self.adj_union_in_in, inci_norm=self.inci_norm)
+            if not (self.beta == -1 and self.gama == -1):
+                out2 = aggregate(x, self.beta, self.linx[0], self.norm_list[0], self.linx[1], self.norm_list[1], self.adj_intersection_in_out, self.adj_union_in_out, inci_norm=self.inci_norm)
+                out3 = aggregate(x, self.gama, self.linx[2], self.norm_list[2], self.linx[3], self.norm_list[3], self.adj_intersection_in_in, self.adj_union_in_in, inci_norm=self.inci_norm)
+            else:
+                out2 = out3 = 0
         elif self.conv_type in ['dir-gat', 'dir-sage']:
             edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
             if self.edge_in_in is None:
@@ -1083,8 +1088,11 @@ class DirGCNConv_2(torch.nn.Module):
 
 
             out1 = aggregate_index(x, self.alpha, self.lin_src_to_dst, edge_index, self.lin_dst_to_src, edge_index_t, self.Intersect_alpha, self.Union_alpha)
-            out2 = aggregate_index(x, self.beta, self.linx[0], self.edge_in_out, self.linx[1], self.edge_out_in, self.Intersect_beta, self.Union_beta)
-            out3 = aggregate_index(x, self.gama, self.linx[2], self.edge_in_in, self.linx[3], self.edge_out_out, self.Intersect_gama, self.Union_gama)
+            if not (self.beta == -1 and self.gama == -1):
+                out2 = aggregate_index(x, self.beta, self.linx[0], self.edge_in_out, self.linx[1], self.edge_out_in, self.Intersect_beta, self.Union_beta)
+                out3 = aggregate_index(x, self.gama, self.linx[2], self.edge_in_in, self.linx[3], self.edge_out_out, self.Intersect_gama, self.Union_gama)
+            else:
+                out2 = out3 = 0
 
         else:
             raise NotImplementedError
@@ -1128,6 +1136,7 @@ def remove_shared_edges(self_edge_index, edge_index, edge_index_t):
     return filtered_edge_tensor
 
 def edge_index_u_i(edge_index, edge_index_t):
+    device = edge_index.device
     # Convert edge_index and edge_index_t to sets of tuples
     edge_set = set(tuple(edge) for edge in edge_index.t().tolist())
     edge_set_t = set(tuple(edge) for edge in edge_index_t.t().tolist())
@@ -1145,7 +1154,7 @@ def edge_index_u_i(edge_index, edge_index_t):
     intersection_edge_list = list(intersection_edge_set)
     intersection_edge_tensor = torch.tensor(intersection_edge_list).t()
 
-    return intersection_edge_tensor, union_edge_tensor
+    return intersection_edge_tensor.to(device), union_edge_tensor.to(device)
 
 
 def edge_index_to_adj(edge_index, num_nodes):
@@ -1175,13 +1184,7 @@ def get_higher_edge_index(edge_index, num_nodes, rm_gen_sLoop=0):
         adj_in_out[torch.arange(num_nodes), torch.arange(num_nodes)] = 0
         adj_out_in[torch.arange(num_nodes), torch.arange(num_nodes)] = 0
 
-
     return get_index(adj_in_out), get_index(adj_out_in), get_index(adj_aa), get_index(adj_out_out)
-
-
-
-
-
 
 def aggregate(x, alpha, lin0, adj0, lin1, adj1,  intersection, union, inci_norm='inci_norm'):
     if alpha == 2:
@@ -1199,7 +1202,7 @@ def aggregate_index(x, alpha, lin0, index0, lin1, index1,  intersection, union):
     elif alpha == 3:
         out = lin0(x, intersection)
     else:
-        out = (1+alpha)*(alpha * lin0(x, index0) + (1 - alpha) * lin1(x, index1))
+        out = (1+alpha)*((1 - alpha) * lin0(x, index0) +  alpha * lin1(x, index1))
 
     return out
 

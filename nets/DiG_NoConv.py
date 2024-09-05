@@ -1216,7 +1216,8 @@ class DiSAGE_xBN_nhid(torch.nn.Module):
             in_dim_jk = nhid * self.layer if self.jk == "cat" else nhid
             # self.lin = Linear(input_dim, out_dim)
             self.lin = Linear(in_dim_jk, nhid)
-            self.jump = JumpingKnowledge(mode=self.jk, channels=nhid, num_layers=out_dim)
+            if self.jk:
+                self.jump = JumpingKnowledge(mode=self.jk, channels=nhid, num_layers=out_dim)
 
         if m == 'S':
             self.conv1 = DiSAGEConv(input_dim, nhid)
@@ -1277,7 +1278,7 @@ class DiSAGE_xBN_nhid(torch.nn.Module):
         x = self.batch_norm2(self.conv2(x, edge_index, edge_weight))
         xs += [x]
 
-        if self.jk is not None:
+        if self.jk:
             x = self.jump(xs)
             x = self.lin(x)
 
