@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib.ticker import MultipleLocator
 
 data = 'CiteSeer'       # CoraML
-Adj = 'A3'
+Adj = 'A'
 
 # Data
 if data == 'CiteSeer' and Adj == 'A':
@@ -12,6 +12,8 @@ if data == 'CiteSeer' and Adj == 'A':
     layer_mean = [63.1, 60.5, 59.5, 57.1, 54.8, 54.1, 51.7, 53.1, 47.3, 43.9, 40.9, 40.0, 36.1, 30.1, 25.2, 29.6, 22.5, 23.6, 22.8, 22.3]
     Ak_vari = [1.9, 3.4, 2.1, 2.0, 2.0, 1.8, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
     layer_vari = [2.0, 2.6, 2.3, 2.6, 3.8, 3.4, 3.8, 2.9, 3.6, 2.8, 2.6, 3.3, 7.1, 6.4, 5.9, 7.2, 3.3, 4.5, 2.0, 1.9]
+    Akmlp_mean = [57.1, 60.1, 60.8, 60.2, 59.3, 59.7, 53.6, 43.7, 33.3, 28.9, 24.6, 23.8, 23.6, 24.4, 21.2, 22.5, 19.9, 22.1, 22.1, 20.8]
+    Akmlp_vari = [1.3, 1.9, 2.4, 1.8, 2.0, 2.5, 4.6, 5.0, 5.9, 4.8, 4.1, 3.2, 2.0, 3.4, 3.5, 3.0, 2.9, 2.8, 3.2, 2.9]
     density = [0.0720, 0.0985, 0.1105, 0.1146, 0.1159, 0.1163, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164]
 
 elif data == 'CiteSeer' and Adj == 'At':
@@ -20,6 +22,8 @@ elif data == 'CiteSeer' and Adj == 'At':
     layer_mean = [59.6, 56.7, 56.0, 53.7, 51.8, 50.2, 49.7, 47.3, 43.8, 38.5, 32.5, 34.6, 31.9, 25.7, 25.3, 21.0, 19.8, 19.6, 19.9, 19.7]
     Ak_vari = [2.4, 3.7, 3.2, 2.8, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9]
     layer_vari = [2.2, 1.4, 1.9, 2.9, 2.3, 2.7, 2.9, 3.4, 6.3, 4.6, 3.4, 4.5, 6.2, 6.0, 7.4, 4.0, 1.0, 1.5, 1.2, 1.5]
+    Akmlp_mean = [53.2, 55.5, 56.9, 56.9, 57.6, 55.8, 49.0, 34.6, 24.6, 22.6, 22.4, 22.8, 21.6, 20.6, 21.2, 21.3, 19.9, 20.2, 20.5, 19.7]
+    Akmlp_vari = [1.4, 2.6, 2.9, 1.9, 3.2, 2.7, 3.6, 5.0, 3.8, 3.6, 2.5, 2.9, 2.3, 1.8, 1.5, 1.5, 1.1, 1.4, 1.2, 1.9]
     density = [0.0720, 0.0985, 0.1105, 0.1146, 0.1159, 0.1163, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164, 0.1164]
 
 elif data== 'CiteSeer' and Adj == 'A3':
@@ -52,6 +56,8 @@ elif data == 'CoraML' and Adj == 'A':
     layer_mean = [73.2, 72.3, 70.5, 68.5, 65.2, 64.2, 61.7, 54.7, 44.6, 39.4, 34.8, 32.1, 26.3, 23.6, 21.7, 22.1, 22.2, 22.0, 21.9, 22.3]
     Ak_vari = [1.5, 1.7, 1.9, 2.1, 2.2, 2.2, 2.6, 2.7, 2.5, 3.1, 3.6, 3.8, 4.2, 3.8, 3.6, 3.6, 3.3, 3.1, 3.3, 3.0]
     layer_vari = [1.5, 1.8, 2.4, 3.6, 4.5, 3.4, 3.7, 3.4, 6.1, 5.5, 5.8, 8.7, 8.3, 5.7, 4.1, 4.6, 5.5, 5.6, 5.3, 6.1]
+    Akmlp_mean = [73.2, 71.4, 70.3, 69.1, 65.1, 63.6, 53.3, 43.1, 36.4, 33.5, 33.0, 31.7, 31.0, 30.4, 29.4, 30.0, 27.2, 28.3, 30.2, 29.2]
+    Akmlp_vari = [1.5, 1.8, 2.7, 2.4, 3.5, 3.4, 6.8, 6.5, 3.7, 2.9, 4.5, 4.6, 2.8, 3.7, 2.1, 2.3, 5.2, 3.8, 3.3, 1.5]
     density = [0.1272, 0.3110, 0.5627, 0.8566, 1.1754, 1.5044, 1.8377, 2.1793, 2.5173, 2.8398, 3.1323, 3.3888, 3.6172, 3.8162, 3.9746, 4.1075, 4.2237, 4.3256, 4.4066, 4.4641]
 
 elif data == 'CoraML' and Adj == 'A3':
@@ -112,11 +118,13 @@ elif data== 'PubMed' and Adj == 'At':
 
 elif data== 'PubMed' and Adj == 'Undirect':
     layers = list(range(1, 21))
-    Ak_mean = []
-    layer_mean = []
-    Ak_vari = []
-    layer_vari = []
-    density = []
+    Ak_layers = list(range(1, 5))
+    den_layers = list(range(1, 9))
+    Ak_mean = [73.6, 69.9, 66.5, 66.8]
+    layer_mean = [73.6,77.8,76.2,75.2,70.0,69.0,66.9,66.4,65.2,63.8,55.2,47.1,48.0,43.5,42.5,43.2,42.1,43.4,43.3,43.5 ]
+    Ak_vari = [1.0, 0.7, 1.3, 1.0]
+    layer_vari = [1.0,0.1,0.7,1.0,4.5,3.4,2.3,2.4,2.6,7.7,13.1,8.4,10.1,1.9,1.7,2.4,1.9,2.5,2.2,1.8]
+    density = [0.0279, 0.3046, 2.0014, 10.0998, 26.9450, 56.7873, 79.6643, 93.5512]
 
 elif data== 'WikiCS' and Adj == 'Undirect':
     layers = list(range(1, 21))
@@ -127,12 +135,14 @@ elif data== 'WikiCS' and Adj == 'Undirect':
     density = []
 
 elif data== 'WikiCS' and Adj == 'A':
-    layers = list(range(1, 21))
-    Ak_mean = []
-    layer_mean = []
-    Ak_vari = []
-    layer_vari = []
-    density = []
+    layers = list(range(1, 16))
+    Ak_layers = list(range(1, 5))
+    den_layers = list(range(1, 15))
+    Ak_mean = [75.4, 70.7, 70.7, 65.1]
+    layer_mean = [75.4, 76.5, 75.8, 74.9, 73.9, 72.8, 71.9, 70.4, 68.7, 67.6, 67.3, 66.0, 65.4, 64.2, 63.2]
+    Ak_vari = [0.4, 0.6, 0.6, 1.0]
+    layer_vari = [0.4, 0.6, 0.6, 0.7, 0.8, 0.8, 0.8, 0.9, 1.4, 1.2, 1.2, 1.8, 1.4, 1.6, 2.5]
+    density = [0.2207, 4.6382, 31.1582, 61.3509, 72.2286, 74.3985, 74.7607, 74.8299, 74.8525, 74.8625, 74.8650, 74.8653, 74.8653, 74.8653]
 
 elif data== 'WikiCS' and Adj == 'At':
     layers = list(range(1, 21))
@@ -145,6 +155,10 @@ elif data== 'WikiCS' and Adj == 'At':
 # Calculate standard error from variance
 std_err_1 = layer_vari    # np.sqrt(layer_vari)
 std_err_2 = Ak_vari       # np.sqrt(Ak_vari)
+if 'Ak_layers' not in locals():
+    Ak_layers = layers
+if 'den_layers' not in locals():
+    den_layers = layers
 
 # Create figure
 plt.figure(figsize=(10, 6))
@@ -152,7 +166,8 @@ plt.figure(figsize=(10, 6))
 # Create first y-axis and plot accuracy data
 ax1 = plt.gca()
 ax1.errorbar(layers, layer_mean, yerr=std_err_1, fmt='bo-', label='Growing Layer', capsize=3, markersize=5)
-ax1.errorbar(layers, Ak_mean, yerr=std_err_2, fmt='rs-', label='Growing k', capsize=3, markersize=5)
+ax1.errorbar(Ak_layers, Ak_mean, yerr=std_err_2, fmt='rs-', label='Growing k', capsize=3, markersize=5)
+ax1.errorbar(Ak_layers, Akmlp_mean, yerr=Akmlp_vari, fmt='g^-', label='Growing k and layer', capsize=3, markersize=5)
 ax1.set_xlabel('Layers or k', fontsize=14)  # Increase x-axis label font size
 ax1.set_ylabel('Accuracy (%)', fontsize=14)
 
@@ -161,7 +176,7 @@ ax1.yaxis.set_major_locator(MultipleLocator(5))
 
 # # Create second y-axis and plot density
 ax2 = ax1.twinx()
-density_line = ax2.plot(layers, np.array(density)/100, 'k-', label='Density', marker='d', markersize=5)
+density_line = ax2.plot(den_layers, np.array(density)/100, 'k-', label='Density', marker='d', markersize=5)
 ax2.set_ylabel('Density', fontsize=14)
 
 # Format density axis as percentage
@@ -171,7 +186,7 @@ ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:.2%}'))
 lines1, labels1 = ax1.get_legend_handles_labels()
 lines2, labels2 = density_line, ['Density']
 ax1.legend(lines1 + lines2, labels1 + labels2,
-          loc='upper right', bbox_to_anchor=(1, 0.7))
+          loc='upper right', bbox_to_anchor=(1, 0.5))
 
 # Add grid
 ax1.grid(True, alpha=0.1)
