@@ -504,6 +504,75 @@ class StandGCNXBN(nn.Module):
         # x = F.dropout(x, p=self.dropout_p, training=self.training)      # this is the best dropout arrangement
         return x
 
+class StandGCNX_noRelu(nn.Module):
+    def __init__(self, nfeat, nclass, args):
+        super().__init__()
+        nhid = args.feat_dim
+        dropout = args.dropout
+        nlayer = args.layer
+        is_add_self_loops = args.First_self_loop
+        norm = args.gcn_norm
+        self.is_add_self_loops = is_add_self_loops  # Qin True is the original
+        if nlayer == 1:
+            self.conv1 = GCNConv(nfeat, nclass, cached= False, normalize=norm, add_self_loops=self.is_add_self_loops)
+            # self.conv1 = SAGEConv_QinNov(nfeat, nclass)      #  delete
+            # self.conv1 = SAGEConv(nfeat, nclass)      #  delete
+        else:
+            self.conv1 = GCNConv(nfeat, nhid, cached= False, normalize=norm, add_self_loops=self.is_add_self_loops)
+
+        self.mlp1 = torch.nn.Linear(nhid, nclass)
+        self.conv2 = GCNConv(nhid, nclass, cached=False, normalize=norm, add_self_loops=self.is_add_self_loops)
+        self.convx = nn.ModuleList([GCNConv(nhid, nhid, cached=False, normalize=norm, add_self_loops=self.is_add_self_loops) for _ in range(nlayer-2)])
+        self.dropout_p = dropout
+
+        self.batch_norm1 = nn.BatchNorm1d(nhid)
+        self.batch_norm2 = nn.BatchNorm1d(nclass)
+        self.batch_norm3 = nn.BatchNorm1d(nhid)
+        # self.reg_params = list(self.conv1.parameters()) + list(self.convx.parameters())  # no effect to layer=1,
+        # self.non_reg_params = self.conv2.parameters()
+
+        self.layer = nlayer
+
+    def forward(self, x, adj, edge_weight=None):
+        edge_index = adj
+        x = self.conv1(x, edge_index)
+        # x = self.mlp1(x)
+        if self.layer == 1:
+            return x
+        # if args.BN_model:
+        #     x = self.batch_norm1(x)
+        # x = F.relu(x)
+        # if args.dropout:
+        #     x = F.dropout(x, p=args.dropout, training=self.training)
+        # if args.normalize:
+        #     x = F.normalize(x, p=2, dim=1)
+
+        if self.layer>2:
+            for iter_layer in self.convx:
+                # x = F.dropout(x,p= self.dropout_p, training=self.training)
+                x = iter_layer(x, edge_index)
+                # if args.BN_model:
+                #     x= self.batch_norm3(x)
+                # x = F.relu(x)
+                if self.dropout_p:
+                    x = F.dropout(x, p=self.dropout_p, training=self.training)
+                # if args.normalize:
+                #     x = F.normalize(x, p=2, dim=1)
+
+        # x = F.dropout(x, p= self.dropout_p, training=self.training)
+        x = self.conv2(x, edge_index)
+        # if args.BN_model:
+        #     x = self.batch_norm2(x)
+        # x = F.relu(x)
+        # if args.dropout:
+        #     x = F.dropout(x, p=args.dropout, training=self.training)
+        # if args.normalize:
+        #     x = F.normalize(x, p=2, dim=1)
+
+        # x = F.dropout(x, p=self.dropout_p, training=self.training)      # this is the best dropout arrangement
+        return x
+
+
 
 class GraphSAGEXBatNorm(nn.Module):
     def __init__(self,  nfeat, nclass, args):

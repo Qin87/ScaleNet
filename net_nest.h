@@ -1,6 +1,6 @@
 #!/bin/bash
 
-net_values="  GCNAk "
+net_values="  GCN_NoRelu "
 layer_values=" 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20    "
 #layer_values="   1  15 16 17 18 19 20 30 40 50 60 70 "   1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 
@@ -22,7 +22,7 @@ for Didataset in "${Direct_dataset[@]}"; do
             log_output="${Didataset//\//_}_${timestamp}_${net}_layer${layer}q${q_value}.log"
 
             # Run the Python script with parameters and log output
-            python3 main.py   --net="$net"  --Ak=$((3 * layer))   --to_undirected=0   --to_reverse_edge=0  --use_best_hyperparams=1  --gcn_norm=1  \
+            python3 main.py   --net="$net"  --Ak=$((1 * layer))  --layer=1  --to_undirected=0   --to_reverse_edge=0  --use_best_hyperparams=1  --gcn_norm=1  \
             --Dataset="$Didataset" > "$log_output"
              2>&1
             wait $pid
