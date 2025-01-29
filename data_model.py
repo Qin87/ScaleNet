@@ -6,7 +6,7 @@ import torch
 from torch_scatter import scatter_add
 
 from nets.gat import GATConvQin, StandGAT1BN_Qin
-from nets.gcn import ParaGCNXBN, StandGCNXBN, StandGCNXBN_Ak
+from nets.gcn import ParaGCNXBN, StandGCNXBN, StandGCNXBN_Ak, StandGCNX_noRelu
 from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model, Sloop_JKNet, ScaleNet, RandomNet, High_Frequent
 from nets.models import JKNet, create_MLP, create_SGC, create_pgnn, GPRGNNNet1, GraphModel
 
@@ -170,6 +170,9 @@ def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
         if args.net == 'GCN':
             # model = GCNModel_Cheb(num_features, n_cls,filter_num=args.feat_dim, dropout=args.dropout, layer=args.layer).to(device)
             model = StandGCNXBN(num_features, n_cls, args=args)
+        elif args.net == 'GCN_NoRelu':
+            # model = GCNModel_Cheb(num_features, n_cls,filter_num=args.feat_dim, dropout=args.dropout, layer=args.layer).to(device)
+            model = StandGCNX_noRelu(num_features, n_cls, args=args)
         elif args.net == 'GCNAk':  # only 1 layer GCN, other layer are MLP
             model = StandGCNXBN_Ak(num_features, n_cls, args=args)
         elif args.net == 'ParaGCN':

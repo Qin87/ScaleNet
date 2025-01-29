@@ -2,7 +2,7 @@
 telegram/:
   feat_dim: 64
   l2: 0   # 97.0(0), 95.6(5e-4)
-#  inci_norm: 0  # {94.2±4.4(dir) 95.6±3.0(0)}  {93.2(dir), 97.0(0)}
+  inci_norm: 0  # {94.2±4.4(dir) 95.6±3.0(0)}  {93.2(dir), 97.0(0)}
   has_scheduler: 1
   NotImproved: 410
   epoch: 1500
@@ -14,11 +14,11 @@ telegram/:
   lr: 0.01
   normalize: 1
   BN_model: 1    # sure
-  First_self_loop: 1
-  jk: 'max'
+#  First_self_loop: 1
+#  jk: 'max'
   dropout: 0.0
   jk_inner: 0
-  alphaDir: 0.5     # 0.5, 0.2(94.8)
+#  alphaDir: 0.5     # 0.5, 0.2(94.8)
   betaDir: -1
   gamaDir: -1
   seed: 101   # 96.4±2.5(1), 94.8±2.9(11), 97.0±2.2(101)
@@ -34,9 +34,9 @@ cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
   has_scheduler: 1
   conv_type: "dir-gcn"
   nonlinear: 1
-  net: ScaleNet   #  net: QiGi3
+#  net: ScaleNet   #  net: QiGi3
   feat_dim: 128   # better than 64
-  layer: 3   # 2(80), 3(75), 4(79.8), 5(79.6)
+#  layer: 3   # 2(80), 3(75), 4(79.8), 5(79.6)
   lr: 0.01    # 0.1(79), 0.01(80.7)
   l2: 0.0005
   normalize: 0
@@ -52,7 +52,7 @@ cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
 
 #
 citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.0_0.0_0.5----2.0_0.0_0.0----2.0_2.0_0.5-----0.5_2.0_0.5---0.0_0.5_2.0--0.5_2.0_2.0
-#  l2: 0   # A3_layer14 0_50, 5e-4_33
+  l2: 0   # A3_layer14 0_50, 5e-4_33;  undirected 5e-4 is a bit better 65(0_60)
   NotImproved: 810
   epoch: 10000
   patience: 80  # 400
@@ -138,7 +138,7 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   dropout: 0.0  # 0.5(acc65), 0.0(acc75)
   nonlinear: 1   # on diff in small layer, but deeper differs great, 0 is worse
 #  net: ScaleNet
-  layer: 5      # 80.1
+#  layer: 5      # 80.1
   lr: 0.005
   normalize: 1
   BN_model: 0  #  without layerNorm, very bad(but Dir-GNN prefer no LN)
