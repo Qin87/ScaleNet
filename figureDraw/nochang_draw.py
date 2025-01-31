@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+# data_name = 'Squirrel'
+data_name = 'Chameleon'   # 'Squi'  revise here to draw
 
 # Data
 layers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 30, 40, 50]
@@ -18,22 +20,22 @@ acc_vari_1_squi = [1.8, 1.8, 2.0, 1.4, 1.9, 1.9, 1.9, 1.6, 1.7, 2.1,
 # Create figure and axis
 plt.figure(figsize=(12, 6))
 
-# Plot Chameleon data
-plt.plot(layers, acc_mean_1_chame, 'b-', label='Chameleon', linewidth=2)
-plt.fill_between(layers,
-                 np.array(acc_mean_1_chame) - np.array(acc_vari_1_chame),
-                 np.array(acc_mean_1_chame) + np.array(acc_vari_1_chame),
-                 color='blue', alpha=0.2)
+if data_name == 'Chameleon':
+    # Plot Chameleon data
+    plt.plot(layers, acc_mean_1_chame, 'b-', label='Chameleon', linewidth=2)
+    plt.fill_between(layers,
+                     np.array(acc_mean_1_chame) - np.array(acc_vari_1_chame),
+                     np.array(acc_mean_1_chame) + np.array(acc_vari_1_chame),
+                     color='blue', alpha=0.2)
+elif data_name == 'Squirrel':
+    # Plot Squirrel data
+    plt.plot(layers_squi, acc_mean_1_squi, 'g-', label='Squirrel', linewidth=2)
+    plt.fill_between(layers_squi,
+                     np.array(acc_mean_1_squi) - np.array(acc_vari_1_squi),
+                     np.array(acc_mean_1_squi) + np.array(acc_vari_1_squi),
+                     color='green', alpha=0.2)
 
-# Plot Squirrel data
-# plt.plot(layers_squi, acc_mean_1_squi, 'g-', label='Squirrel', linewidth=2)
-# plt.fill_between(layers_squi,
-#                  np.array(acc_mean_1_squi) - np.array(acc_vari_1_squi),
-#                  np.array(acc_mean_1_squi) + np.array(acc_vari_1_squi),
-#                  color='green', alpha=0.2)
 
-data_name = 'Squirrel'
-# data_name = 'Chameleon'
 # Customize the plot
 plt.xlabel('Number of Layers', fontsize=12)
 plt.ylabel('Accuracy (%)', fontsize=12)
