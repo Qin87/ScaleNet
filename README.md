@@ -1,6 +1,7 @@
-# ScaleNet
-After paper [Scale Invariance of Graph Neural Networks](https://arxiv.org/abs/2411.19392).
+# MPNN demystified
+After paper [Demystifying MPNNs: Message Passing as Merely Efficient Matrix Multiplication]().
 
+Work better in 2025
 ## Requirements
 
 This repository has been tested with the following packages:
