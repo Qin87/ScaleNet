@@ -1,5 +1,5 @@
-# ScaleNet
-After paper [Scale Invariance of Graph Neural Networks](https://arxiv.org/abs/2411.19392).
+#  MPNN Demystified
+Our paper [Demystifying MPNNs: Message Passing as Merely Efficient Matrix Multiplication].
 
 ## Requirements
 
@@ -25,89 +25,76 @@ By following these steps, you can resolve compatibility issues and avoid segment
 Specify the name of the dataset you want to use. The available datasets are categorized as follows:
 
 - **Directed Datasets**:
-  - **Assortative Graph**:
+  - **Citation Classification**:
     - `citeseer/`
     - `cora_ml/`
-    - `WikiCS/`
-    - `telegram/`
     - `dgl/pubmed`
   
-  - **Disassortative Graph**:
+  - **Webpage Traffic Classification**:
     - `WikipediaNetwork/squirrel`
     - `WikipediaNetwork/chameleon`
+  - **Social Network**:
+    - `telegram/`
 
-### GNN Backbone 
-- **GNN baselines**:
-  - `MLP`  
-  - `GCN`
-  - `GAT`
-  - `SAGE` for GraphSAGE
-  - `Cheb`
-  - `APPNP`
-
-- **Hermitian Matrix GNNs**:
-  - `Mag` for MagNet
-  - `Sig`  for SigMaNet
-  - `Qua` for QuaNet
-- **Symmetric models**: 
-  -  *`Sym`* for DGCN
-      - `1ym`
-  - *`DiG`, `DiGi2`*  for DiGCN(ib) 
-    - `1iG`
-    - `RiG`
-  
-    In DiG\*, 1iG\*, RiG\*,  * can be nothing or exampled as follows**:
-      - `i2` interception of 2-order edges
-      - `u3` union of 3-order edges 
-    Number 2, 3 can be replaced with any number k>1.
-- **BiDirectional models**:
+- **Models**:
   - `Dir-GNN`
+  - `GCN with selfloop`:   args.add_selfloop=1   args.net='GCN'
+  - `GCN without selfloop`:   args.add_selfloop=0   args.net='GCN'
+  - `single layer with k-hop neighbors`: args.net='GCNAk'  args.Ak=10 
+- **Option of Propagation**:
+  - `original directed`: args.to_undirected=0  args.to_reverse_edge=0
+  - `bidirectional`: args.to_undirected=1
+  - `reverse direction`: args.to_reverse_edge=1
+- **Other Options**:
+  - `enable density computation for different hop neighbors`: args.num_edge=1
+  - `enable incidence normalization for GCN`: args.gcn_norm=1
+  - `node feature to be all 1`: args.all1=1
+  - `node feature to be node degree`: args.degfea=1(in degree), -1(out degree), 2(both degree), 0(not using degree)
+
 
 ### How to Run
 
-- **(1) To run and get the best performance for each model**:
-  - On original datasets:
+- **(1) To run and get the result in Figure 3**:
+  - Comment out relative settings in best_hyperparameters.yml, then run: 
 
     ```
-    python3 main.py  --net='ScaleNet' --use_best_hyperparams=1  --Dataset='cora_ml/'
+    python3 main.py  --net='GCN'   --to_reverse_edge=1 --use_best_hyperparams=1   --Dataset='WikipediaNetwork/chameleon'  --add_selfloop=0
     ```
+  - Then copy the results to ./figureDraw/nochange_draw.py and run to draw figures.
   
-    ```
-    python3 main.py --net='Dir-GNN' --use_best_hyperparams=1   --Dataset='citeseer_npz/'
-    
-    ```
-  - For imbalanced datasets:
-    ```
-    python3 main.py  --net='ScaleNet' --use_best_hyperparams=1  --Dataset='cora_ml/'   --MakeImbalance   --imb_ratio=100
-    ```
-- **(2)Run in batches**:
-To run with your own configurations, revise net_nest.h by kicking in all the nets in net_values, all the layers in layer_values,
-all the datasets in Direct_dataset. Then in terminal, run: 
-
+- **(2) To run and get the results in Figure 4**:
+ - To get the blue line of growing layers:
   ```
-  ./net_nest.h
+  python3 main.py  --net='GCN'  --add_selfloop=1  --layer=8  --Ak=0
+  ```
+  - To get the red line of growing neighbors:
+  ```
+  python3 main.py  --net='GCN'  --add_selfloop=1  --Ak=8   --layer=1
+  ```
+  - To get the green line of growing neighbors and layers:
+  ```
+  python3 main.py  --net='GCNAk'  --add_selfloop=1  --Ak=8  
+  ```
+  - To get the black line of density, run the following code and the result will be printed. Then copy the results to ./figureDraw/draw.py to draw figures.
+  ```
+  python3 main.py  --add_selfloop=1  --num_edge=1  
+  ```
+ - To run and get the results in Figure 5**, just add --args.to_reverse_edge=1 for reverse propagation, add --to_undirected=1 for bidirectional propagation.
+ 
+
+- **(3) Batch running**:
+  - Revise following file to cater your needs:
+  ```
+  ./net_nest.h &
   ```
 
-
-
-- **(3) To compare ScaleNet with the enumeration of the parameters alpha, beta, and gamma, use the following command**:
-
+- **(4) To get the results in Table 2**:
+  - Enable all requirements in best_hyperparameters.yml exception inci_norm and run, 
+  for instance, the code below is no features by setting all1 to be 1, and row normalization:
   ```
-  ./scale.h &
+  python3 main.py   --net='GCN'   --use_best_hyperparams=1  --inci_norm='row'   --all1=1
   ```
 
-- **(4) To get performance of removing shared edges with lower-scale graphs**:
-  - To get performance of AAt-A-At, AtA-A-At, AAt+AtA-A-At ('-' means removing the shared edges with A or At):
-    
-    args.differ_AAt=1    args.differ_AA=0
-  - To get performance of AA-A-At, AtAt-A-At, AA+AtAt-A-At ('-' means removing the shared edges with A or At):
-    
-    args.differ_AA=1
-- **(5) Wilcoxon test** 
-To run the Wilcoxon test on each dataset, execute the corresponding script. For example:
-  ```
-  python3 ./wilcoxon/wilcoxon_cham.py  &
-  ```
 
 
 
