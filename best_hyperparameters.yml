@@ -2,23 +2,23 @@
 telegram/:
   feat_dim: 64
   l2: 0   # 97.0(0), 95.6(5e-4)
-  inci_norm: 0  # {94.2±4.4(dir) 95.6±3.0(0)}  {93.2(dir), 97.0(0)}
+#  inci_norm: 0  # {94.2±4.4(dir) 95.6±3.0(0)}  {93.2(dir), 97.0(0)}
   has_scheduler: 1
   NotImproved: 410
   epoch: 1500
   patience: 80
-  net: ScaleNet         # 1iGi3
+#  net: ScaleNet         # 1iGi3
   conv_type: "dir-gcn"
   nonlinear: 1
-  layer: 4
+#  layer: 4
   lr: 0.01
   normalize: 1
   BN_model: 1    # sure
 #  First_self_loop: 1
-#  jk: 'max'
+  jk: 'max'
   dropout: 0.0
   jk_inner: 0
-#  alphaDir: 0.5     # 0.5, 0.2(94.8)
+  alphaDir: 0.5     # 0.5, 0.2(94.8)
   betaDir: -1
   gamaDir: -1
   seed: 101   # 96.4±2.5(1), 94.8±2.9(11), 97.0±2.2(101)
@@ -128,9 +128,9 @@ dgl/pubmed:
 WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5)
   monitor: 'acc'
   l2: 0  # 5e-4 is a bit worse
-  NotImproved: 810
-  epoch: 10000
-  patience: 400
+#  NotImproved: 810
+#  epoch: 10000
+#  patience: 400
   has_scheduler: 1
   feat_dim: 128
   conv_type: "dir-gcn"
@@ -139,11 +139,11 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   nonlinear: 1   # on diff in small layer, but deeper differs great, 0 is worse
 #  net: ScaleNet
 #  layer: 5      # 80.1
-  lr: 0.005
+#  lr: 0.005
   normalize: 1
   BN_model: 0  #  without layerNorm, very bad(but Dir-GNN prefer no LN)
   First_self_loop: 0
-#  jk: 'max'
+  jk: 'max'
   jk_inner: 0
   alphaDir: 1
 #  betaDir: 1
