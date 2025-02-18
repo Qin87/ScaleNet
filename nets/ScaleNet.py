@@ -338,7 +338,7 @@ class ScaleNet_2025(torch.nn.Module):
 
         for i, conv in enumerate(self.convs):
             # x = conv(x, edge_index)
-            x = conv(x, self.adj, self.adj_t, self.adj_A_A,  self.adj_A_At, self.adj_At_A, self.adj_At_At)
+            x = conv(x, edge_index, self.adj, self.adj_t, self.adj_A_A,  self.adj_A_At, self.adj_At_A, self.adj_At_At)
             if i != len(self.convs) - 1 or self.jumping_knowledge:
                 if self.nonlinear:
                     x = F.relu(x)
@@ -395,8 +395,8 @@ class DirGCNConv_Feb18(torch.nn.Module):
         else:
             raise NotImplementedError
 
-        self.First_self_loop = args.First_self_loop
-        self.rm_gen_sloop = args.rm_gen_sloop
+        # self.First_self_loop = args.First_self_loop
+        # self.rm_gen_sloop = args.rm_gen_sloop
         self.differ_AA = args.differ_AA
         self.differ_AAt = args.differ_AAt
         if self.differ_AA or self.differ_AAt:
@@ -430,10 +430,11 @@ class DirGCNConv_Feb18(torch.nn.Module):
             self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=input_dim, num_layers=3)
             self.linjk = Linear(input_dim_jk, output_dim)
 
-    def forward(self, x,  adj, adj_t, adj_A_A, adj_A_At, adj_At_A, adj_At_At):
+    def forward(self, x,  edge_index, adj, adj_t, adj_A_A, adj_A_At, adj_At_A, adj_At_At):
         num_nodes = x.shape[0]
         if self.conv_type == 'dir-gcn':
-            out1 = self.alpha * self.lin_src_to_dst(x, adj) + (1-self.alpha) * self.lin_dst_to_src(x, adj_t)
+            # out1 = self.alpha * self.lin_src_to_dst(x, adj) + (1-self.alpha) * self.lin_dst_to_src(x, adj_t)
+            out1 = self.alpha * self.lin_src_to_dst(x, edge_index) + (1-self.alpha) * self.lin_dst_to_src(x, edge_index[[1,0]])
 
             if not (self.beta == -1 and self.gama == -1):
                 out2 = self.beta * self.linx[0](x, adj_A_A) + (1 - self.beta) * self.linx[1](x, adj_A_At)
