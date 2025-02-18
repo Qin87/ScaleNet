@@ -138,16 +138,16 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   dropout: 0.0  # 0.5(acc65), 0.0(acc75)
   nonlinear: 1   # on diff in small layer, but deeper differs great, 0 is worse
 #  net: ScaleNet
-  layer: 5      # 80.1
+#  layer: 5      # 80.1
   lr: 0.005
-  normalize: 1  # GCN without this
+#  normalize: 1  # GCN without this
   BN_model: 0  #  without layerNorm, very bad(but Dir-GNN prefer no LN)
   First_self_loop: 0
   jk: 'max'
   jk_inner: 0
   alphaDir: 1
-  betaDir: 1
-  gamaDir: 1
+#  betaDir: 1
+#  gamaDir: 1
   seed: 101   # tried 2099,
 
 
