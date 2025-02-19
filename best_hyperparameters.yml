@@ -146,8 +146,8 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   jk: 'max'
   jk_inner: 0
   alphaDir: 1
-#  betaDir: 1
-#  gamaDir: 1
+  betaDir: 1
+  gamaDir: 1
   seed: 101   # tried 2099,
 
 

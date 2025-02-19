@@ -261,13 +261,17 @@ class GCNConv_inciNormOption(MessagePassing):
             elif isinstance(edge_index, SparseTensor):
                 cache = self._cached_adj_t
                 if cache is None:
-                    edge_index = gcn_norm_option( self.inci_norm,   # yapf: disable
+                    sparse_tensor = gcn_norm_option( self.inci_norm,   # yapf: disable
                         edge_index, edge_weight, x.size(self.node_dim),
                         self.improved, self.add_self_loops, self.flow, x.dtype)
+
+                    # Extract edge_index and edge_weight from SparseTensor
+                    row, col, edge_weight = sparse_tensor.coo()
+                    edge_index = torch.stack([row, col], dim=0)
                     if self.cached:
-                        self._cached_adj_t = edge_index
+                            self._cached_adj_t = (edge_index, edge_weight)
                 else:
-                    edge_index = cache
+                    edge_index, edge_weight = cache
 
         x = self.lin(x)
 
@@ -324,21 +328,13 @@ class ScaleNet_2025(torch.nn.Module):
         self.adj_A_A, self.adj_A_At, self.adj_At_A, self.adj_At_At = None, None, None, None
 
     def forward(self, x, edge_index):
-        if self.adj is None:
-            num_nodes = x.shape[0]
-            self.adj = SparseTensor(row=edge_index[0], col=edge_index[1], sparse_sizes=(num_nodes, num_nodes))
-            self.adj_t = SparseTensor(row=edge_index[1], col=edge_index[0], sparse_sizes=(num_nodes, num_nodes))
-        if self.adj_A_A is None:
-            self.adj_A_A = self.adj @ self.adj
-            self.adj_A_At = self.adj @ self.adj_t
-            self.adj_At_A = self.adj_t @ self.adj
-            self.adj_At_At = self.adj_t @ self.adj_t
+
 
         xs = []
 
         for i, conv in enumerate(self.convs):
-            # x = conv(x, edge_index)
-            x = conv(x, edge_index, self.adj, self.adj_t, self.adj_A_A,  self.adj_A_At, self.adj_At_A, self.adj_At_At)
+            x = conv(x, edge_index)
+            # x = conv(x, edge_index, self.adj, self.adj_t, self.adj_A_A,  self.adj_A_At, self.adj_At_A, self.adj_At_At)
             if i != len(self.convs) - 1 or self.jumping_knowledge:
                 if self.nonlinear:
                     x = F.relu(x)
@@ -430,14 +426,25 @@ class DirGCNConv_Feb18(torch.nn.Module):
             self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=input_dim, num_layers=3)
             self.linjk = Linear(input_dim_jk, output_dim)
 
-    def forward(self, x,  edge_index, adj, adj_t, adj_A_A, adj_A_At, adj_At_A, adj_At_At):
+    def forward(self, x,  edge_index):
         num_nodes = x.shape[0]
+        if self.adj is None:
+            num_nodes = x.shape[0]
+            self.adj = SparseTensor(row=edge_index[0], col=edge_index[1], sparse_sizes=(num_nodes, num_nodes))
+            self.adj_t = SparseTensor(row=edge_index[1], col=edge_index[0], sparse_sizes=(num_nodes, num_nodes))
+        if self.adj_A_A is None:
+            self.adj_A_A = self.adj @ self.adj
+            self.adj_A_At = self.adj @ self.adj_t
+            self.adj_At_A = self.adj_t @ self.adj
+            self.adj_At_At = self.adj_t @ self.adj_t
         if self.conv_type == 'dir-gcn':
-            # out1 = self.alpha * self.lin_src_to_dst(x, adj) + (1-self.alpha) * self.lin_dst_to_src(x, adj_t)
-            out1 = self.alpha * self.lin_src_to_dst(x, edge_index) + (1-self.alpha) * self.lin_dst_to_src(x, edge_index[[1,0]])
+            out1 = self.alpha * self.lin_src_to_dst(x, self.adj) + (1-self.alpha) * self.lin_dst_to_src(x, adj_t)
+            # out1 = self.alpha * self.lin_src_to_dst(x, edge_index) + (1-self.alpha) * self.lin_dst_to_src(x, edge_index[[1,0]])
 
             if not (self.beta == -1 and self.gama == -1):
+                torch.cuda.empty_cache()
                 out2 = self.beta * self.linx[0](x, adj_A_A) + (1 - self.beta) * self.linx[1](x, adj_A_At)
+                torch.cuda.empty_cache()
                 out3 = self.gama * self.linx[2](x, adj_At_A) + (1 - self.gama) * self.linx[3](x, adj_At_At)
             else:
                 out2 = torch.zeros_like(out1)
