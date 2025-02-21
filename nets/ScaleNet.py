@@ -72,21 +72,19 @@ copy from torch-geometric, but they are wrong. and add different norm options
             row_sum = sparsesum(adj_t, dim=idx)
             inv_deg = 1 / row_sum.view(-1, 1)
             inv_deg.masked_fill_(inv_deg == float("inf"), 0.0)
+            adj_t = mul(adj_t, inv_deg)
 
-            return mul(adj_t, inv_deg)
+            return adj_t
         elif inci_norm == 'dir':
             idx = 0 if flow == 'source_to_target' else 1
             device = adj_t.device()
-            in_deg = sparsesum(adj_t, dim=idx)
-            in_deg_inv_sqrt = in_deg.pow(-0.5)
+            in_deg = sparsesum(adj_t, dim=idx).to(device)
+            in_deg_inv_sqrt = in_deg.pow_(-0.5)
             in_deg_inv_sqrt.masked_fill_(in_deg_inv_sqrt == float("inf"), 0.0)
 
-            out_deg = sparsesum(adj_t, dim=1-idx)
-            out_deg_inv_sqrt = out_deg.pow(-0.5)
+            out_deg = sparsesum(adj_t, dim=1-idx).to(device)
+            out_deg_inv_sqrt = out_deg.pow_(-0.5)
             out_deg_inv_sqrt.masked_fill_(out_deg_inv_sqrt == float("inf"), 0.0)
-
-            out_deg_inv_sqrt = out_deg_inv_sqrt.to(device)
-            in_deg_inv_sqrt = in_deg_inv_sqrt.to(adj_t.device())
 
             adj0 = mul(adj_t, out_deg_inv_sqrt.view(-1, 1))
             adj1_t = mul(adj0, in_deg_inv_sqrt.view(1, -1))
@@ -105,41 +103,31 @@ copy from torch-geometric, but they are wrong. and add different norm options
             adj_t, _ = add_self_loops_fn(adj_t, None, fill_value, num_nodes)
 
         edge_index, value = to_edge_index(adj_t)
+        row, col = edge_index[0], edge_index[1]
+        idx = col if flow == 'source_to_target' else row
         if inci_norm == 'sym':
-            row, col = edge_index[0], edge_index[1]
-            idx = col if flow == 'source_to_target' else row
-
             deg = scatter(value, idx, 0, dim_size=num_nodes, reduce='sum')
             deg_inv_sqrt = deg.pow_(-0.5)
             deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0)
             value = deg_inv_sqrt[row] * value * deg_inv_sqrt[col]
 
         elif inci_norm == 'row':
-            row, col = edge_index[0], edge_index[1]
-            idx = col if flow == 'source_to_target' else row
-
             row_sum = scatter(value, idx, 0, dim_size=num_nodes, reduce='sum')
             inv_deg = 1 / row_sum.view(-1, 1)
             inv_deg.masked_fill_(inv_deg == float("inf"), 0.0)
             value = inv_deg[row] * value
 
         elif inci_norm == 'dir':
-            row, col = edge_index[0], edge_index[1]
-            idx = col if flow == 'source_to_target' else row
-            device = adj_t.device()
-            in_deg = scatter(value, idx, 0, dim_size=num_nodes, reduce='sum')
-            in_deg_inv_sqrt = in_deg.pow(-0.5)
+            in_deg = scatter(value, idx, 0, dim_size=num_nodes, reduce='sum').to(edge_index.device)
+            in_deg_inv_sqrt = in_deg.pow_(-0.5)
             in_deg_inv_sqrt.masked_fill_(in_deg_inv_sqrt == float("inf"), 0.0)
 
             idx_ = row if flow == 'source_to_target' else col
-            out_deg = scatter(value, idx_, 0, dim_size=num_nodes, reduce='sum')
-            out_deg_inv_sqrt = out_deg.pow(-0.5)
+            out_deg = scatter(value, idx_, 0, dim_size=num_nodes, reduce='sum').to(edge_index.device)
+            out_deg_inv_sqrt = out_deg.pow_(-0.5)
             out_deg_inv_sqrt.masked_fill_(out_deg_inv_sqrt == float("inf"), 0.0)
 
-            out_deg_inv_sqrt = out_deg_inv_sqrt.to(device)
-            in_deg_inv_sqrt = in_deg_inv_sqrt.to(adj_t.device())
-
-            value = in_deg_inv_sqrt[row] * value * out_deg_inv_sqrt[col]
+            value = in_deg_inv_sqrt[idx] * value * out_deg_inv_sqrt[idx_]
 
         return set_sparse_value(adj_t.coalesce(), value), None
 
@@ -152,38 +140,30 @@ copy from torch-geometric, but they are wrong. and add different norm options
     if edge_weight is None:
         edge_weight = torch.ones((edge_index.size(1), ), dtype=dtype,
                                  device=edge_index.device)
+
+    row, col = edge_index[0], edge_index[1]
+    idx = col if flow == 'source_to_target' else row
+    idx_ = row if flow == 'source_to_target' else col
     if inci_norm == 'sym':
-        row, col = edge_index[0], edge_index[1]
-        idx = col if flow == 'source_to_target' else row
-        deg = scatter(edge_weight, idx, dim=0, dim_size=num_nodes, reduce='sum')
+        deg = scatter(edge_weight, idx, dim=0, dim_size=num_nodes, reduce='sum').to(edge_index.device)
         deg_inv_sqrt = deg.pow_(-0.5)
         deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0)
         edge_weight = deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
     elif inci_norm == 'row':
-        row, col = edge_index[0], edge_index[1]
-        idx = col if flow == 'source_to_target' else row
-
-        row_sum = scatter(edge_weight, idx, 0, dim_size=num_nodes, reduce='sum')
-        inv_deg = 1 / row_sum.view(-1, 1)
+        row_sum = scatter(edge_weight, idx, 0, dim_size=num_nodes, reduce='sum').to(edge_index.device)
+        inv_deg = 1 / row_sum
         inv_deg.masked_fill_(inv_deg == float("inf"), 0.0)
         edge_weight = inv_deg[row] * edge_weight
     elif inci_norm == 'dir':
-        row, col = edge_index[0], edge_index[1]
-        idx = col if flow == 'source_to_target' else row
-        device = adj_t.device()
-        in_deg = scatter(edge_weight, idx, 0, dim_size=num_nodes, reduce='sum')
-        in_deg_inv_sqrt = in_deg.pow(-0.5)
+        in_deg = scatter(edge_weight, idx, 0, dim_size=num_nodes, reduce='sum').to(edge_index.device)
+        in_deg_inv_sqrt = in_deg.pow_(-0.5)
         in_deg_inv_sqrt.masked_fill_(in_deg_inv_sqrt == float("inf"), 0.0)
 
-        idx_ = row if flow == 'source_to_target' else col
-        out_deg = scatter(edge_weight, idx_, 0, dim_size=num_nodes, reduce='sum')
-        out_deg_inv_sqrt = out_deg.pow(-0.5)
+        out_deg = scatter(edge_weight, idx_, 0, dim_size=num_nodes, reduce='sum').to(edge_index.device)
+        out_deg_inv_sqrt = out_deg.pow_(-0.5)
         out_deg_inv_sqrt.masked_fill_(out_deg_inv_sqrt == float("inf"), 0.0)
 
-        out_deg_inv_sqrt = out_deg_inv_sqrt.to(device)
-        in_deg_inv_sqrt = in_deg_inv_sqrt.to(adj_t.device())
-
-        edge_weight = in_deg_inv_sqrt[row] * edge_weight * out_deg_inv_sqrt[col]
+        edge_weight = in_deg_inv_sqrt[idx] * edge_weight * out_deg_inv_sqrt[idx_]
 
     return edge_index, edge_weight
 
@@ -217,6 +197,8 @@ class GCNConv_inciNormOption(MessagePassing):
 
         self._cached_edge_index = None
         self._cached_adj_t = None
+        # self.flow = "source_to_target"
+        # self.flow = "target_to_source"   # TODO Qin
 
         self.lin = Linear(in_channels, out_channels, bias=False,
                           weight_initializer='glorot')
@@ -273,6 +255,9 @@ class GCNConv_inciNormOption(MessagePassing):
                 else:
                     edge_index, edge_weight = cache
 
+        else:
+            edge_weight = torch.ones(edge_index.size(1)).to(edge_index.device())
+
         x = self.lin(x)
 
         # propagate_type: (x: Tensor, edge_weight: OptTensor)
@@ -328,13 +313,21 @@ class ScaleNet_2025(torch.nn.Module):
         self.adj_A_A, self.adj_A_At, self.adj_At_A, self.adj_At_At = None, None, None, None
 
     def forward(self, x, edge_index):
-
+        if self.adj is None:
+            num_nodes = x.shape[0]
+            self.adj = SparseTensor(row=edge_index[0], col=edge_index[1], sparse_sizes=(num_nodes, num_nodes))
+            self.adj_t = SparseTensor(row=edge_index[1], col=edge_index[0], sparse_sizes=(num_nodes, num_nodes))
+        if self.adj_A_A is None:
+            self.adj_A_A = self.adj @ self.adj
+            self.adj_A_At = self.adj @ self.adj_t
+            self.adj_At_A = self.adj_t @ self.adj
+            self.adj_At_At = self.adj_t @ self.adj_t
 
         xs = []
 
         for i, conv in enumerate(self.convs):
-            x = conv(x, edge_index)
-            # x = conv(x, edge_index, self.adj, self.adj_t, self.adj_A_A,  self.adj_A_At, self.adj_At_A, self.adj_At_At)
+            # x = conv(x, edge_index)
+            x = conv(x, self.adj, self.adj_t, self.adj_A_A,  self.adj_A_At, self.adj_At_A, self.adj_At_At)
             if i != len(self.convs) - 1 or self.jumping_knowledge:
                 if self.nonlinear:
                     x = F.relu(x)
@@ -426,19 +419,13 @@ class DirGCNConv_Feb18(torch.nn.Module):
             self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=input_dim, num_layers=3)
             self.linjk = Linear(input_dim_jk, output_dim)
 
-    def forward(self, x,  edge_index):
+    # def forward(self, x,  edge_index):
+    def forward(self, x,  adj, adj_t, adj_A_A,  adj_A_At, adj_At_A, adj_At_At):
         num_nodes = x.shape[0]
-        if self.adj is None:
-            num_nodes = x.shape[0]
-            self.adj = SparseTensor(row=edge_index[0], col=edge_index[1], sparse_sizes=(num_nodes, num_nodes))
-            self.adj_t = SparseTensor(row=edge_index[1], col=edge_index[0], sparse_sizes=(num_nodes, num_nodes))
-        if self.adj_A_A is None:
-            self.adj_A_A = self.adj @ self.adj
-            self.adj_A_At = self.adj @ self.adj_t
-            self.adj_At_A = self.adj_t @ self.adj
-            self.adj_At_At = self.adj_t @ self.adj_t
+
         if self.conv_type == 'dir-gcn':
-            out1 = self.alpha * self.lin_src_to_dst(x, self.adj) + (1-self.alpha) * self.lin_dst_to_src(x, adj_t)
+            mm = self.lin_src_to_dst(x, adj)
+            out1 = self.alpha * self.lin_src_to_dst(x, adj) + (1-self.alpha) * self.lin_dst_to_src(x, adj_t)
             # out1 = self.alpha * self.lin_src_to_dst(x, edge_index) + (1-self.alpha) * self.lin_dst_to_src(x, edge_index[[1,0]])
 
             if not (self.beta == -1 and self.gama == -1):

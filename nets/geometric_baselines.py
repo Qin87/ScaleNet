@@ -1038,27 +1038,8 @@ class DirGCNConv_2(torch.nn.Module):
                 adj = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
                 self.adj_norm = get_norm_adj(adj, norm=self.inci_norm)     # this is key: improve from 57 to 72
 
-                # indices = edge_index.to(device)
-                # values = torch.ones(edge_index.size(1)).to(device)  # or your edge weights if you have them
-                # size = (num_nodes, num_nodes)
-                # sparse_tensor = torch.sparse_coo_tensor(
-                #     indices=indices,
-                #     values=values,
-                #     size=size
-                # )
-                # self.adj_norm00 = get_norm_adj(sparse_tensor, norm=self.inci_norm)     # this is key: improve from 57 to 72
-                #
-                #
-                # self.adj_norm = get_norm_adj(edge_index, norm=self.inci_norm)     # this is key: improve from 57 to 72
-
                 adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
                 self.adj_t_norm = get_norm_adj(adj_t, norm=self.inci_norm)  #
-
-                # edge_index_t = edge_index[[1, 0]]
-                # transposed = sparse_tensor.t()
-                # self.adj_norm00_T = get_norm_adj(transposed, norm=self.inci_norm)
-                # self.adj_t_norm = get_norm_adj(edge_index_t, norm=self.inci_norm)  #
-                # print('edge number(A, At):', sparse_all(self.adj_norm), sparse_all(self.adj_t_norm))
 
             # if self.adj_norm_in_out is None and not (self.beta == -1 and self.beta == -1):
             if self.adj_norm_in_out is None:
@@ -1070,11 +1051,6 @@ class DirGCNConv_2(torch.nn.Module):
                 self.adj_norm_out_out = get_norm_adj(adj_t @ adj_t, norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
 
                 self.norm_list = [self.adj_norm_in_out, self.adj_norm_out_in, self.adj_norm_in_in, self.adj_norm_out_out]
-                # print('edge_num of AAt, AtA, AA, AtAt: ',
-                #       sparse_all(self.adj_norm_in_out, k=1),
-                #       sparse_all(self.adj_norm_out_in, k=1),
-                #       sparse_all(self.adj_norm_in_in, k=1),
-                #       sparse_all(self.adj_norm_out_out, k=1))
 
                 if self.differ_AA:
                     Union_A_AA, Intersect_A_AA, diff_0 = share_edge(self.adj_norm_in_in, self.adj_norm, self.adj_t_norm)
@@ -2438,10 +2414,11 @@ def aggregate(x, alpha, lin0, adj0, lin1, adj1,  intersection, union, inci_norm=
     elif alpha == 3:
         out = lin0(intersection @ x)
     else:
-        out = 0.5*(1+alpha)*(alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
+        # out = 0.5*(1+alpha)*(alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
         # out = 0.5*(1+alpha)*(alpha * (adj0 @ lin0(x)) + (1 - alpha) * (adj1 @ lin1(x)))
-        # m = lin0(x)
-        # out = 0.5*(1+alpha)*(alpha * (adj0 @ m) + (1 - alpha) * lin1(adj1 @ x))
+        m = lin0(x)
+        mm= adj0 @ m
+        out = 0.5*(1+alpha)*((1 - alpha) * (adj0 @ m) +  alpha * lin1(adj1 @ x))
         # out = (alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
 
     return out
@@ -2452,7 +2429,7 @@ def aggregate_index(x, alpha, lin0, index0, lin1, index1,  intersection, union):
     elif alpha == 3:
         out = lin0(x, intersection)
     else:
-        out = (1+alpha)*((1 - alpha) * lin0(x, index0) +  alpha * lin1(x, index1))
+        out = (1+alpha)*( alpha* lin0(x, index0) +  (1 - alpha) * lin1(x, index1))
 
     # if conv_type == 'dir-sage':
     #     out = out + lin(x)
@@ -2810,6 +2787,7 @@ def directed_norm(adj, rm_gen_sLoop=True):
 
     # Create normalized edge weights
     edge_weight = out_deg_inv_sqrt[edge_index[0]] * in_deg_inv_sqrt[edge_index[1]]
+    # edge_weight = out_deg_inv_sqrt[edge_index[1]] * in_deg_inv_sqrt[edge_index[0]]   # Qin worse
 
     # Create new normalized sparse tensor
     return SparseTensor(
@@ -3022,8 +3000,8 @@ class GCN_JKNet(torch.nn.Module):
         normalize = args.normalize
         dropout = args.dropout
         nonlinear = args.nonlinear
-        if args.net == 'ScaleNet_':
-            DirGCNConv_2 = DirGCNConv_Feb18
+        # if args.net == 'ScaleNet_':
+        #     DirGCNConv_2 = DirGCNConv_Feb18
 
         output_dim = nhid if jumping_knowledge else nclass
         if layer == 1:
