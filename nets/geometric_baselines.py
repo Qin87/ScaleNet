@@ -819,27 +819,8 @@ class DirGCNConv_2(torch.nn.Module):
                 adj = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
                 self.adj_norm = get_norm_adj(adj, norm=self.inci_norm)     # this is key: improve from 57 to 72
 
-                # indices = edge_index.to(device)
-                # values = torch.ones(edge_index.size(1)).to(device)  # or your edge weights if you have them
-                # size = (num_nodes, num_nodes)
-                # sparse_tensor = torch.sparse_coo_tensor(
-                #     indices=indices,
-                #     values=values,
-                #     size=size
-                # )
-                # self.adj_norm00 = get_norm_adj(sparse_tensor, norm=self.inci_norm)     # this is key: improve from 57 to 72
-                #
-                #
-                # self.adj_norm = get_norm_adj(edge_index, norm=self.inci_norm)     # this is key: improve from 57 to 72
-
                 adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
                 self.adj_t_norm = get_norm_adj(adj_t, norm=self.inci_norm)  #
-
-                # edge_index_t = edge_index[[1, 0]]
-                # transposed = sparse_tensor.t()
-                # self.adj_norm00_T = get_norm_adj(transposed, norm=self.inci_norm)
-                # self.adj_t_norm = get_norm_adj(edge_index_t, norm=self.inci_norm)  #
-                # print('edge number(A, At):', sparse_all(self.adj_norm), sparse_all(self.adj_t_norm))
 
             # if self.adj_norm_in_out is None and not (self.beta == -1 and self.beta == -1):
             if self.adj_norm_in_out is None:
@@ -2231,9 +2212,8 @@ def aggregate(x, alpha, lin0, adj0, lin1, adj1,  intersection, union, inci_norm=
 
         out = 0.5*(1+alpha)*(alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
         # out = 0.5*(1+alpha)*(alpha * (adj0 @ lin0(x)) + (1 - alpha) * (adj1 @ lin1(x)))
-
-
-        # out = 0.5*(1+alpha)*(alpha * (adj0 @ m) + (1 - alpha) * (adj1 @ m_))
+        # m = lin0(x)
+        # out = 0.5*(1+alpha)*(alpha * (adj0 @ m) + (1 - alpha) * lin1(adj1 @ x))
         # out = (alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
 
     return out
@@ -2471,8 +2451,7 @@ copy from torch-geometric, but they are wrong.
         if add_self_loops:
             adj_t = torch_sparse.fill_diag(adj_t, fill_value)
 
-        # idx = 0 if flow == 'source_to_target' else 1
-        idx = 1 if flow == 'source_to_target' else 0   # Qin
+        idx = 0 if flow == 'source_to_target' else 1
         deg = torch_sparse.sum(adj_t, dim=idx)  # Qin dim from 1 to 0
         deg_inv_sqrt = deg.pow_(-0.5)
         deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0.)
@@ -2530,7 +2509,7 @@ def row_norm(adj):
     Applies the row-wise normalization:
         \mathbf{D}_{out}^{-1} \mathbf{A}
     """
-    row_sum0 = sparsesum(adj, dim=1)
+    # row_sum0 = sparsesum(adj, dim=1)
     row_sum = torch_sparse.sum(adj, dim=1)
 
     # row_sum = sparsesum(adj, dim=0)  # Qin not better
@@ -2857,8 +2836,6 @@ class GCN_JKNet(torch.nn.Module):
 
 
     def forward(self, x, edge_index):
-        # if self.mlp:
-        #     x_mlp = self.mlp(x)
         xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index)

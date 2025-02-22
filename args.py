@@ -28,7 +28,7 @@ def parse_args():
     parser.add_argument("--normalize", type=int, help="whether use batch normalization in ScaleNet, model:0/1", default=0)
     parser.add_argument("--jk", choices=["max", "cat", 'weighted',  0], default=0)
     parser.add_argument("--jk_inner", choices=["max", "cat", 'lstm', 0, 'weighted'], default=0)
-    parser.add_argument("--inci_norm", choices=["dir", "sym", 'row', 0], default="sym")
+    parser.add_argument("--inci_norm", choices=["dir", "sym", 'row', 0], default='row')
     parser.add_argument("--fs", type=str, choices=["sum", "cat", 'weight_sum', 'linear'], default="dir", help='fusion method')
     parser.add_argument("--alphaDir", type=float, help="Direction convex combination params", default=0.5)
     parser.add_argument("--betaDir", type=float, help="Direction convex combination params", default=-1)
