@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MultipleLocator
 
-data = 'CiteSeer'       # CoraML
+data = 'PubMed'       # CoraML
 Adj = 'A'
 
 # Data

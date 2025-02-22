@@ -1,0 +1,353 @@
+Python Path: ['/home/qj2004/ScaleNet', '/home/qj2004/.conda/envs/3.9Mar/lib/python39.zip', '/home/qj2004/.conda/envs/3.9Mar/lib/python3.9', '/home/qj2004/.conda/envs/3.9Mar/lib/python3.9/lib-dynload', '/home/qj2004/.local/lib/python3.9/site-packages', '/home/qj2004/.conda/envs/3.9Mar/lib/python3.9/site-packages']
+Current Working Directory: /home/qj2004/ScaleNet
+selfloop: 601, Num_bidirect_edges: 80987, total_num_edges: 297110
+This is directed graph:  True
+Namespace(monitor='acc', all1=0, all1d=1, degfea=0, use_best_hyperparams=1, GPU=0, CPU=False, mlpIn=0, mlpOut=0, BN_model=0, nonlinear=1, First_self_loop=1, rm_gen_sloop=0, has_scheduler=1, patience=80, conv_type='dir-gcn', normalize=1, jk=0, jk_inner=0, inci_norm='dir', fs='dir', alphaDir=0.5, betaDir=2, gamaDir=-1, learn_alpha=False, differ_AA=0, differ_AAt=0, num_split=20, MakeImbalance=False, imb_ratio=20, net='ScaleNet', seed=0, Dataset='WikiCS/', dropout=0.5, layer=4, alpha=0.1, AP_K=10, feat_dim=10, epoch=1500, NotImproved=410, lr=0.001, lrweight=0.4, coeflr=2, wd4coef=0.05, l2=0.0005, heads=1, q=0, p_q=0.95, p_inter=0.1, norm=0, activation=0, K=2, netflow=True, follow_math=True, gcn=True, i_complex=True, qua_weights=False, qua_bias=False, log_path='test', data_path='../dataset/data/tmp/', ppnp='GPR_prop', Init='PPR', p=2, mu=0.1, W_degree=5, has_1_order=0, paraD=False, gcn_norm=0, add_selfloop=0, to_undirected=0, to_reverse_edge=0, feat_proximity=False, ibx1=False, log_root='../logs/')
+percent of no_in, in_homo, no_out, out_homo:18.5% | 69.1% | 3.8% | 76.7%
+cuda Device Index: 0
+splits 20
+GCN_JKNet(
+  (convs): ModuleList(
+    (0): DirGCNConv_2(
+      (lin_src_to_dst): Linear(in_features=300, out_features=10, bias=True)
+      (lin_dst_to_src): Linear(in_features=300, out_features=10, bias=True)
+      (linx): ModuleList(
+        (0-3): 4 x Linear(in_features=300, out_features=10, bias=True)
+      )
+      (batch_norm2): BatchNorm1d(10, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (conv2_1): Linear(in_features=20, out_features=10, bias=True)
+    )
+    (1-3): 3 x DirGCNConv_2(
+      (lin_src_to_dst): Linear(in_features=10, out_features=10, bias=True)
+      (lin_dst_to_src): Linear(in_features=10, out_features=10, bias=True)
+      (linx): ModuleList(
+        (0-3): 4 x Linear(in_features=10, out_features=10, bias=True)
+      )
+      (batch_norm2): BatchNorm1d(10, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (conv2_1): Linear(in_features=20, out_features=10, bias=True)
+    )
+  )
+)
+class in data:  [295, 413, 492, 667, 780, 865, 1424, 1933, 2153, 2679]
+WikiCS_Direct	totalNode_11701	 trainNodeBal_580	 trainNodeNow_580
+WikiCS_Direct	totalEdge_297110	 trainEdgeBal_297110	 trainEdgeNow_297110
+class_num_list is  [14, 33, 107, 96, 133, 39, 20, 43, 24, 71]
+sorted class_num_list is  [133, 107, 96, 71, 43, 39, 33, 24, 20, 14]
+Origin Imbalance ratio is 9.5
+epoch:   0, val_loss:2.307441, test_acc: 16.90, bacc: 11.86, tmp_test_acc: 16.90, f1: 6.83
+epoch:   1, val_loss:2.275645,val_acc: 15.88, test_acc: 16.90, bacc: 11.86, tmp_test_acc: 16.15, f1: 6.83
+epoch:  21, val_loss:2.172922,val_acc: 23.40, test_acc: 23.07, bacc: 10.24, tmp_test_acc: 23.07, f1: 4.72
+epoch:  41, val_loss:2.140500,val_acc: 23.23, test_acc: 23.26, bacc: 10.27, tmp_test_acc: 23.48, f1: 4.47
+epoch:  61, val_loss:2.086823,val_acc: 26.57, test_acc: 26.68, bacc: 12.32, tmp_test_acc: 26.68, f1: 7.93
+epoch:  81, val_loss:2.029591,val_acc: 33.58, test_acc: 34.80, bacc: 17.25, tmp_test_acc: 33.20, f1: 12.57
+epoch: 100, val_loss:1.992369, test_acc: 36.16, bacc: 18.02, tmp_test_acc: 35.73, f1: 12.80
+epoch: 101, val_loss:1.990531,val_acc: 35.50, test_acc: 36.16, bacc: 18.02, tmp_test_acc: 36.02, f1: 12.80
+epoch: 121, val_loss:1.957752,val_acc: 36.46, test_acc: 37.85, bacc: 19.00, tmp_test_acc: 36.39, f1: 13.81
+epoch: 141, val_loss:1.914067,val_acc: 42.28, test_acc: 42.89, bacc: 21.79, tmp_test_acc: 42.89, f1: 16.68
+epoch: 161, val_loss:1.872862,val_acc: 42.74, test_acc: 43.42, bacc: 22.17, tmp_test_acc: 42.88, f1: 16.51
+epoch: 181, val_loss:1.835531,val_acc: 42.45, test_acc: 43.42, bacc: 22.17, tmp_test_acc: 42.62, f1: 16.51
+epoch: 200, val_loss:1.803806, test_acc: 44.07, bacc: 22.50, tmp_test_acc: 44.06, f1: 16.88
+epoch: 300, val_loss:1.614667, test_acc: 51.91, bacc: 28.11, tmp_test_acc: 51.91, f1: 24.18
+epoch: 400, val_loss:1.462911, test_acc: 55.19, bacc: 31.37, tmp_test_acc: 52.35, f1: 27.74
+epoch: 500, val_loss:1.353986, test_acc: 58.51, bacc: 34.42, tmp_test_acc: 58.51, f1: 30.36
+epoch: 600, val_loss:1.284912, test_acc: 59.42, bacc: 36.13, tmp_test_acc: 58.87, f1: 32.18
+epoch: 700, val_loss:1.181627, test_acc: 63.42, bacc: 41.56, tmp_test_acc: 63.42, f1: 39.16
+epoch: 800, val_loss:1.175945, test_acc: 64.77, bacc: 42.89, tmp_test_acc: 61.40, f1: 40.33
+epoch: 900, val_loss:1.086223, test_acc: 66.43, bacc: 45.10, tmp_test_acc: 65.71, f1: 42.33
+epoch: 1000, val_loss:1.058987, test_acc: 67.64, bacc: 47.72, tmp_test_acc: 65.64, f1: 44.81
+epoch: 1100, val_loss:1.018396, test_acc: 67.85, bacc: 47.91, tmp_test_acc: 67.33, f1: 44.68
+epoch: 1200, val_loss:1.012534, test_acc: 68.79, bacc: 48.68, tmp_test_acc: 67.27, f1: 45.50
+Epoch 01218: reducing learning rate of group 0 to 5.0000e-04.
+epoch: 1300, val_loss:0.983849, test_acc: 68.79, bacc: 48.68, tmp_test_acc: 68.98, f1: 45.50
+epoch: 1400, val_loss:0.972134, test_acc: 69.75, bacc: 49.64, tmp_test_acc: 69.71, f1: 46.72
+NoBNorm_ScaleNet10hid__Bal_dir-gcn_part0.5_2_-1_sloop10_jk0_normdirlayer4 WikiCS_Direct0 EndEpoch 1499 lr 0.001
+Split  0, acc: 70.12, bacc: 50.61, f1: 47.64
+epoch:   0, val_loss:2.269742, test_acc: 22.20, bacc: 11.63, tmp_test_acc: 22.20, f1: 6.61
+epoch:   1, val_loss:2.224263,val_acc: 21.88, test_acc: 22.15, bacc: 11.54, tmp_test_acc: 22.15, f1: 6.38
+epoch:  21, val_loss:2.140328,val_acc: 18.88, test_acc: 22.20, bacc: 11.58, tmp_test_acc: 17.21, f1: 6.41
+epoch:  41, val_loss:2.092822,val_acc: 21.14, test_acc: 22.20, bacc: 11.58, tmp_test_acc: 19.57, f1: 6.41
+epoch:  61, val_loss:2.057129,val_acc: 21.54, test_acc: 22.20, bacc: 11.58, tmp_test_acc: 20.92, f1: 6.41
+epoch:  81, val_loss:2.001781,val_acc: 26.40, test_acc: 26.71, bacc: 13.49, tmp_test_acc: 26.48, f1: 8.84
+epoch: 100, val_loss:1.959154, test_acc: 30.43, bacc: 15.63, tmp_test_acc: 30.29, f1: 11.16
+epoch: 101, val_loss:1.957361,val_acc: 30.36, test_acc: 30.43, bacc: 15.63, tmp_test_acc: 29.98, f1: 11.16
+epoch: 121, val_loss:1.930990,val_acc: 32.96, test_acc: 32.03, bacc: 16.81, tmp_test_acc: 32.20, f1: 12.56
+epoch: 141, val_loss:1.901798,val_acc: 34.88, test_acc: 33.83, bacc: 18.11, tmp_test_acc: 34.14, f1: 14.00
+epoch: 161, val_loss:1.866653,val_acc: 37.37, test_acc: 37.04, bacc: 20.22, tmp_test_acc: 37.04, f1: 16.60
+epoch: 181, val_loss:1.856680,val_acc: 37.70, test_acc: 40.16, bacc: 22.19, tmp_test_acc: 36.77, f1: 18.29
+epoch: 200, val_loss:1.814541, test_acc: 45.48, bacc: 25.01, tmp_test_acc: 43.27, f1: 20.93
+epoch: 300, val_loss:1.601352, test_acc: 53.17, bacc: 30.21, tmp_test_acc: 53.17, f1: 25.78
+epoch: 400, val_loss:1.466738, test_acc: 55.79, bacc: 33.78, tmp_test_acc: 55.69, f1: 30.29
+epoch: 500, val_loss:1.341267, test_acc: 59.14, bacc: 37.21, tmp_test_acc: 59.14, f1: 33.27
+epoch: 600, val_loss:1.262505, test_acc: 60.49, bacc: 38.72, tmp_test_acc: 60.73, f1: 35.62
+epoch: 700, val_loss:1.219745, test_acc: 62.03, bacc: 40.99, tmp_test_acc: 61.47, f1: 38.78
+epoch: 800, val_loss:1.187832, test_acc: 63.90, bacc: 43.20, tmp_test_acc: 63.08, f1: 40.69
+epoch: 900, val_loss:1.125777, test_acc: 63.90, bacc: 43.20, tmp_test_acc: 64.02, f1: 40.69
+epoch: 1000, val_loss:1.092467, test_acc: 65.06, bacc: 45.30, tmp_test_acc: 65.16, f1: 42.24
+epoch: 1100, val_loss:1.081571, test_acc: 65.54, bacc: 45.89, tmp_test_acc: 65.52, f1: 42.94
+epoch: 1200, val_loss:1.062086, test_acc: 66.12, bacc: 46.03, tmp_test_acc: 65.83, f1: 43.08
+Epoch 01296: reducing learning rate of group 0 to 5.0000e-04.
+epoch: 1300, val_loss:1.106031, test_acc: 67.15, bacc: 48.35, tmp_test_acc: 60.29, f1: 46.16
+epoch: 1400, val_loss:1.040741, test_acc: 67.40, bacc: 48.50, tmp_test_acc: 66.17, f1: 46.71
+Epoch 01418: reducing learning rate of group 0 to 2.5000e-04.
+NoBNorm_ScaleNet10hid__Bal_dir-gcn_part0.5_2_-1_sloop10_jk0_normdirlayer4 WikiCS_Direct00 EndEpoch 1499 lr 0.001
+Split  1, acc: 67.40, bacc: 48.50, f1: 46.71
+epoch:   0, val_loss:2.476166, test_acc: 4.02, bacc: 7.99, tmp_test_acc: 4.02, f1: 2.04
+epoch:   1, val_loss:2.453909,val_acc: 3.73, test_acc: 4.02, bacc: 7.99, tmp_test_acc: 3.81, f1: 2.04
+epoch:  21, val_loss:2.205337,val_acc: 20.24, test_acc: 23.05, bacc: 12.61, tmp_test_acc: 20.57, f1: 7.90
+epoch:  41, val_loss:2.179466,val_acc: 19.33, test_acc: 23.05, bacc: 12.61, tmp_test_acc: 19.58, f1: 7.90
+epoch:  61, val_loss:2.138630,val_acc: 20.63, test_acc: 23.05, bacc: 12.61, tmp_test_acc: 21.14, f1: 7.90
+epoch:  81, val_loss:2.101347,val_acc: 23.80, test_acc: 23.05, bacc: 12.61, tmp_test_acc: 23.45, f1: 7.90
+epoch: 100, val_loss:2.064578, test_acc: 28.37, bacc: 14.70, tmp_test_acc: 28.37, f1: 10.19
+epoch: 101, val_loss:2.063275,val_acc: 29.06, test_acc: 28.54, bacc: 14.78, tmp_test_acc: 28.54, f1: 10.27
+epoch: 121, val_loss:2.029420,val_acc: 31.09, test_acc: 31.20, bacc: 15.97, tmp_test_acc: 31.20, f1: 11.31
+epoch: 141, val_loss:1.993289,val_acc: 34.03, test_acc: 35.40, bacc: 18.17, tmp_test_acc: 34.07, f1: 13.60
+epoch: 161, val_loss:1.937251,val_acc: 40.53, test_acc: 41.61, bacc: 21.31, tmp_test_acc: 41.05, f1: 16.28
+epoch: 181, val_loss:1.890478,val_acc: 42.68, test_acc: 43.97, bacc: 22.51, tmp_test_acc: 42.88, f1: 17.29
+epoch: 200, val_loss:1.839559, test_acc: 46.76, bacc: 24.08, tmp_test_acc: 45.78, f1: 18.53
+epoch: 300, val_loss:1.706957, test_acc: 49.02, bacc: 25.51, tmp_test_acc: 49.17, f1: 20.85
+epoch: 400, val_loss:1.611630, test_acc: 51.14, bacc: 27.24, tmp_test_acc: 51.14, f1: 22.96
+epoch: 500, val_loss:1.517110, test_acc: 53.39, bacc: 28.66, tmp_test_acc: 52.49, f1: 24.24
+epoch: 600, val_loss:1.462385, test_acc: 54.95, bacc: 30.07, tmp_test_acc: 53.77, f1: 25.78
+epoch: 700, val_loss:1.386977, test_acc: 56.06, bacc: 31.68, tmp_test_acc: 56.10, f1: 27.71
+epoch: 800, val_loss:1.380136, test_acc: 57.74, bacc: 33.37, tmp_test_acc: 57.33, f1: 29.42
+epoch: 900, val_loss:1.320837, test_acc: 59.79, bacc: 36.18, tmp_test_acc: 59.71, f1: 31.60
+epoch: 1000, val_loss:1.254361, test_acc: 61.74, bacc: 38.76, tmp_test_acc: 62.13, f1: 34.68
+epoch: 1100, val_loss:1.212183, test_acc: 62.87, bacc: 40.07, tmp_test_acc: 62.41, f1: 36.59
+epoch: 1200, val_loss:1.150698, test_acc: 63.38, bacc: 40.25, tmp_test_acc: 63.45, f1: 37.10
+epoch: 1300, val_loss:1.145291, test_acc: 64.44, bacc: 41.87, tmp_test_acc: 63.21, f1: 39.50
+epoch: 1400, val_loss:1.162751, test_acc: 63.72, bacc: 40.88, tmp_test_acc: 60.24, f1: 38.12
+NoBNorm_ScaleNet10hid__Bal_dir-gcn_part0.5_2_-1_sloop10_jk0_normdirlayer4 WikiCS_Direct000 EndEpoch 1499 lr 0.001
+Split  2, acc: 63.72, bacc: 40.88, f1: 38.12
+epoch:   0, val_loss:2.300368, test_acc: 17.34, bacc: 10.87, tmp_test_acc: 17.34, f1: 6.61
+epoch:   1, val_loss:2.266751,val_acc: 19.56, test_acc: 19.22, bacc: 10.92, tmp_test_acc: 19.22, f1: 5.77
+epoch:  21, val_loss:2.146454,val_acc: 22.89, test_acc: 25.04, bacc: 12.18, tmp_test_acc: 22.90, f1: 7.28
+epoch:  41, val_loss:2.059392,val_acc: 32.39, test_acc: 32.39, bacc: 15.81, tmp_test_acc: 32.39, f1: 11.34
+epoch:  61, val_loss:1.972476,val_acc: 43.75, test_acc: 45.60, bacc: 23.10, tmp_test_acc: 43.56, f1: 18.08
+epoch:  81, val_loss:1.935377,val_acc: 41.89, test_acc: 47.43, bacc: 24.16, tmp_test_acc: 41.78, f1: 18.59
+epoch: 100, val_loss:1.875357, test_acc: 48.91, bacc: 25.08, tmp_test_acc: 47.90, f1: 19.14
+epoch: 101, val_loss:1.873944,val_acc: 48.22, test_acc: 48.91, bacc: 25.08, tmp_test_acc: 48.25, f1: 19.14
+epoch: 121, val_loss:1.844196,val_acc: 49.35, test_acc: 48.91, bacc: 25.08, tmp_test_acc: 49.00, f1: 19.14
+epoch: 141, val_loss:1.810374,val_acc: 48.16, test_acc: 49.07, bacc: 25.12, tmp_test_acc: 47.87, f1: 19.02
+epoch: 161, val_loss:1.781377,val_acc: 49.24, test_acc: 49.24, bacc: 25.24, tmp_test_acc: 49.41, f1: 18.97
+epoch: 181, val_loss:1.747485,val_acc: 48.73, test_acc: 49.24, bacc: 25.24, tmp_test_acc: 48.52, f1: 18.97
+epoch: 200, val_loss:1.722046, test_acc: 49.34, bacc: 25.30, tmp_test_acc: 48.81, f1: 18.92
+epoch: 300, val_loss:1.576612, test_acc: 49.63, bacc: 25.49, tmp_test_acc: 48.71, f1: 19.33
+epoch: 400, val_loss:1.443293, test_acc: 56.78, bacc: 32.57, tmp_test_acc: 56.78, f1: 29.48
+epoch: 500, val_loss:1.355914, test_acc: 59.98, bacc: 35.72, tmp_test_acc: 59.98, f1: 32.46
+epoch: 600, val_loss:1.336476, test_acc: 61.88, bacc: 38.13, tmp_test_acc: 60.58, f1: 34.83
+epoch: 700, val_loss:1.249807, test_acc: 62.58, bacc: 38.54, tmp_test_acc: 61.95, f1: 35.03
+epoch: 800, val_loss:1.225115, test_acc: 62.70, bacc: 38.80, tmp_test_acc: 62.03, f1: 35.19
+Epoch 00813: reducing learning rate of group 0 to 5.0000e-04.
+epoch: 900, val_loss:1.211742, test_acc: 62.70, bacc: 38.80, tmp_test_acc: 62.49, f1: 35.19
+epoch: 1000, val_loss:1.215827, test_acc: 62.70, bacc: 38.80, tmp_test_acc: 61.93, f1: 35.19
+Epoch 01010: reducing learning rate of group 0 to 2.5000e-04.
+epoch: 1100, val_loss:1.203136, test_acc: 62.70, bacc: 38.80, tmp_test_acc: 62.25, f1: 35.19
+Class 0: {'total': 295, 'tested': 147, 'correct': 0, 'accuracy': 0.0}
+Class 1: {'total': 667, 'tested': 333, 'correct': 104, 'accuracy': 0.31}
+Class 2: {'total': 2153, 'tested': 1076, 'correct': 908, 'accuracy': 0.84}
+Class 3: {'total': 1933, 'tested': 966, 'correct': 725, 'accuracy': 0.75}
+Class 4: {'total': 2679, 'tested': 1339, 'correct': 1123, 'accuracy': 0.84}
+Class 5: {'total': 780, 'tested': 390, 'correct': 0, 'accuracy': 0.0}
+Class 6: {'total': 413, 'tested': 206, 'correct': 0, 'accuracy': 0.0}
+Class 7: {'total': 865, 'tested': 432, 'correct': 123, 'accuracy': 0.28}
+Class 8: {'total': 492, 'tested': 246, 'correct': 0, 'accuracy': 0.0}
+Class 9: {'total': 1424, 'tested': 712, 'correct': 637, 'accuracy': 0.89}
+NoBNorm_ScaleNet10hid__Bal_dir-gcn_part0.5_2_-1_sloop10_jk0_normdirlayer4 WikiCS_Direct0000 EndEpoch 1139 lr 0.001
+Split  3, acc: 62.70, bacc: 38.80, f1: 35.19
+epoch:   0, val_loss:2.430637, test_acc: 11.25, bacc: 9.47, tmp_test_acc: 11.25, f1: 4.40
+epoch:   1, val_loss:2.367569,val_acc: 15.83, test_acc: 15.84, bacc: 11.36, tmp_test_acc: 15.84, f1: 5.37
+epoch:  21, val_loss:2.229023,val_acc: 16.56, test_acc: 16.49, bacc: 9.98, tmp_test_acc: 16.50, f1: 2.86
+epoch:  41, val_loss:2.149737,val_acc: 17.18, test_acc: 17.00, bacc: 10.24, tmp_test_acc: 17.00, f1: 3.59
+epoch:  61, val_loss:2.094442,val_acc: 24.87, test_acc: 26.22, bacc: 14.83, tmp_test_acc: 24.83, f1: 8.08
+epoch:  81, val_loss:2.027303,val_acc: 30.92, test_acc: 31.33, bacc: 16.72, tmp_test_acc: 31.33, f1: 12.08
+epoch: 100, val_loss:1.965574, test_acc: 33.91, bacc: 18.80, tmp_test_acc: 31.67, f1: 12.52
+epoch: 101, val_loss:1.960138,val_acc: 32.28, test_acc: 33.91, bacc: 18.80, tmp_test_acc: 32.03, f1: 12.52
+epoch: 121, val_loss:1.930731,val_acc: 31.71, test_acc: 34.19, bacc: 20.52, tmp_test_acc: 30.44, f1: 13.90
+epoch: 141, val_loss:1.877196,val_acc: 32.84, test_acc: 34.86, bacc: 20.92, tmp_test_acc: 32.08, f1: 14.53
+epoch: 161, val_loss:1.843190,val_acc: 35.22, test_acc: 37.04, bacc: 21.50, tmp_test_acc: 34.84, f1: 16.20
+epoch: 181, val_loss:1.798040,val_acc: 42.23, test_acc: 41.66, bacc: 23.80, tmp_test_acc: 41.66, f1: 18.94
+epoch: 200, val_loss:1.766461, test_acc: 44.96, bacc: 25.83, tmp_test_acc: 44.96, f1: 21.15
+epoch: 300, val_loss:1.619449, test_acc: 55.24, bacc: 32.02, tmp_test_acc: 54.88, f1: 26.06
+epoch: 400, val_loss:1.484810, test_acc: 59.60, bacc: 34.89, tmp_test_acc: 58.75, f1: 29.87
+epoch: 500, val_loss:1.464174, test_acc: 61.01, bacc: 36.66, tmp_test_acc: 58.54, f1: 32.31
+epoch: 600, val_loss:1.326322, test_acc: 62.05, bacc: 38.38, tmp_test_acc: 62.32, f1: 34.16
+epoch: 700, val_loss:1.260790, test_acc: 63.62, bacc: 40.00, tmp_test_acc: 62.97, f1: 35.74
+epoch: 800, val_loss:1.220661, test_acc: 63.79, bacc: 40.45, tmp_test_acc: 62.77, f1: 35.98
+epoch: 900, val_loss:1.209602, test_acc: 63.79, bacc: 40.45, tmp_test_acc: 60.32, f1: 35.98
+epoch: 1000, val_loss:1.133147, test_acc: 65.06, bacc: 41.82, tmp_test_acc: 64.80, f1: 37.38
+epoch: 1100, val_loss:1.080206, test_acc: 66.17, bacc: 44.25, tmp_test_acc: 66.00, f1: 40.87
+epoch: 1200, val_loss:1.079007, test_acc: 66.17, bacc: 44.25, tmp_test_acc: 64.87, f1: 40.87
+Epoch 01205: reducing learning rate of group 0 to 5.0000e-04.
+epoch: 1300, val_loss:1.076362, test_acc: 67.66, bacc: 46.46, tmp_test_acc: 64.77, f1: 43.65
+Epoch 01360: reducing learning rate of group 0 to 2.5000e-04.
+epoch: 1400, val_loss:1.011599, test_acc: 68.41, bacc: 47.85, tmp_test_acc: 68.31, f1: 45.61
+Epoch 01496: reducing learning rate of group 0 to 1.2500e-04.
+NoBNorm_ScaleNet10hid__Bal_dir-gcn_part0.5_2_-1_sloop10_jk0_normdirlayer4 WikiCS_Direct00000 EndEpoch 1499 lr 0.001
+Split  4, acc: 68.67, bacc: 48.22, f1: 45.94
+epoch:   0, val_loss:2.392148, test_acc: 11.85, bacc: 10.37, tmp_test_acc: 11.85, f1: 3.85
+epoch:   1, val_loss:2.376923,val_acc: 10.91, test_acc: 11.85, bacc: 10.37, tmp_test_acc: 11.36, f1: 3.85
+epoch:  21, val_loss:2.177965,val_acc: 20.35, test_acc: 19.87, bacc: 13.43, tmp_test_acc: 19.87, f1: 6.82
+epoch:  41, val_loss:2.038963,val_acc: 36.97, test_acc: 37.37, bacc: 18.99, tmp_test_acc: 37.37, f1: 10.88
+epoch:  61, val_loss:1.972917,val_acc: 35.61, test_acc: 38.04, bacc: 19.57, tmp_test_acc: 35.86, f1: 12.31
+epoch:  81, val_loss:1.903867,val_acc: 37.76, test_acc: 41.27, bacc: 21.53, tmp_test_acc: 37.93, f1: 16.23
+epoch: 100, val_loss:1.864759, test_acc: 47.80, bacc: 25.25, tmp_test_acc: 46.09, f1: 20.39
+epoch: 101, val_loss:1.856515,val_acc: 47.60, test_acc: 47.80, bacc: 25.25, tmp_test_acc: 47.53, f1: 20.39
+epoch: 121, val_loss:1.805107,val_acc: 46.47, test_acc: 50.40, bacc: 27.07, tmp_test_acc: 47.32, f1: 22.32
+epoch: 141, val_loss:1.756779,val_acc: 45.39, test_acc: 53.77, bacc: 29.49, tmp_test_acc: 46.23, f1: 24.95
+epoch: 161, val_loss:1.709191,val_acc: 50.99, test_acc: 55.89, bacc: 31.29, tmp_test_acc: 52.01, f1: 26.40
+epoch: 181, val_loss:1.681435,val_acc: 52.57, test_acc: 55.96, bacc: 31.41, tmp_test_acc: 52.92, f1: 26.24
+epoch: 200, val_loss:1.636816, test_acc: 56.99, bacc: 31.92, tmp_test_acc: 55.99, f1: 27.36
+epoch: 300, val_loss:1.528696, test_acc: 59.18, bacc: 33.72, tmp_test_acc: 55.55, f1: 27.92
+epoch: 400, val_loss:1.399688, test_acc: 60.32, bacc: 34.29, tmp_test_acc: 59.72, f1: 28.52
+epoch: 500, val_loss:1.343457, test_acc: 60.32, bacc: 34.29, tmp_test_acc: 59.04, f1: 28.52
+epoch: 600, val_loss:1.298570, test_acc: 61.96, bacc: 36.78, tmp_test_acc: 61.07, f1: 32.35
+epoch: 700, val_loss:1.203884, test_acc: 62.97, bacc: 38.05, tmp_test_acc: 63.04, f1: 33.74
+epoch: 800, val_loss:1.182905, test_acc: 63.91, bacc: 39.48, tmp_test_acc: 61.36, f1: 35.24
+epoch: 900, val_loss:1.156976, test_acc: 64.53, bacc: 40.43, tmp_test_acc: 61.60, f1: 36.55
+epoch: 1000, val_loss:1.134646, test_acc: 64.53, bacc: 40.43, tmp_test_acc: 64.12, f1: 36.55
+epoch: 1100, val_loss:1.111853, test_acc: 65.59, bacc: 42.63, tmp_test_acc: 60.46, f1: 38.99
+Epoch 01200: reducing learning rate of group 0 to 5.0000e-04.
+epoch: 1200, val_loss:1.162894, test_acc: 65.88, bacc: 42.78, tmp_test_acc: 60.83, f1: 39.41
+Epoch 01281: reducing learning rate of group 0 to 2.5000e-04.
+epoch: 1300, val_loss:1.116916, test_acc: 65.88, bacc: 42.78, tmp_test_acc: 63.02, f1: 39.41
+Epoch 01362: reducing learning rate of group 0 to 1.2500e-04.
+epoch: 1400, val_loss:1.084577, test_acc: 65.88, bacc: 42.78, tmp_test_acc: 64.82, f1: 39.41
+Epoch 01443: reducing learning rate of group 0 to 6.2500e-05.
+NoBNorm_ScaleNet10hid__Bal_dir-gcn_part0.5_2_-1_sloop10_jk0_normdirlayer4 WikiCS_Direct000000 EndEpoch 1499 lr 0.001
+Split  5, acc: 65.88, bacc: 42.78, f1: 39.41
+epoch:   0, val_loss:2.376116, test_acc: 6.70, bacc: 10.00, tmp_test_acc: 6.70, f1: 1.29
+epoch:   1, val_loss:2.344716,val_acc: 6.61, test_acc: 6.72, bacc: 10.02, tmp_test_acc: 6.72, f1: 1.30
+epoch:  21, val_loss:2.236913,val_acc: 8.48, test_acc: 9.12, bacc: 10.42, tmp_test_acc: 9.12, f1: 3.17
+epoch:  41, val_loss:2.175478,val_acc: 22.89, test_acc: 22.64, bacc: 10.62, tmp_test_acc: 22.78, f1: 4.83
+epoch:  61, val_loss:2.120998,val_acc: 22.84, test_acc: 22.64, bacc: 10.62, tmp_test_acc: 22.95, f1: 4.83
+epoch:  81, val_loss:2.039453,val_acc: 38.72, test_acc: 38.93, bacc: 19.19, tmp_test_acc: 38.93, f1: 13.47
+epoch: 100, val_loss:1.960037, test_acc: 42.40, bacc: 21.18, tmp_test_acc: 42.40, f1: 15.69
+epoch: 101, val_loss:1.959447,val_acc: 42.17, test_acc: 42.40, bacc: 21.18, tmp_test_acc: 42.57, f1: 15.69
+epoch: 121, val_loss:1.898907,val_acc: 44.77, test_acc: 45.19, bacc: 22.82, tmp_test_acc: 45.19, f1: 17.82
+epoch: 141, val_loss:1.837434,val_acc: 43.98, test_acc: 45.80, bacc: 23.25, tmp_test_acc: 45.12, f1: 18.21
+epoch: 161, val_loss:1.798197,val_acc: 43.87, test_acc: 47.10, bacc: 23.94, tmp_test_acc: 43.61, f1: 19.23
+epoch: 181, val_loss:1.769889,val_acc: 45.56, test_acc: 50.83, bacc: 26.95, tmp_test_acc: 45.34, f1: 23.13
+epoch: 200, val_loss:1.755368, test_acc: 54.63, bacc: 29.86, tmp_test_acc: 39.92, f1: 26.37
+epoch: 300, val_loss:1.532100, test_acc: 58.05, bacc: 32.80, tmp_test_acc: 58.18, f1: 27.83
+epoch: 400, val_loss:1.431046, test_acc: 59.18, bacc: 33.77, tmp_test_acc: 59.31, f1: 28.55
+epoch: 500, val_loss:1.381119, test_acc: 60.41, bacc: 34.88, tmp_test_acc: 59.16, f1: 30.10
+epoch: 600, val_loss:1.310710, test_acc: 61.54, bacc: 36.01, tmp_test_acc: 59.35, f1: 31.62
+epoch: 700, val_loss:1.211014, test_acc: 62.84, bacc: 38.56, tmp_test_acc: 63.09, f1: 35.50
+epoch: 800, val_loss:1.172042, test_acc: 65.14, bacc: 41.28, tmp_test_acc: 65.14, f1: 38.73
+epoch: 900, val_loss:1.215859, test_acc: 66.29, bacc: 43.28, tmp_test_acc: 65.37, f1: 40.73
+epoch: 1000, val_loss:1.112619, test_acc: 67.28, bacc: 45.49, tmp_test_acc: 67.15, f1: 43.38
+Epoch 01078: reducing learning rate of group 0 to 5.0000e-04.
+epoch: 1100, val_loss:1.128238, test_acc: 67.28, bacc: 45.49, tmp_test_acc: 67.50, f1: 43.38
+Epoch 01189: reducing learning rate of group 0 to 2.5000e-04.
+epoch: 1200, val_loss:1.121315, test_acc: 67.76, bacc: 45.69, tmp_test_acc: 67.78, f1: 44.00
+Epoch 01270: reducing learning rate of group 0 to 1.2500e-04.
+epoch: 1300, val_loss:1.110221, test_acc: 67.76, bacc: 45.69, tmp_test_acc: 67.38, f1: 44.00
+Epoch 01351: reducing learning rate of group 0 to 6.2500e-05.
+epoch: 1400, val_loss:1.120195, test_acc: 67.76, bacc: 45.69, tmp_test_acc: 67.47, f1: 44.00
+Epoch 01432: reducing learning rate of group 0 to 3.1250e-05.
+NoBNorm_ScaleNet10hid__Bal_dir-gcn_part0.5_2_-1_sloop10_jk0_normdirlayer4 WikiCS_Direct0000000 EndEpoch 1499 lr 0.001
+Split  6, acc: 67.76, bacc: 45.69, f1: 44.00
+epoch:   0, val_loss:2.330909, test_acc: 3.87, bacc: 10.18, tmp_test_acc: 3.87, f1: 2.29
+epoch:   1, val_loss:2.318794,val_acc: 3.90, test_acc: 4.19, bacc: 10.29, tmp_test_acc: 4.19, f1: 2.40
+epoch:  21, val_loss:2.175668,val_acc: 15.55, test_acc: 15.58, bacc: 9.01, tmp_test_acc: 15.58, f1: 5.10
+epoch:  41, val_loss:2.112945,val_acc: 20.01, test_acc: 19.98, bacc: 10.97, tmp_test_acc: 20.15, f1: 6.02
+epoch:  61, val_loss:2.062816,val_acc: 25.16, test_acc: 24.49, bacc: 12.67, tmp_test_acc: 25.33, f1: 8.12
+epoch:  81, val_loss:2.008116,val_acc: 31.09, test_acc: 31.11, bacc: 16.19, tmp_test_acc: 31.11, f1: 11.76
+epoch: 100, val_loss:1.948763, test_acc: 41.46, bacc: 21.22, tmp_test_acc: 41.46, f1: 16.25
+epoch: 101, val_loss:1.945554,val_acc: 40.81, test_acc: 41.46, bacc: 21.22, tmp_test_acc: 41.22, f1: 16.25
+epoch: 121, val_loss:1.889641,val_acc: 45.56, test_acc: 45.66, bacc: 24.08, tmp_test_acc: 45.66, f1: 20.20
+epoch: 141, val_loss:1.852761,val_acc: 50.37, test_acc: 50.61, bacc: 27.57, tmp_test_acc: 50.61, f1: 23.91
+epoch: 161, val_loss:1.820491,val_acc: 50.65, test_acc: 53.12, bacc: 29.34, tmp_test_acc: 52.18, f1: 25.38
+epoch: 181, val_loss:1.789082,val_acc: 54.89, test_acc: 55.31, bacc: 31.26, tmp_test_acc: 55.31, f1: 26.53
+epoch: 200, val_loss:1.731578, test_acc: 56.35, bacc: 31.58, tmp_test_acc: 56.66, f1: 27.14
+epoch: 300, val_loss:1.577819, test_acc: 58.97, bacc: 33.41, tmp_test_acc: 59.09, f1: 28.26
+epoch: 400, val_loss:1.478280, test_acc: 59.09, bacc: 33.71, tmp_test_acc: 56.58, f1: 28.29
+epoch: 500, val_loss:1.342137, test_acc: 59.72, bacc: 34.01, tmp_test_acc: 59.42, f1: 28.48
+epoch: 600, val_loss:1.252606, test_acc: 60.99, bacc: 35.24, tmp_test_acc: 60.99, f1: 30.18
+epoch: 700, val_loss:1.196765, test_acc: 61.69, bacc: 36.54, tmp_test_acc: 61.50, f1: 32.28
+epoch: 800, val_loss:1.118011, test_acc: 63.52, bacc: 39.73, tmp_test_acc: 63.35, f1: 37.20
+epoch: 900, val_loss:1.129928, test_acc: 64.89, bacc: 42.22, tmp_test_acc: 64.43, f1: 39.65
+epoch: 1000, val_loss:1.112580, test_acc: 64.89, bacc: 42.22, tmp_test_acc: 64.12, f1: 39.65
+Epoch 01015: reducing learning rate of group 0 to 5.0000e-04.
+epoch: 1100, val_loss:1.135629, test_acc: 66.44, bacc: 44.89, tmp_test_acc: 63.26, f1: 42.66
+Epoch 01166: reducing learning rate of group 0 to 2.5000e-04.
+epoch: 1200, val_loss:1.091056, test_acc: 65.88, bacc: 43.35, tmp_test_acc: 64.99, f1: 41.11
+Epoch 01247: reducing learning rate of group 0 to 1.2500e-04.
+epoch: 1300, val_loss:1.073755, test_acc: 65.85, bacc: 43.90, tmp_test_acc: 64.60, f1: 41.47
+Epoch 01371: reducing learning rate of group 0 to 6.2500e-05.
+epoch: 1400, val_loss:1.072921, test_acc: 65.85, bacc: 43.90, tmp_test_acc: 65.38, f1: 41.47
+Epoch 01452: reducing learning rate of group 0 to 3.1250e-05.
+NoBNorm_ScaleNet10hid__Bal_dir-gcn_part0.5_2_-1_sloop10_jk0_normdirlayer4 WikiCS_Direct00000000 EndEpoch 1499 lr 0.001
+Split  7, acc: 65.85, bacc: 43.90, f1: 41.47
+epoch:   0, val_loss:2.369400, test_acc: 5.58, bacc: 6.62, tmp_test_acc: 5.58, f1: 2.64
+epoch:   1, val_loss:2.342123,val_acc: 8.76, test_acc: 8.86, bacc: 6.76, tmp_test_acc: 8.86, f1: 2.89
+epoch:  21, val_loss:2.188377,val_acc: 16.73, test_acc: 16.50, bacc: 10.32, tmp_test_acc: 16.69, f1: 3.38
+epoch:  41, val_loss:2.134789,val_acc: 25.10, test_acc: 25.40, bacc: 13.81, tmp_test_acc: 25.40, f1: 7.93
+epoch:  61, val_loss:2.040662,val_acc: 34.03, test_acc: 37.18, bacc: 18.85, tmp_test_acc: 34.31, f1: 10.63
+epoch:  81, val_loss:1.973656,val_acc: 37.25, test_acc: 37.47, bacc: 19.01, tmp_test_acc: 37.68, f1: 10.85
+epoch: 100, val_loss:1.920916, test_acc: 43.05, bacc: 21.77, tmp_test_acc: 43.05, f1: 16.07
+epoch: 101, val_loss:1.913203,val_acc: 43.30, test_acc: 43.51, bacc: 21.95, tmp_test_acc: 43.51, f1: 16.29
+epoch: 121, val_loss:1.854462,val_acc: 43.36, test_acc: 44.72, bacc: 22.61, tmp_test_acc: 44.40, f1: 17.19
+epoch: 141, val_loss:1.807278,val_acc: 43.87, test_acc: 44.72, bacc: 22.61, tmp_test_acc: 44.89, f1: 17.19
+epoch: 161, val_loss:1.760383,val_acc: 45.34, test_acc: 45.87, bacc: 23.35, tmp_test_acc: 45.87, f1: 18.27
+epoch: 181, val_loss:1.718068,val_acc: 46.07, test_acc: 46.33, bacc: 23.77, tmp_test_acc: 46.84, f1: 18.85
+epoch: 200, val_loss:1.682133, test_acc: 48.79, bacc: 25.73, tmp_test_acc: 47.19, f1: 21.61
+epoch: 300, val_loss:1.568741, test_acc: 53.87, bacc: 29.80, tmp_test_acc: 53.39, f1: 25.57
+epoch: 400, val_loss:1.467563, test_acc: 56.92, bacc: 31.95, tmp_test_acc: 56.92, f1: 27.37
+epoch: 500, val_loss:1.399697, test_acc: 58.42, bacc: 32.99, tmp_test_acc: 58.39, f1: 27.96
+epoch: 600, val_loss:1.357996, test_acc: 59.33, bacc: 33.65, tmp_test_acc: 58.68, f1: 28.78
+epoch: 700, val_loss:1.278035, test_acc: 60.51, bacc: 35.11, tmp_test_acc: 60.12, f1: 30.63
+epoch: 800, val_loss:1.219975, test_acc: 62.53, bacc: 38.12, tmp_test_acc: 60.92, f1: 35.17
+epoch: 900, val_loss:1.174600, test_acc: 63.86, bacc: 40.09, tmp_test_acc: 63.02, f1: 37.50
+epoch: 1000, val_loss:1.147330, test_acc: 65.61, bacc: 43.52, tmp_test_acc: 63.08, f1: 41.27
+Epoch 01041: reducing learning rate of group 0 to 5.0000e-04.
+epoch: 1100, val_loss:1.112494, test_acc: 65.61, bacc: 43.52, tmp_test_acc: 65.50, f1: 41.27
+epoch: 1200, val_loss:1.099041, test_acc: 66.91, bacc: 44.79, tmp_test_acc: 65.59, f1: 42.72
+Epoch 01273: reducing learning rate of group 0 to 2.5000e-04.
+epoch: 1300, val_loss:1.073772, test_acc: 67.62, bacc: 45.98, tmp_test_acc: 65.79, f1: 43.95
+epoch: 1400, val_loss:1.054219, test_acc: 67.08, bacc: 45.21, tmp_test_acc: 66.75, f1: 43.32
+Epoch 01475: reducing learning rate of group 0 to 1.2500e-04.
+NoBNorm_ScaleNet10hid__Bal_dir-gcn_part0.5_2_-1_sloop10_jk0_normdirlayer4 WikiCS_Direct000000000 EndEpoch 1499 lr 0.001
+Split  8, acc: 67.98, bacc: 46.65, f1: 44.40
+epoch:   0, val_loss:2.349251, test_acc: 11.49, bacc: 11.08, tmp_test_acc: 11.49, f1: 2.94
+epoch:   1, val_loss:2.336090,val_acc: 11.81, test_acc: 11.60, bacc: 10.57, tmp_test_acc: 11.60, f1: 2.80
+epoch:  21, val_loss:2.225301,val_acc: 16.05, test_acc: 16.23, bacc: 12.48, tmp_test_acc: 16.23, f1: 6.76
+epoch:  41, val_loss:2.084007,val_acc: 42.40, test_acc: 44.33, bacc: 23.80, tmp_test_acc: 43.13, f1: 20.44
+epoch:  61, val_loss:2.014751,val_acc: 44.38, test_acc: 47.00, bacc: 25.53, tmp_test_acc: 44.09, f1: 22.04
+epoch:  81, val_loss:1.969213,val_acc: 46.86, test_acc: 48.47, bacc: 26.49, tmp_test_acc: 47.12, f1: 23.10
+epoch: 100, val_loss:1.964708, test_acc: 52.04, bacc: 29.46, tmp_test_acc: 51.77, f1: 25.09
+epoch: 101, val_loss:1.963794,val_acc: 50.76, test_acc: 52.04, bacc: 29.46, tmp_test_acc: 51.34, f1: 25.09
+epoch: 121, val_loss:1.895637,val_acc: 51.50, test_acc: 52.39, bacc: 29.60, tmp_test_acc: 52.37, f1: 25.23
+epoch: 141, val_loss:1.863934,val_acc: 52.85, test_acc: 54.59, bacc: 30.86, tmp_test_acc: 53.58, f1: 26.46
+epoch: 161, val_loss:1.849622,val_acc: 53.70, test_acc: 54.59, bacc: 30.86, tmp_test_acc: 54.16, f1: 26.46
+epoch: 181, val_loss:1.817139,val_acc: 52.69, test_acc: 55.60, bacc: 31.52, tmp_test_acc: 52.52, f1: 26.92
+epoch: 200, val_loss:1.773438, test_acc: 55.60, bacc: 31.52, tmp_test_acc: 54.68, f1: 26.92
+epoch: 300, val_loss:1.628079, test_acc: 57.26, bacc: 32.48, tmp_test_acc: 57.41, f1: 27.58
+epoch: 400, val_loss:1.519884, test_acc: 58.78, bacc: 33.42, tmp_test_acc: 58.78, f1: 28.40
+epoch: 500, val_loss:1.446241, test_acc: 59.11, bacc: 33.75, tmp_test_acc: 57.55, f1: 28.21
+epoch: 600, val_loss:1.391284, test_acc: 59.79, bacc: 34.02, tmp_test_acc: 58.97, f1: 28.83
+epoch: 700, val_loss:1.339559, test_acc: 59.42, bacc: 34.85, tmp_test_acc: 59.33, f1: 30.44
+epoch: 800, val_loss:1.253286, test_acc: 61.96, bacc: 38.34, tmp_test_acc: 61.91, f1: 34.87
+epoch: 900, val_loss:1.209467, test_acc: 64.00, bacc: 41.66, tmp_test_acc: 60.99, f1: 39.30
+epoch: 1000, val_loss:1.114089, test_acc: 66.24, bacc: 44.61, tmp_test_acc: 64.94, f1: 42.98
+epoch: 1100, val_loss:1.106435, test_acc: 66.77, bacc: 45.21, tmp_test_acc: 65.57, f1: 43.72
+epoch: 1200, val_loss:1.088675, test_acc: 67.13, bacc: 45.95, tmp_test_acc: 66.91, f1: 44.11
+epoch: 1300, val_loss:1.051242, test_acc: 68.02, bacc: 47.30, tmp_test_acc: 67.83, f1: 45.34
+epoch: 1400, val_loss:1.049390, test_acc: 68.31, bacc: 47.30, tmp_test_acc: 67.81, f1: 45.34
+NoBNorm_ScaleNet10hid__Bal_dir-gcn_part0.5_2_-1_sloop10_jk0_normdirlayer4 WikiCS_Direct0000000000 EndEpoch 1499 lr 0.001
+Split  9, acc: 68.31, bacc: 47.30, f1: 45.34
+epoch:   0, val_loss:2.282396, test_acc: 10.79, bacc: 10.65, tmp_test_acc: 10.79, f1: 4.67
+epoch:   1, val_loss:2.261251,val_acc: 11.19, test_acc: 10.79, bacc: 10.65, tmp_test_acc: 11.03, f1: 4.67
+epoch:  21, val_loss:2.146778,val_acc: 28.09, test_acc: 29.30, bacc: 14.48, tmp_test_acc: 29.35, f1: 8.68
+epoch:  41, val_loss:2.108652,val_acc: 29.11, test_acc: 30.44, bacc: 14.80, tmp_test_acc: 30.58, f1: 8.61
+epoch:  61, val_loss:2.082397,val_acc: 30.19, test_acc: 31.76, bacc: 15.36, tmp_test_acc: 31.85, f1: 8.96
+epoch:  81, val_loss:2.005768,val_acc: 33.07, test_acc: 34.82, bacc: 16.99, tmp_test_acc: 34.02, f1: 10.06
+epoch: 100, val_loss:1.936580, test_acc: 36.74, bacc: 18.09, tmp_test_acc: 36.74, f1: 11.77
+epoch: 101, val_loss:1.930921,val_acc: 35.67, test_acc: 36.74, bacc: 18.09, tmp_test_acc: 36.53, f1: 11.77
+epoch: 121, val_loss:1.885125,val_acc: 36.97, test_acc: 37.06, bacc: 18.40, tmp_test_acc: 37.06, f1: 12.47
+epoch: 141, val_loss:1.855568,val_acc: 37.76, test_acc: 37.51, bacc: 18.80, tmp_test_acc: 37.51, f1: 13.08
+epoch: 161, val_loss:1.813649,val_acc: 38.95, test_acc: 40.94, bacc: 21.53, tmp_test_acc: 39.97, f1: 17.58
+epoch: 181, val_loss:1.807850,val_acc: 38.16, test_acc: 40.94, bacc: 21.53, tmp_test_acc: 38.93, f1: 17.58
+epoch: 200, val_loss:1.747726, test_acc: 46.11, bacc: 25.54, tmp_test_acc: 46.11, f1: 21.83
+epoch: 300, val_loss:1.601920, test_acc: 51.45, bacc: 29.76, tmp_test_acc: 50.11, f1: 25.33
+epoch: 400, val_loss:1.488115, test_acc: 54.69, bacc: 32.00, tmp_test_acc: 54.99, f1: 27.89

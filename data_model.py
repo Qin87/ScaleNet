@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from torch_scatter import scatter_add
 
+from nets.ScaleNet import DirGCNConv_Feb18, ScaleNet_2025
 from nets.gat import GATConvQin, StandGAT1BN_Qin
 from nets.gcn import ParaGCNXBN, StandGCNXBN, StandGCNXBN_Ak, StandGCNX_noRelu
 from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model, Sloop_JKNet, ScaleNet, RandomNet, High_Frequent
@@ -94,6 +95,8 @@ def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
         model = ChebModel(num_features, n_cls, K=args.K,filter_num=args.feat_dim, dropout=args.dropout,layer=args.layer).to(device)
     elif args.net == 'ScaleNet':
         model = GCN_JKNet(nfeat=num_features, nclass=n_cls, args=args)
+    elif args.net == 'ScaleNet_':
+        model = ScaleNet_2025(nfeat=num_features, nclass=n_cls, args=args)
     elif args.net == 'HFNet':
         model = High_Frequent(nfeat=num_features, nclass=n_cls, args=args)
     elif args.net == 'RandomNet':

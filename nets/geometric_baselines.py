@@ -16,9 +16,12 @@ from torch_sparse import mul
 
 
 # from dgl.python.dgl import add_self_loop
-from nets.gcn import gcn_norm
+# from nets.gcn import gcn_norm
+from torch_geometric.nn.conv.gcn_conv import gcn_norm
+
 from torch_geometric.utils import add_self_loops
 
+from nets.ScaleNet import DirGCNConv_Feb18
 from nets.jumping_weight import JumpingKnowledge
 
 ####################################################################
@@ -176,225 +179,6 @@ class GAT_Link(torch.nn.Module):
 
         return F.log_softmax(x, dim=1)
 
-
-'''
-####################################################################
-# Link Prediction Models in old versions of the paper
-####################################################################
-class Sym_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, dropout = False):
-        super(Sym_Link, self).__init__()
-        self.dropout = dropout
-        self.conv11 = GCNConv(input_dim, filter_num)
-        self.conv12 = GCNConv(input_dim, filter_num)
-        self.conv13 = GCNConv(input_dim, filter_num)
-
-        self.conv21 = GCNConv(filter_num*3, filter_num)
-        self.conv22 = GCNConv(filter_num*3, filter_num)
-        self.conv23 = GCNConv(filter_num*3, filter_num)
-
-        self.Conv = nn.Conv1d(filter_num*3, out_dim, kernel_size=1)
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, positive, negative):
-        x1 = self.conv11(x, edge_index)
-        x2 = self.conv12(x, edge_in, in_w)
-        x3 = self.conv13(x, edge_out, out_w)
-        x = torch.cat((x1, x2, x3), axis = -1)
-        x = F.relu(x)
-
-        x1 = self.conv21(x, edge_index)
-        x2 = self.conv21(x, edge_in, in_w)
-        x3 = self.conv23(x, edge_out, out_w)
-        x = torch.cat((x1, x2, x3), axis = -1)
-        x = F.relu(x)
-
-        pos = x[positive[:,0]] - x[positive[:,1]]
-        neg = x[negative[:,0]] - x[negative[:,1]]
-        x = torch.cat((pos, neg), axis = 0)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0,2,1))
-        x = self.Conv(x)
-        x = x.permute((0,2,1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-class APPNP_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, alpha = 0.1, dropout = False, K=1):
-        super(APPNP_Link, self).__init__()
-        self.dropout = dropout
-
-        self.line1 = nn.Linear(input_dim, filter_num)
-        self.line2 = nn.Linear(filter_num, filter_num)
-
-        self.conv1 = APPNP(K=K, alpha=alpha)
-        self.conv2 = APPNP(K=K, alpha=alpha)
-
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-    def forward(self, x, edge_index, positive, negative):
-        x = self.line1(x)
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-
-        x = self.line2(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        pos = x[positive[:,0]] - x[positive[:,1]]
-        neg = x[negative[:,0]] - x[negative[:,1]]
-        x = torch.cat((pos, neg), axis = 0)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0,2,1))
-        x = self.Conv(x)
-        x = x.permute((0,2,1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-class GIN_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, dropout = False):
-        super(GIN_Link, self).__init__()
-        self.dropout = dropout
-        self.line1 = nn.Linear(input_dim, filter_num)
-        self.line2 = nn.Linear(filter_num, filter_num)
-
-        self.conv1 = GINConv(self.line1)
-        self.conv2 = GINConv(self.line2)
-
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-    def forward(self, x, edge_index, positive, negative):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        pos = x[positive[:,0]] - x[positive[:,1]]
-        neg = x[negative[:,0]] - x[negative[:,1]]
-        x = torch.cat((pos, neg), axis = 0)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0,2,1))
-        x = self.Conv(x)
-        x = x.permute((0,2,1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-class GCN_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, dropout = False):
-        super(GCN_Link, self).__init__()
-        self.dropout = dropout
-        self.conv1 = GCNConv(input_dim, filter_num)
-        self.conv2 = GCNConv(filter_num, filter_num)
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-    def forward(self, x, edge_index, positive, negative):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        pos = x[positive[:,0]] - x[positive[:,1]]
-        neg = x[negative[:,0]] - x[negative[:,1]]
-        x = torch.cat((pos, neg), axis = 0)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0,2,1))
-        x = self.Conv(x)
-        x = x.permute((0,2,1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-class Cheb_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, K, dropout = False):
-        super(Cheb_Link, self).__init__()
-        self.dropout = dropout
-        self.conv1 = ChebConv(input_dim, filter_num, K)
-        self.conv2 = ChebConv(filter_num, filter_num, K)
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-    def forward(self, x, edge_index, positive, negative):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        pos = x[positive[:,0]] - x[positive[:,1]]
-        neg = x[negative[:,0]] - x[negative[:,1]]
-        x = torch.cat((pos, neg), axis = 0)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0,2,1))
-        x = self.Conv(x)
-        x = x.permute((0,2,1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-class SAGE_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, dropout = False):
-        super(SAGE_Link, self).__init__()
-        self.dropout = dropout
-        self.conv1 = SAGEConv(input_dim, filter_num)
-        self.conv2 = SAGEConv(filter_num, filter_num)
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-    def forward(self, x, edge_index, positive, negative):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        pos = x[positive[:,0]] - x[positive[:,1]]
-        neg = x[negative[:,0]] - x[negative[:,1]]
-        x = torch.cat((pos, neg), axis = 0)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0,2,1))
-        x = self.Conv(x)
-        x = x.permute((0,2,1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-class GAT_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, heads, filter_num, dropout = False):
-        super(GAT_Link, self).__init__()
-        self.dropout = dropout
-        self.conv1 = GATConv(input_dim, filter_num, heads=heads)
-        self.conv2 = GATConv(filter_num*heads, filter_num, heads=heads)
-        self.Conv = nn.Conv1d(filter_num*heads, out_dim, kernel_size=1)
-
-    def forward(self, x, edge_index, positive, negative):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        pos = x[positive[:,0]] - x[positive[:,1]]
-        neg = x[negative[:,0]] - x[negative[:,1]]
-        x = torch.cat((pos, neg), axis = 0)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0,2,1))
-        x = self.Conv(x)
-        x = x.permute((0,2,1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-'''
 
 
 ####################################################################
@@ -915,7 +699,7 @@ class DirGCNConv(torch.nn.Module):
             row, col = edge_index
             num_nodes = x.shape[0]
 
-            adj = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+            adj = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
             self.adj_norm = get_norm_adj(adj, norm="dir")     # this is key: improve from 57 to 72
 
             adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
@@ -1035,25 +819,36 @@ class DirGCNConv_2(torch.nn.Module):
                 adj = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
                 self.adj_norm = get_norm_adj(adj, norm=self.inci_norm)     # this is key: improve from 57 to 72
 
+                # indices = edge_index.to(device)
+                # values = torch.ones(edge_index.size(1)).to(device)  # or your edge weights if you have them
+                # size = (num_nodes, num_nodes)
+                # sparse_tensor = torch.sparse_coo_tensor(
+                #     indices=indices,
+                #     values=values,
+                #     size=size
+                # )
+                # self.adj_norm00 = get_norm_adj(sparse_tensor, norm=self.inci_norm)     # this is key: improve from 57 to 72
+                #
+                #
+                # self.adj_norm = get_norm_adj(edge_index, norm=self.inci_norm)     # this is key: improve from 57 to 72
+
                 adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
                 self.adj_t_norm = get_norm_adj(adj_t, norm=self.inci_norm)  #
+
+                # edge_index_t = edge_index[[1, 0]]
+                # transposed = sparse_tensor.t()
+                # self.adj_norm00_T = get_norm_adj(transposed, norm=self.inci_norm)
+                # self.adj_t_norm = get_norm_adj(edge_index_t, norm=self.inci_norm)  #
                 # print('edge number(A, At):', sparse_all(self.adj_norm), sparse_all(self.adj_t_norm))
 
             # if self.adj_norm_in_out is None and not (self.beta == -1 and self.beta == -1):
             if self.adj_norm_in_out is None:
-                # if :
-                #     break
                 self.adj_norm_in_out = get_norm_adj(adj @ adj_t,norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
                 self.adj_norm_out_in = get_norm_adj(adj_t @ adj, norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
                 self.adj_norm_in_in = get_norm_adj(adj @ adj, norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
                 self.adj_norm_out_out = get_norm_adj(adj_t @ adj_t, norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
 
                 self.norm_list = [self.adj_norm_in_out, self.adj_norm_out_in, self.adj_norm_in_in, self.adj_norm_out_out]
-                # print('edge_num of AAt, AtA, AA, AtAt: ',
-                #       sparse_all(self.adj_norm_in_out, k=1),
-                #       sparse_all(self.adj_norm_out_in, k=1),
-                #       sparse_all(self.adj_norm_in_in, k=1),
-                #       sparse_all(self.adj_norm_out_out, k=1))
 
                 if self.differ_AA:
                     Union_A_AA, Intersect_A_AA, diff_0 = share_edge(self.adj_norm_in_in, self.adj_norm, self.adj_t_norm)
@@ -1065,13 +860,13 @@ class DirGCNConv_2(torch.nn.Module):
                     indices = torch.stack([torch.tensor(pair) for pair in diff_0], dim=0).t()
                     row = indices[0]
                     col = indices[1]
-                    sparse_tensor1 = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+                    sparse_tensor1 = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
                     self.adj_norm = get_norm_adj(sparse_tensor1, norm=self.inci_norm).to(self.adj_t_norm.device())
 
                     indices = torch.stack([torch.tensor(pair) for pair in diff_t], dim=0).t()
                     row = indices[0]
                     col = indices[1]
-                    sparse_tensor2 = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+                    sparse_tensor2 = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
                     self.adj_t_norm = get_norm_adj(sparse_tensor2, norm=self.inci_norm).to(self.adj_t_norm.device())
                 if 3 in (self.alpha, self.beta, self.gama) and self.adj_intersection is None:
                     self.adj_intersection = intersection_adj_norm(self.adj_norm, self.adj_t_norm, self.inci_norm, device)
@@ -1269,7 +1064,7 @@ class HighFreConv(torch.nn.Module):
 
         if self.conv_type == 'dir-gcn':
             if self.adj_norm is None:
-                adj = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+                adj = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
                 self.adj_norm = get_norm_adj(adj, norm=self.inci_norm)     # this is key: improve from 57 to 72
 
                 adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
@@ -1296,13 +1091,13 @@ class HighFreConv(torch.nn.Module):
             #         indices = torch.stack([torch.tensor(pair) for pair in diff_0], dim=0).t()
             #         row = indices[0]
             #         col = indices[1]
-            #         sparse_tensor1 = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+            #         sparse_tensor1 = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
             #         self.adj_norm = get_norm_adj(sparse_tensor1, norm=self.inci_norm).to(self.adj_t_norm.device())
             #
             #         indices = torch.stack([torch.tensor(pair) for pair in diff_t], dim=0).t()
             #         row = indices[0]
             #         col = indices[1]
-            #         sparse_tensor2 = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+            #         sparse_tensor2 = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
             #         self.adj_t_norm = get_norm_adj(sparse_tensor2, norm=self.inci_norm).to(self.adj_t_norm.device())
             #     if 3 in (self.alpha, self.beta, self.gama) and self.adj_intersection is None:
             #         self.adj_intersection = intersection_adj_norm(self.adj_norm, self.adj_t_norm, self.inci_norm, device)
@@ -1454,7 +1249,7 @@ class RanConv(torch.nn.Module):
 
         if self.conv_type == 'dir-gcn':
             if self.adj_norm is None:
-                adj = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+                adj = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
                 edge_weight = torch.rand(len(row)) * (10000 - 0.0001) + 0.0001
                 edge_weight = edge_weight.to(device)
                 self.adj_norm = directed_norm_weight(adj, edge_weight)     # this is key: improve from 57 to 72
@@ -1482,13 +1277,13 @@ class RanConv(torch.nn.Module):
                     indices = torch.stack([torch.tensor(pair) for pair in diff_0], dim=0).t()
                     row = indices[0]
                     col = indices[1]
-                    sparse_tensor1 = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+                    sparse_tensor1 = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
                     self.adj_norm = get_norm_adj(sparse_tensor1, norm=self.inci_norm).to(self.adj_t_norm.device())
 
                     indices = torch.stack([torch.tensor(pair) for pair in diff_t], dim=0).t()
                     row = indices[0]
                     col = indices[1]
-                    sparse_tensor2 = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+                    sparse_tensor2 = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
                     self.adj_t_norm = get_norm_adj(sparse_tensor2, norm=self.inci_norm).to(self.adj_t_norm.device())
                 if 3 in (self.alpha, self.beta, self.gama) and self.adj_intersection is None:
                     self.adj_intersection = intersection_adj_norm(self.adj_norm, self.adj_t_norm, self.inci_norm, device)
@@ -1640,7 +1435,7 @@ class DirConv_tSNE(torch.nn.Module):
 
         if self.conv_type == 'dir-gcn':
             if self.adj_norm is None:
-                adj = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+                adj = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
                 self.adj_norm = get_norm_adj(adj, norm=self.inci_norm)     # this is key: improve from 57 to 72
 
                 adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
@@ -1654,11 +1449,6 @@ class DirConv_tSNE(torch.nn.Module):
                 self.adj_norm_out_out = get_norm_adj(adj_t @ adj_t, norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
 
                 self.norm_list = [self.adj_norm_in_out, self.adj_norm_out_in, self.adj_norm_in_in, self.adj_norm_out_out]
-                # print('edge_num of AAt, AtA, AA, AtAt: ',
-                #       sparse_all(self.adj_norm_in_out, k=1),
-                #       sparse_all(self.adj_norm_out_in, k=1),
-                #       sparse_all(self.adj_norm_in_in, k=1),
-                #       sparse_all(self.adj_norm_out_out, k=1))
 
                 if self.differ_AA:
                     Union_A_AA, Intersect_A_AA, diff_0 = share_edge(self.adj_norm_in_in, self.adj_norm, self.adj_t_norm)
@@ -1670,13 +1460,13 @@ class DirConv_tSNE(torch.nn.Module):
                     indices = torch.stack([torch.tensor(pair) for pair in diff_0], dim=0).t()
                     row = indices[0]
                     col = indices[1]
-                    sparse_tensor1 = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+                    sparse_tensor1 = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
                     self.adj_norm = get_norm_adj(sparse_tensor1, norm=self.inci_norm).to(self.adj_t_norm.device())
 
                     indices = torch.stack([torch.tensor(pair) for pair in diff_t], dim=0).t()
                     row = indices[0]
                     col = indices[1]
-                    sparse_tensor2 = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+                    sparse_tensor2 = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
                     self.adj_t_norm = get_norm_adj(sparse_tensor2, norm=self.inci_norm).to(self.adj_t_norm.device())
                 if 3 in (self.alpha, self.beta, self.gama) and self.adj_intersection is None:
                     self.adj_intersection = intersection_adj_norm(self.adj_norm, self.adj_t_norm, self.inci_norm, device)
@@ -2218,7 +2008,7 @@ class DirGCNConv_sloop(torch.nn.Module):
             if self.conv_type == 'dir-gcn':
                 if self.adj_norm is None or flag:
 
-                    adj = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+                    adj = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
                     self.adj_norm = get_norm_adj(adj, norm=self.inci_norm)     # this is key: improve from 57 to 72
 
                     adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
@@ -2234,11 +2024,6 @@ class DirGCNConv_sloop(torch.nn.Module):
 
 
                     self.norm_list = [self.adj_norm_in_out, self.adj_norm_out_in, self.adj_norm_in_in, self.adj_norm_out_out]
-                    # print('edge_num of AAt, AtA, AA, AtAt: ',
-                    #       sparse_all(self.adj_norm_in_out, k=1),
-                    #       sparse_all(self.adj_norm_out_in, k=1),
-                    #       sparse_all(self.adj_norm_in_in, k=1),
-                    #       sparse_all(self.adj_norm_out_out, k=1))
 
                     if self.differ_AA:
                         Union_A_AA, Intersect_A_AA, diff_0 = share_edge(self.adj_norm_in_in, self.adj_norm, self.adj_t_norm)
@@ -2250,13 +2035,13 @@ class DirGCNConv_sloop(torch.nn.Module):
                         indices = torch.stack([torch.tensor(pair) for pair in diff_0], dim=0).t()
                         row = indices[0]
                         col = indices[1]
-                        sparse_tensor1 = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+                        sparse_tensor1 = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
                         self.adj_norm = get_norm_adj(sparse_tensor1, norm=self.inci_norm).to(self.adj_t_norm.device())
 
                         indices = torch.stack([torch.tensor(pair) for pair in diff_t], dim=0).t()
                         row = indices[0]
                         col = indices[1]
-                        sparse_tensor2 = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+                        sparse_tensor2 = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
                         self.adj_t_norm = get_norm_adj(sparse_tensor2, norm=self.inci_norm).to(self.adj_t_norm.device())
                     if 3 in (self.alpha, self.beta, self.gama) and self.adj_intersection is None:
                         self.adj_intersection = intersection_adj_norm(self.adj_norm, self.adj_t_norm, self.inci_norm, device)
@@ -2384,7 +2169,7 @@ def edge_index_to_adj(edge_index, num_nodes):
     # Create the adjacency matrix from edge_index
     row = edge_index[0]
     col = edge_index[1]
-    adj = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+    adj = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
     return adj
 
 def get_index(adj_aat):
@@ -2417,9 +2202,38 @@ def aggregate(x, alpha, lin0, adj0, lin1, adj1,  intersection, union, inci_norm=
     elif alpha == 3:
         out = lin0(intersection @ x)
     else:
-        # out = 0.5*(1+alpha)*(alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
         m = lin0(x)
-        out = 0.5*(1+alpha)*(alpha * (adj0 @ m) + (1 - alpha) * lin1(adj1 @ x))
+        m_ = lin1(x)
+
+        row_indices0, col_indices0, values0 = adj0.coo()
+        adj0 = SparseTensor(
+            row=col_indices0,
+            col=row_indices0,
+            value=values0,
+            sparse_sizes=(adj0.sparse_sizes()[1], adj0.sparse_sizes()[0])
+        )
+        row_indices1, col_indices1, values1 = adj1.coo()
+        adj1 = SparseTensor(
+            row=col_indices1,
+            col=row_indices1,
+            value=values1,
+            sparse_sizes=(adj1.sparse_sizes()[1], adj1.sparse_sizes()[0])
+        )
+        out0_= adj1 @ m_
+        # try:
+        #     nonzero_values_rate0 = (torch.count_nonzero(adj0.storage.value()) / adj0.storage.value().numel()) * 100
+        #     nonzero_values_rate1 = (torch.count_nonzero(adj1.storage.value()) / adj1.storage.value().numel()) * 100
+        #     print('non zero rate of adj0:', nonzero_values_rate0)
+        #     print('non zero rate of adj1:', nonzero_values_rate1)
+        # except:
+        #     pass
+
+
+        out = 0.5*(1+alpha)*(alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
+        # out = 0.5*(1+alpha)*(alpha * (adj0 @ lin0(x)) + (1 - alpha) * (adj1 @ lin1(x)))
+
+
+        # out = 0.5*(1+alpha)*(alpha * (adj0 @ m) + (1 - alpha) * (adj1 @ m_))
         # out = (alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
 
     return out
@@ -2453,7 +2267,7 @@ def union_adj_norm(adj0, adj1, inci_norm, device):
     row = unique_edges[:, 0].to(device)
     col = unique_edges[:, 1].to(device)
     num_nodes = adj0.size(0)
-    unique_edges = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+    unique_edges = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
     new_adj_norm = get_norm_adj(unique_edges, norm=inci_norm).to(device)
 
     return new_adj_norm
@@ -2494,7 +2308,7 @@ def intersection_adj_norm(adj0, adj1, inci_norm, device):
     row = intersection[:, 0].to(device)
     col = intersection[:, 1].to(device)
     num_nodes = adj0.size(0)
-    unique_edges = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+    unique_edges = SparseTensor(row=row.contiguous(), col=col.contiguous(), sparse_sizes=(num_nodes, num_nodes))
     new_adj_norm = get_norm_adj(unique_edges, norm=inci_norm).to(device)
 
     return new_adj_norm
@@ -2612,16 +2426,121 @@ def get_norm_adj(adj, norm, rm_gen_sLoop=0):
     else:
         raise ValueError(f"{norm} normalization is not supported")
 
+
+from typing import Optional
+
+import torch
+from torch import Tensor
+from torch.nn import Parameter
+
+from torch_geometric.nn.conv import MessagePassing
+from torch_geometric.nn.dense.linear import Linear
+from torch_geometric.nn.inits import zeros
+from torch_geometric.typing import (
+    Adj,
+    OptPairTensor,
+    OptTensor,
+    SparseTensor,
+    torch_sparse,
+)
+from torch_geometric.utils import add_remaining_self_loops
+from torch_geometric.utils import add_self_loops as add_self_loops_fn
+from torch_geometric.utils import (
+    is_torch_sparse_tensor,
+    scatter,
+    spmm,
+    to_edge_index,
+)
+from torch_geometric.utils.num_nodes import maybe_num_nodes
+from torch_geometric.utils.sparse import set_sparse_value
+def gcn_norm(edge_index, edge_weight=None, num_nodes=None, improved=False,
+             add_self_loops=True, flow="source_to_target", dtype=None):
+    '''
+copy from torch-geometric, but they are wrong.
+    '''
+
+    fill_value = 2. if improved else 1.
+
+    if isinstance(edge_index, SparseTensor):
+        assert edge_index.size(0) == edge_index.size(1)
+
+        adj_t = edge_index
+
+        if not adj_t.has_value():
+            adj_t = adj_t.fill_value(1., dtype=dtype)
+        if add_self_loops:
+            adj_t = torch_sparse.fill_diag(adj_t, fill_value)
+
+        # idx = 0 if flow == 'source_to_target' else 1
+        idx = 1 if flow == 'source_to_target' else 0   # Qin
+        deg = torch_sparse.sum(adj_t, dim=idx)  # Qin dim from 1 to 0
+        deg_inv_sqrt = deg.pow_(-0.5)
+        deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0.)
+        adj_t = torch_sparse.mul(adj_t, deg_inv_sqrt.view(-1, 1))
+        adj_t = torch_sparse.mul(adj_t, deg_inv_sqrt.view(1, -1))
+
+        return adj_t
+
+    if is_torch_sparse_tensor(edge_index):
+        assert edge_index.size(0) == edge_index.size(1)
+
+        if edge_index.layout == torch.sparse_csc:
+            raise NotImplementedError("Sparse CSC matrices are not yet "
+                                      "supported in 'gcn_norm'")
+
+        adj_t = edge_index
+        if add_self_loops:
+            adj_t, _ = add_self_loops_fn(adj_t, None, fill_value, num_nodes)
+
+        edge_index, value = to_edge_index(adj_t)
+        row, col = edge_index[0], edge_index[1]
+        idx = col if flow == 'source_to_target' else row
+
+        deg = scatter(value, idx, 0, dim_size=num_nodes, reduce='sum')
+        deg_inv_sqrt = deg.pow_(-0.5)
+        deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0)
+        value = deg_inv_sqrt[row] * value * deg_inv_sqrt[col]
+
+        return set_sparse_value(adj_t, value), None
+
+    assert flow in ['source_to_target', 'target_to_source']
+    num_nodes = maybe_num_nodes(edge_index, num_nodes)
+
+    if add_self_loops:
+        edge_index, edge_weight = add_remaining_self_loops(
+            edge_index, edge_weight, fill_value, num_nodes)
+
+    if edge_weight is None:
+        edge_weight = torch.ones((edge_index.size(1), ), dtype=dtype,
+                                 device=edge_index.device)
+
+    row, col = edge_index[0], edge_index[1]
+    idx = col if flow == 'source_to_target' else row
+    deg = scatter(edge_weight, idx, dim=0, dim_size=num_nodes, reduce='sum')
+    deg_inv_sqrt = deg.pow_(-0.5)   # modifies the tensor in-place (notice the underscore)
+    deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0)
+    edge_weight = deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
+
+    return edge_index, edge_weight
+
+
+
 def row_norm(adj):
     """
     Applies the row-wise normalization:
         \mathbf{D}_{out}^{-1} \mathbf{A}
     """
-    row_sum = sparsesum(adj, dim=1)
+    row_sum0 = sparsesum(adj, dim=1)
+    row_sum = torch_sparse.sum(adj, dim=1)
+
+    # row_sum = sparsesum(adj, dim=0)  # Qin not better
+    non_zero_rate = torch.count_nonzero(row_sum) / row_sum.numel()
     inv_deg = 1 / row_sum.view(-1, 1)
     inv_deg.masked_fill_(inv_deg == float("inf"), 0.0)
 
-    return mul(adj, inv_deg)
+    adj_norm = mul(adj, inv_deg)
+
+    return adj_norm
 
 # def remove_self_loops(adj):
 #     """Remove self-loops from the adjacency matrix."""
@@ -2636,7 +2555,7 @@ def remove_self_loop_qin(adj):
     row = row[mask]
     col = col[mask]
     value = value[mask] if value is not None else None
-    adj = SparseTensor(row=row, col=col, value=value, sparse_sizes=adj.sparse_sizes())
+    adj = SparseTensor(row=row.contiguous(), col=col.contiguous(), value=value, sparse_sizes=adj.sparse_sizes())
     return adj
 
 
@@ -2667,8 +2586,42 @@ def add_self_loop_qin(adj):
     return adj
 
 
-def directed_norm(adj, rm_gen_sLoop=False):
+def directed_norm(adj, rm_gen_sLoop=True):
+    device = adj.device()
+
+    # Convert to COO and work with that
+    edge_index = adj.coo()[:2]  # This seems to work based on your error logs
+    N = adj.sparse_sizes()[0]
+
+    # Calculate degrees using edge_index directly
+    in_deg = torch.zeros(N, device=device)
+    out_deg = torch.zeros(N, device=device)
+
+    # Count degrees using index_add
+    in_deg.index_add_(0, edge_index[1], torch.ones_like(edge_index[1], dtype=torch.float))
+    out_deg.index_add_(0, edge_index[0], torch.ones_like(edge_index[0], dtype=torch.float))
+
+    # Compute normalizations
+    in_deg_inv_sqrt = in_deg.pow(-0.5)
+    out_deg_inv_sqrt = out_deg.pow(-0.5)
+    in_deg_inv_sqrt[in_deg_inv_sqrt.isinf()] = 0
+    out_deg_inv_sqrt[out_deg_inv_sqrt.isinf()] = 0
+
+    # Create normalized edge weights
+    edge_weight = out_deg_inv_sqrt[edge_index[0]] * in_deg_inv_sqrt[edge_index[1]]
+
+    # Create new normalized sparse tensor
+    return SparseTensor(
+        row=edge_index[0],
+        col=edge_index[1],
+        value=edge_weight,
+        sparse_sizes=(N, N)
+    ).to(device)
+
+
+def directed_norm0(adj, rm_gen_sLoop=False):
     """
+    this will go wrong in GPU1
     Applies the normalization for directed graphs:
         \mathbf{D}_{out}^{-1/2} \mathbf{A} \mathbf{D}_{in}^{-1/2}.
     """
@@ -2702,7 +2655,7 @@ def directed_norm_weight(adj, edge_weight=None, rm_gen_sLoop=False):
     if edge_weight is not None:
         row, col, _ = adj.coo()
         new_values = edge_weight
-        adj = torch_sparse.SparseTensor(row=row, col=col, value=new_values, sparse_sizes=adj.sparse_sizes())
+        adj = torch_sparse.SparseTensor(row=row.contiguous(), col=col.contiguous(), value=new_values, sparse_sizes=adj.sparse_sizes())
         return adj        # this to test without inci-norm
 
     device = adj.device()
@@ -2904,13 +2857,8 @@ class GCN_JKNet(torch.nn.Module):
 
 
     def forward(self, x, edge_index):
-    # def forward(self, data):
-    # def forward(self, data_list):
-    #     data = data_list[0]
-    #     x = data.x
-    #     edge_index = data.edge_index
-        if self.mlp:
-            x_mlp = self.mlp(x)
+        # if self.mlp:
+        #     x_mlp = self.mlp(x)
         xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index)
@@ -2930,6 +2878,7 @@ class GCN_JKNet(torch.nn.Module):
             x = self.lin(x)
 
         return x
+
 
 class High_Frequent(torch.nn.Module):
     def __init__(self, nfeat, nclass, args):

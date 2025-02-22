@@ -14,7 +14,6 @@ from utils0.util_qin import analyze_edge_index, remove_bidirectional_edges, get_
 
 print("Python Path:", sys.path)
 print("Current Working Directory:", os.getcwd())
-import os
 import signal
 import statistics
 import sys
@@ -87,6 +86,7 @@ def train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_wei
     new_x = None
     new_y = None
     new_y_train = None
+
     model.train()
     if args.net.endswith('ymN1'):   # without 1st-order edges
         biedges = edge_in
@@ -285,9 +285,6 @@ macro_F1 = []
 acc_list = []
 bacc_list = []
 
-device = set_device(args)
-# device = set_device1(args)
-
 if args.all1:
     all1d = args.all1d
     if all1d:
@@ -298,17 +295,25 @@ if args.all1:
 if args.degfea:
     data_x = calculate_degree_features(edges, args.degfea)
     num_features = abs(args.degfea)
-data_x = data_x.to(device)
-data_y = data_y.to(device)
-edges = edges.to(device)
 
-# visualize_class_relationships(edges, data_y)
+if args.paral:
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-data_train_maskOrigin = data_train_maskOrigin.to(device)
-data_val_maskOrigin = data_val_maskOrigin.to(device)
-data_test_maskOrigin = data_test_maskOrigin.to(device)
+    data_x.to(device)
+    data_y.to(device)
+    edges.to(device).contiguous()
+    data_train_maskOrigin.to(device)
+    data_val_maskOrigin.to(device)
+    data_test_maskOrigin.to(device)
+else:
+    device = set_device(args)
 
-# edges = scaled_edges(edges, data_x.shape[0])
+    data_x = data_x.to(device)
+    data_y = data_y.to(device)
+    edges = edges.to(device)
+    data_train_maskOrigin = data_train_maskOrigin.to(device)
+    data_val_maskOrigin = data_val_maskOrigin.to(device)
+    data_test_maskOrigin = data_test_maskOrigin.to(device)
 
 
 criterion = CrossEntropy().to(device)
@@ -450,7 +455,14 @@ try:
     with open(log_directory + log_file_name_with_timestamp, 'a') as log_file:
         print('Using Device: ', device, file=log_file)
         for split in range(num_run):
-            model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device)
+            model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1])
+            if args.paral:
+                if torch.cuda.device_count() > 1:
+                    model = torch.nn.DataParallel(model)
+                    print(f'model parallel!', flush=True)
+                    model.to(device)
+            else:
+                model = model.to(device)
             if split==0:
                 print('no_in, homo_in, no_out, homo_out:', no_in, homo_ratio_A, no_out, homo_ratio_At, file=log_file)
                 print(model, file=log_file)
@@ -542,7 +554,11 @@ try:
                 if len(lst) == 0:
                     print(f"{name}:No Node")
                     continue
-                mask = create_mask(lst, data_x.shape[0]).to(device)
+                mask = create_mask(lst, data_x.shape[0])
+                if args.paral:
+                    mask.to(device)
+                else:
+                    mask = mask.to(device)
                 train_temp, val_temp, test_temp = mask & data_train_mask, mask & data_val_mask, mask & data_test_mask
                 print(f"{name}: Train={train_temp.sum().item()}, Val={val_temp.sum().item()}, Test={test_temp.sum().item()}")
 
