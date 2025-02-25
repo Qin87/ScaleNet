@@ -2186,20 +2186,20 @@ def aggregate(x, alpha, lin0, adj0, lin1, adj1,  intersection, union, inci_norm=
         m = lin0(x)
         m_ = lin1(x)
 
-        row_indices0, col_indices0, values0 = adj0.coo()
-        adj0 = SparseTensor(
-            row=col_indices0,
-            col=row_indices0,
-            value=values0,
-            sparse_sizes=(adj0.sparse_sizes()[1], adj0.sparse_sizes()[0])
-        )
-        row_indices1, col_indices1, values1 = adj1.coo()
-        adj1 = SparseTensor(
-            row=col_indices1,
-            col=row_indices1,
-            value=values1,
-            sparse_sizes=(adj1.sparse_sizes()[1], adj1.sparse_sizes()[0])
-        )
+        # row_indices0, col_indices0, values0 = adj0.coo()
+        # adj0 = SparseTensor(
+        #     row=col_indices0,
+        #     col=row_indices0,
+        #     value=values0,
+        #     sparse_sizes=(adj0.sparse_sizes()[1], adj0.sparse_sizes()[0])
+        # )
+        # row_indices1, col_indices1, values1 = adj1.coo()
+        # adj1 = SparseTensor(
+        #     row=col_indices1,
+        #     col=row_indices1,
+        #     value=values1,
+        #     sparse_sizes=(adj1.sparse_sizes()[1], adj1.sparse_sizes()[0])
+        # )
         out0_= adj1 @ m_
         # try:
         #     nonzero_values_rate0 = (torch.count_nonzero(adj0.storage.value()) / adj0.storage.value().numel()) * 100
