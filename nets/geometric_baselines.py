@@ -2211,13 +2211,13 @@ def aggregate(x, alpha, lin0, adj0, lin1, adj1,  intersection, union, inci_norm=
 
         alpha = 1-alpha
         # out = 0.5*(alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
-        out = 1*(alpha * lin1(adj0 @ x) + (1 - alpha) * lin0(adj1 @ x))  # TODO reverse lin0 and lin1
+        # out = 1*(alpha * lin1(adj0 @ x) + (1 - alpha) * lin0(adj1 @ x))  # TODO reverse lin0 and lin1
 
         # out = 0.5*(1+alpha)*((1 - alpha) * lin0(adj0 @ x) + alpha * lin1(adj1 @ x))     # TODO
         # out = ((1 - alpha) * lin0(adj0 @ x) + alpha * lin1(adj1 @ x))     # TODO
 
         # out = 0.5*(1+alpha)*(alpha * (adj0 @ lin0(x)) + (1 - alpha) * (adj1 @ lin1(x)))
-        # out = 0.05*(alpha * (adj0 @ lin1(x)) + (1 - alpha) * (adj1 @ lin0(x)))   # TODO reverse lin0 and lin1
+        out = 1*(alpha * (adj0 @ lin1(x)) + (1 - alpha) * (adj1 @ lin0(x)))   # TODO reverse lin0 and lin1
 
         # m = lin0(x)
         # out = 0.5*(1+alpha)*(alpha * (adj0 @ m) + (1 - alpha) * lin1(adj1 @ x))
