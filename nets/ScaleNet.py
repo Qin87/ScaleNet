@@ -40,6 +40,7 @@ from torch_sparse import mul
 
 from torch_geometric.utils import add_self_loops
 
+from args import parse_args
 from nets.jumping_weight import JumpingKnowledge
 
 def gcn_norm_option(inci_norm, edge_index, edge_weight=None, num_nodes=None, improved=False,
@@ -69,7 +70,7 @@ copy from torch-geometric, but they are wrong. and add different norm options
             return adj_t
         elif inci_norm == 'row':
             idx = 0 if flow == 'source_to_target' else 1
-            row_sum = sparsesum(adj_t, dim=idx)
+            row_sum = torch_sparse.sum(adj_t, dim=idx)
             inv_deg = 1 / row_sum.view(-1, 1)
             inv_deg.masked_fill_(inv_deg == float("inf"), 0.0)
             adj_t = mul(adj_t, inv_deg)
@@ -77,12 +78,11 @@ copy from torch-geometric, but they are wrong. and add different norm options
             return adj_t
         elif inci_norm == 'dir':
             idx = 0 if flow == 'source_to_target' else 1
-            device = adj_t.device()
-            in_deg = sparsesum(adj_t, dim=idx).to(device)
+            in_deg = torch_sparse.sum(adj_t, dim=idx).to(adj_t.device)
             in_deg_inv_sqrt = in_deg.pow_(-0.5)
             in_deg_inv_sqrt.masked_fill_(in_deg_inv_sqrt == float("inf"), 0.0)
 
-            out_deg = sparsesum(adj_t, dim=1-idx).to(device)
+            out_deg = torch_sparse.sum(adj_t, dim=1-idx).to(adj_t.device)
             out_deg_inv_sqrt = out_deg.pow_(-0.5)
             out_deg_inv_sqrt.masked_fill_(out_deg_inv_sqrt == float("inf"), 0.0)
 
@@ -105,6 +105,7 @@ copy from torch-geometric, but they are wrong. and add different norm options
         edge_index, value = to_edge_index(adj_t)
         row, col = edge_index[0], edge_index[1]
         idx = col if flow == 'source_to_target' else row
+        idx_ = row if flow == 'source_to_target' else col
         if inci_norm == 'sym':
             deg = scatter(value, idx, 0, dim_size=num_nodes, reduce='sum')
             deg_inv_sqrt = deg.pow_(-0.5)
@@ -122,7 +123,6 @@ copy from torch-geometric, but they are wrong. and add different norm options
             in_deg_inv_sqrt = in_deg.pow_(-0.5)
             in_deg_inv_sqrt.masked_fill_(in_deg_inv_sqrt == float("inf"), 0.0)
 
-            idx_ = row if flow == 'source_to_target' else col
             out_deg = scatter(value, idx_, 0, dim_size=num_nodes, reduce='sum').to(edge_index.device)
             out_deg_inv_sqrt = out_deg.pow_(-0.5)
             out_deg_inv_sqrt.masked_fill_(out_deg_inv_sqrt == float("inf"), 0.0)
@@ -247,26 +247,25 @@ class GCNConv_inciNormOption(MessagePassing):
                         edge_index, edge_weight, x.size(self.node_dim),
                         self.improved, self.add_self_loops, self.flow, x.dtype)
 
-                    # Extract edge_index and edge_weight from SparseTensor
                     row, col, edge_weight = sparse_tensor.coo()
                     edge_index = torch.stack([row, col], dim=0)
                     if self.cached:
                             self._cached_adj_t = (edge_index, edge_weight)
                 else:
                     edge_index, edge_weight = cache
-
         else:
-            edge_weight = torch.ones(edge_index.size(1)).to(edge_index.device())
+            edge_weight = torch.ones(edge_index.size(1)).to(edge_index.device)
 
         x = self.lin(x)
 
         # propagate_type: (x: Tensor, edge_weight: OptTensor)
         out = self.propagate(edge_index, x=x, edge_weight=edge_weight)
-
         if self.bias is not None:
             out = out + self.bias
 
         return out
+
+
 
 
     def message(self, x_j: Tensor, edge_weight: OptTensor) -> Tensor:
@@ -275,6 +274,16 @@ class GCNConv_inciNormOption(MessagePassing):
 
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
         return spmm(adj_t, x, reduce=self.aggr)
+
+if __name__ == '__main__':
+    row = torch.tensor([0, 0, 1, 1, 2, 3, 4, 4])
+    col = torch.tensor([1, 2, 0, 3, 4, 1, 2, 3])
+    edges = torch.stack((row, col), dim=0)  # TODO delete
+    x = torch.ones((6, 1))
+    args =  parse_args()
+    GCNQin = GCNConv_inciNormOption(1, 1, args)
+    out = GCNQin(x, edges)
+    print(out)
 
 class ScaleNet_2025(torch.nn.Module):
     def __init__(self, nfeat, nclass, args):

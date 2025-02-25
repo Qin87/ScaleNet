@@ -7,6 +7,14 @@ from torch_geometric.utils import (
     to_edge_index,
 )
 
+# num_nodes = 5
+# row = torch.tensor([0, 0, 1, 1, 2, 3, 4, 4])
+# col = torch.tensor([1, 2, 0, 3, 4, 1, 2, 3])
+# adj = SparseTensor(row=row.contiguous(), col=col.contiguous(),
+#                    sparse_sizes=(num_nodes, num_nodes))
+# # inv_deg = torch.ones((5, 1))
+# inv_deg = torch.tensor([[1], [2], [3], [4], [5]], dtype=torch.float)
+
 num_nodes = 5
 row = torch.tensor([0, 0, 1, 1, 2, 3, 4, 4])
 col = torch.tensor([1, 2, 0, 3, 4, 1, 2, 3])
@@ -22,6 +30,13 @@ adj_t = SparseTensor(row=col.contiguous(), col=row.contiguous(),
 
 print("Original adjacency matrix:")
 print(adj.to_dense())
+
+x = torch.ones((6,1))
+print("adj @ x :")
+print(adj @ x)
+
+print("adj_t @ x :")
+print(adj_t @ x)
 
 from torch_sparse import sum as sparsesum
 row_sum1 = sparsesum(adj, dim=1)  # row count

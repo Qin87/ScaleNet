@@ -239,7 +239,10 @@ if args.num_edge:
 
 
 # result = longest_hop_direct(edges[torch.tensor([1, 0])], data_x.shape[0])
-
+# row = torch.tensor([0, 0, 1, 1, 2, 3, 4, 4])
+# col = torch.tensor([1, 2, 0, 3, 4, 1, 2, 3])
+# edges = torch.stack((row, col), dim=0)  # TODO delete
+# x = torch.ones((6, 1))
 
 with open(log_directory + log_file_name_with_timestamp, 'w') as log_file:
     print(args, file=log_file)

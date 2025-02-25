@@ -2209,12 +2209,20 @@ def aggregate(x, alpha, lin0, adj0, lin1, adj1,  intersection, union, inci_norm=
         # except:
         #     pass
 
+        alpha = 1-alpha
+        # out = 0.5*(alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
+        out = 1*(alpha * lin1(adj0 @ x) + (1 - alpha) * lin0(adj1 @ x))  # TODO reverse lin0 and lin1
 
-        out = 0.5*(1+alpha)*(alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
+        # out = 0.5*(1+alpha)*((1 - alpha) * lin0(adj0 @ x) + alpha * lin1(adj1 @ x))     # TODO
+        # out = ((1 - alpha) * lin0(adj0 @ x) + alpha * lin1(adj1 @ x))     # TODO
+
         # out = 0.5*(1+alpha)*(alpha * (adj0 @ lin0(x)) + (1 - alpha) * (adj1 @ lin1(x)))
+        # out = 0.05*(alpha * (adj0 @ lin1(x)) + (1 - alpha) * (adj1 @ lin0(x)))   # TODO reverse lin0 and lin1
+
         # m = lin0(x)
         # out = 0.5*(1+alpha)*(alpha * (adj0 @ m) + (1 - alpha) * lin1(adj1 @ x))
-        # out = (alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
+
+
 
     return out
 
@@ -2454,7 +2462,8 @@ copy from torch-geometric, but they are wrong.
         idx = 0 if flow == 'source_to_target' else 1
         deg = torch_sparse.sum(adj_t, dim=idx)  # Qin dim from 1 to 0
         deg_inv_sqrt = deg.pow_(-0.5)
-        deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0.)
+        # deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0.)
+        deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 1.)   # TODO
         adj_t = torch_sparse.mul(adj_t, deg_inv_sqrt.view(-1, 1))
         adj_t = torch_sparse.mul(adj_t, deg_inv_sqrt.view(1, -1))
 
@@ -2509,16 +2518,46 @@ def row_norm(adj):
     Applies the row-wise normalization:
         \mathbf{D}_{out}^{-1} \mathbf{A}
     """
-    # row_sum0 = sparsesum(adj, dim=1)
-    row_sum = torch_sparse.sum(adj, dim=1)
 
-    # row_sum = sparsesum(adj, dim=0)  # Qin not better
+    row_sum = torch_sparse.sum(adj, dim=1)  # dim=1 is row-sum, dim=0 is col-sum
     non_zero_rate = torch.count_nonzero(row_sum) / row_sum.numel()
     inv_deg = 1 / row_sum.view(-1, 1)
-    inv_deg.masked_fill_(inv_deg == float("inf"), 0.0)
+    # inv_deg.masked_fill_(inv_deg == float("inf"), 0.0)
+    inv_deg.masked_fill_(inv_deg == float("inf"), 1.0)   # TODO Qin test
+    deg_nnz = (inv_deg != 0).sum().item()
 
-    adj_norm = mul(adj, inv_deg)
 
+    # print('non zero', deg_nnz)
+    #
+    # # num_nodes = 5
+    # # row = torch.tensor([0, 0, 1, 1, 2, 3, 4, 4])
+    # # col = torch.tensor([1, 2, 0, 3, 4, 1, 2, 3])
+    # # adj = SparseTensor(row=row.contiguous(), col=col.contiguous(),
+    # #                    sparse_sizes=(num_nodes, num_nodes))
+    # # # inv_deg = torch.ones((5, 1))
+    # # inv_deg = torch.tensor([[1], [2], [3], [4], [5]], dtype=torch.float)
+    #
+    # row_indices0, col_indices0, values0 = adj.coo()
+    # adj_t = SparseTensor(
+    #     row=col_indices0,
+    #     col=row_indices0,
+    #     value=values0,
+    #     sparse_sizes=(adj.sparse_sizes()[1], adj.sparse_sizes()[0])
+    # )
+    # # adj_t = SparseTensor(row=adj.storage.col, col=adj.storage.row,sparse_sizes=(adj.size(0), adj.size(0)))
+    # adj_t_norm = torch_sparse.mul(adj_t, inv_deg)
+    # print('adjt: ',adj_t_norm.storage._row)
+    # val1 = (torch.count_nonzero(adj_t_norm.storage.value()) / adj_t_norm.storage.value().numel()) * 100
+    # print(f"adjt Density: {val1:.2f}%")
+                       #
+    adj_norm = torch_sparse.mul(adj, inv_deg)
+   #  print(adj_norm.storage._row)
+   #  val = (torch.count_nonzero(adj_norm.storage.value()) / adj_norm.storage.value().numel()) * 100
+   #
+   #  print(f"Density: {val:.2f}%")
+   # #
+
+    # print(adj_norm)
     return adj_norm
 
 # def remove_self_loops(adj):
@@ -2583,11 +2622,14 @@ def directed_norm(adj, rm_gen_sLoop=True):
     # Compute normalizations
     in_deg_inv_sqrt = in_deg.pow(-0.5)
     out_deg_inv_sqrt = out_deg.pow(-0.5)
-    in_deg_inv_sqrt[in_deg_inv_sqrt.isinf()] = 0
-    out_deg_inv_sqrt[out_deg_inv_sqrt.isinf()] = 0
+    # in_deg_inv_sqrt[in_deg_inv_sqrt.isinf()] = 0
+    in_deg_inv_sqrt[in_deg_inv_sqrt.isinf()] = 1   # TODO Qin
+    # out_deg_inv_sqrt[out_deg_inv_sqrt.isinf()] = 0
+    out_deg_inv_sqrt[out_deg_inv_sqrt.isinf()] = 1   # TODO Qin
 
     # Create normalized edge weights
-    edge_weight = out_deg_inv_sqrt[edge_index[0]] * in_deg_inv_sqrt[edge_index[1]]
+    # edge_weight = out_deg_inv_sqrt[edge_index[0]] * in_deg_inv_sqrt[edge_index[1]]  # origin
+    edge_weight = out_deg_inv_sqrt[edge_index[1]] * in_deg_inv_sqrt[edge_index[0]]  # TODO Qin
 
     # Create new normalized sparse tensor
     return SparseTensor(
