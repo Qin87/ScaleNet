@@ -272,7 +272,8 @@ def get_name(args, IsDirectedGraph):
         else:
             net_to_print = net_to_print  +'_' + args.conv_type +'_part'+str(args.alphaDir)+'_'+ str(args.betaDir)+'_'+str(
                 args.gamaDir)+'_sloop'+str(args.First_self_loop)+str(args.rm_gen_sloop)+'_jk'+str(args.jk)+'_norm'+str(args.inci_norm)
-
+            if args.coef_agg:
+                net_to_print = net_to_print + 'coef_agg' + str(args.coef_agg)
     return net_to_print, dataset_to_print
 
 

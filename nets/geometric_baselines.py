@@ -722,6 +722,7 @@ class DirGCNConv_2(torch.nn.Module):
 
         self.input_dim = input_dim
         self.output_dim = output_dim
+        self.coef = args.coef_agg
         # self.lin = nn.ModuleList([nn.Linear(input_dim, output_dim) for _ in range(4)])
 
         if args.conv_type == 'dir-gcn':
@@ -859,10 +860,10 @@ class DirGCNConv_2(torch.nn.Module):
                     self.adj_union_in_out = union_adj_norm(self.norm_list[0], self.norm_list[1], self.inci_norm, device)
                     self.adj_union_in_in = union_adj_norm(self.norm_list[2], self.norm_list[3], self.inci_norm, device)
 
-            out1 = aggregate(x, self.alpha, self.lin_src_to_dst, self.adj_norm, self.lin_dst_to_src, self.adj_t_norm, self.adj_intersection, self.adj_union,  inci_norm=self.inci_norm)
+            out1 = aggregate(x, self.alpha, self.lin_src_to_dst, self.adj_norm, self.lin_dst_to_src, self.adj_t_norm, self.adj_intersection, self.adj_union, self.coef, inci_norm=self.inci_norm)
             if not (self.beta == -1 and self.gama == -1):
-                out2 = aggregate(x, self.beta, self.linx[0], self.norm_list[0], self.linx[1], self.norm_list[1], self.adj_intersection_in_out, self.adj_union_in_out, inci_norm=self.inci_norm)
-                out3 = aggregate(x, self.gama, self.linx[2], self.norm_list[2], self.linx[3], self.norm_list[3], self.adj_intersection_in_in, self.adj_union_in_in, inci_norm=self.inci_norm)
+                out2 = aggregate(x, self.beta, self.linx[0], self.norm_list[0], self.linx[1], self.norm_list[1], self.adj_intersection_in_out, self.adj_union_in_out, self.coef,inci_norm=self.inci_norm)
+                out3 = aggregate(x, self.gama, self.linx[2], self.norm_list[2], self.linx[3], self.norm_list[3], self.adj_intersection_in_in, self.adj_union_in_in, self.coef,inci_norm=self.inci_norm)
             else:
                 # out2 = out3 = torch.zeros_like(out1)
                 out2 = torch.zeros_like(out1)
@@ -1894,6 +1895,8 @@ class DirGCNConv_sloop(torch.nn.Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
 
+        self.coef = args.coef_agg
+
         if args.conv_type == 'dir-gcn':
             self.lin_src_to_dst = Linear(input_dim, output_dim)
             self.lin_dst_to_src = Linear(input_dim, output_dim)
@@ -2035,10 +2038,10 @@ class DirGCNConv_sloop(torch.nn.Module):
                         self.adj_union_in_in = union_adj_norm(self.norm_list[2], self.norm_list[3], self.inci_norm, device)
 
 
-                out1 = aggregate(x0[i], self.alpha, self.lin_src_to_dst, self.adj_norm, self.lin_dst_to_src, self.adj_t_norm, self.adj_intersection, self.adj_union,  inci_norm=self.inci_norm)
+                out1 = aggregate(x0[i], self.alpha, self.lin_src_to_dst, self.adj_norm, self.lin_dst_to_src, self.adj_t_norm, self.adj_intersection, self.adj_union, self.coef,  inci_norm=self.inci_norm)
                 if not (self.beta == -1 and self.gama == -1):
-                    out2 = aggregate(x0[i], self.beta, self.linx[0], self.norm_list[0], self.linx[1], self.norm_list[1], self.adj_intersection_in_out, self.adj_union_in_out, inci_norm=self.inci_norm)
-                    out3 = aggregate(x0[i], self.gama, self.linx[2], self.norm_list[2], self.linx[3], self.norm_list[3], self.adj_intersection_in_in, self.adj_union_in_in, inci_norm=self.inci_norm)
+                    out2 = aggregate(x0[i], self.beta, self.linx[0], self.norm_list[0], self.linx[1], self.norm_list[1], self.adj_intersection_in_out, self.adj_union_in_out, self.coef, inci_norm=self.inci_norm)
+                    out3 = aggregate(x0[i], self.gama, self.linx[2], self.norm_list[2], self.linx[3], self.norm_list[3], self.adj_intersection_in_in, self.adj_union_in_in, self.coef, inci_norm=self.inci_norm)
                 else:
                     out2 = out3 = torch.zeros_like(out1)
             elif self.conv_type in ['dir-gat', 'dir-sage']:
@@ -2063,7 +2066,7 @@ class DirGCNConv_sloop(torch.nn.Module):
                 out1 = aggregate_index(x0[i], self.alpha, self.lin_src_to_dst, edge_index_temp, self.lin_dst_to_src, edge_index_t, self.Intersect_alpha, self.Union_alpha)
                 if not (self.beta == -1 and self.gama == -1):
                     out2 = aggregate_index(x0[i], self.beta, self.linx[0], self.edge_in_out, self.linx[1], self.edge_out_in, self.Intersect_beta, self.Union_beta)
-                    out3 = aggregate_index(x0[i], self.gama, self.linx[2], self.edge_in_in, self.linx[3], self.edge_out_out, self.Intersect_gama, self.Union_gama)
+                    out3 = aggregate_index(x0[i], self.gama, self.linx[2], self.edge_in_in, self.linx[3], self.edge_out_out, self.Intersect_gama, self.Union_gama, self.coef)
                 else:
                     out2 = out3 = torch.zeros_like(out1)
 
@@ -2177,14 +2180,17 @@ def get_higher_edge_index(edge_index, num_nodes, rm_gen_sLoop=0):
 
 
 
-def aggregate(x, alpha, lin0, adj0, lin1, adj1,  intersection, union, inci_norm='inci_norm'):
+def aggregate(x, alpha, lin0, adj0, lin1, adj1,  intersection, union, coef=1, inci_norm='inci_norm'):
+    if coef == 0:
+        coef = 1
     if alpha == 2:
         out = lin0(union @ x)
     elif alpha == 3:
         out = lin0(intersection @ x)
     else:
-        m = lin0(x)
-        m_ = lin1(x)
+        # m = lin0(x)
+        # m_ = lin1(x)
+        # out0_ = adj1 @ m_
 
         # row_indices0, col_indices0, values0 = adj0.coo()
         # adj0 = SparseTensor(
@@ -2200,7 +2206,7 @@ def aggregate(x, alpha, lin0, adj0, lin1, adj1,  intersection, union, inci_norm=
         #     value=values1,
         #     sparse_sizes=(adj1.sparse_sizes()[1], adj1.sparse_sizes()[0])
         # )
-        out0_= adj1 @ m_
+
         # try:
         #     nonzero_values_rate0 = (torch.count_nonzero(adj0.storage.value()) / adj0.storage.value().numel()) * 100
         #     nonzero_values_rate1 = (torch.count_nonzero(adj1.storage.value()) / adj1.storage.value().numel()) * 100
@@ -2210,13 +2216,13 @@ def aggregate(x, alpha, lin0, adj0, lin1, adj1,  intersection, union, inci_norm=
         #     pass
 
         # alpha = 1-alpha
-        # out = 0.5*(alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
-        # out = 0.05*(alpha * lin1(adj0 @ x) + (1 - alpha) * lin0(adj1 @ x))  # TODO reverse lin0 and lin1
+        # out = 0.3*(alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
+        out = coef*(alpha * lin1(adj0 @ x) + (1 - alpha) * lin0(adj1 @ x))  # TODO reverse lin0 and lin1
 
         # out = 0.5*(1+alpha)*((1 - alpha) * lin0(adj0 @ x) + alpha * lin1(adj1 @ x))     # TODO
         # out = ((1 - alpha) * lin0(adj0 @ x) + alpha * lin1(adj1 @ x))     # TODO
 
-        out = 0.5*(1+alpha)*(alpha * (adj0 @ lin0(x)) + (1 - alpha) * (adj1 @ lin1(x)))
+        # out = 0.5*(1+alpha)*(alpha * (adj0 @ lin0(x)) + (1-alpha) * (adj1 @ lin1(x)))
         # out = 0.05*(alpha * (adj0 @ lin1(x)) + (1 - alpha) * (adj1 @ lin0(x)))   # TODO reverse lin0 and lin1
 
         # m = lin0(x)
@@ -2622,14 +2628,14 @@ def directed_norm(adj, rm_gen_sLoop=True):
     # Compute normalizations
     in_deg_inv_sqrt = in_deg.pow(-0.5)
     out_deg_inv_sqrt = out_deg.pow(-0.5)
-    # in_deg_inv_sqrt[in_deg_inv_sqrt.isinf()] = 0
-    in_deg_inv_sqrt[in_deg_inv_sqrt.isinf()] = 1   # TODO Qin
-    # out_deg_inv_sqrt[out_deg_inv_sqrt.isinf()] = 0
-    out_deg_inv_sqrt[out_deg_inv_sqrt.isinf()] = 1   # TODO Qin
+    in_deg_inv_sqrt[in_deg_inv_sqrt.isinf()] = 0
+    # in_deg_inv_sqrt[in_deg_inv_sqrt.isinf()] = 1   # TODO Qin
+    out_deg_inv_sqrt[out_deg_inv_sqrt.isinf()] = 0
+    # out_deg_inv_sqrt[out_deg_inv_sqrt.isinf()] = 1   # TODO Qin
 
     # Create normalized edge weights
     edge_weight = out_deg_inv_sqrt[edge_index[0]] * in_deg_inv_sqrt[edge_index[1]]  # origin
-    edge_weight = out_deg_inv_sqrt[edge_index[1]] * in_deg_inv_sqrt[edge_index[0]]  # TODO test Qin
+    # edge_weight = out_deg_inv_sqrt[edge_index[1]] * in_deg_inv_sqrt[edge_index[0]]  # TODO test Qin
 
     # Create new normalized sparse tensor
     return SparseTensor(
