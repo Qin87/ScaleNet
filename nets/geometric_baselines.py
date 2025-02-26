@@ -2209,15 +2209,15 @@ def aggregate(x, alpha, lin0, adj0, lin1, adj1,  intersection, union, inci_norm=
         # except:
         #     pass
 
-        alpha = 1-alpha
+        # alpha = 1-alpha
         # out = 0.5*(alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
-        # out = 1*(alpha * lin1(adj0 @ x) + (1 - alpha) * lin0(adj1 @ x))  # TODO reverse lin0 and lin1
+        # out = 0.05*(alpha * lin1(adj0 @ x) + (1 - alpha) * lin0(adj1 @ x))  # TODO reverse lin0 and lin1
 
         # out = 0.5*(1+alpha)*((1 - alpha) * lin0(adj0 @ x) + alpha * lin1(adj1 @ x))     # TODO
         # out = ((1 - alpha) * lin0(adj0 @ x) + alpha * lin1(adj1 @ x))     # TODO
 
-        # out = 0.5*(1+alpha)*(alpha * (adj0 @ lin0(x)) + (1 - alpha) * (adj1 @ lin1(x)))
-        out = 1*(alpha * (adj0 @ lin1(x)) + (1 - alpha) * (adj1 @ lin0(x)))   # TODO reverse lin0 and lin1
+        out = 0.5*(1+alpha)*(alpha * (adj0 @ lin0(x)) + (1 - alpha) * (adj1 @ lin1(x)))
+        # out = 0.05*(alpha * (adj0 @ lin1(x)) + (1 - alpha) * (adj1 @ lin0(x)))   # TODO reverse lin0 and lin1
 
         # m = lin0(x)
         # out = 0.5*(1+alpha)*(alpha * (adj0 @ m) + (1 - alpha) * lin1(adj1 @ x))
@@ -2628,8 +2628,8 @@ def directed_norm(adj, rm_gen_sLoop=True):
     out_deg_inv_sqrt[out_deg_inv_sqrt.isinf()] = 1   # TODO Qin
 
     # Create normalized edge weights
-    # edge_weight = out_deg_inv_sqrt[edge_index[0]] * in_deg_inv_sqrt[edge_index[1]]  # origin
-    edge_weight = out_deg_inv_sqrt[edge_index[1]] * in_deg_inv_sqrt[edge_index[0]]  # TODO Qin
+    edge_weight = out_deg_inv_sqrt[edge_index[0]] * in_deg_inv_sqrt[edge_index[1]]  # origin
+    edge_weight = out_deg_inv_sqrt[edge_index[1]] * in_deg_inv_sqrt[edge_index[0]]  # TODO test Qin
 
     # Create new normalized sparse tensor
     return SparseTensor(

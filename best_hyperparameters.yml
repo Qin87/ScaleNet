@@ -134,7 +134,7 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   has_scheduler: 1
   feat_dim: 128
   conv_type: "dir-gcn"
-#  inci_norm: "dir"
+  inci_norm: "dir"
   dropout: 0.0  # 0.5(acc65), 0.0(acc75)
   nonlinear: 1   # on diff in small layer, but deeper differs great, 0 is worse
   net: ScaleNet
@@ -145,7 +145,7 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   First_self_loop: 0
   jk: 'max'
   jk_inner: 0
-  alphaDir: 0
+  alphaDir: 1
 #  betaDir: 1
 #  gamaDir: 1
   seed: 101   # tried 2099,
