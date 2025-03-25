@@ -29,7 +29,8 @@ Specify the name of the dataset you want to use. The available datasets are cate
   - **Assortative Graph**:
     - `citeseer/`
     - `cora_ml/`
-    - `WikiCS/`
+    - `WikiCS/`[//]: # (## Citation)
+
     - `telegram/`
     - `dgl/pubmed`
   
@@ -119,9 +120,4 @@ MIT License
 
 The code is implemented based on [GraphSHA](https://github.com/wenzhilics/GraphSHA), [DiGCN](https://github.com/flyingtango/DiGCN),  [DirGNN](https://github.com/emalgorithm/directed-graph-neural-network)and 
 [MagNet](https://github.com/matthew-hirn/magnet).
-
-[//]: # (## Citation)
-
-[//]: # ()
-[//]: # (If you find this work is helpful to your research, please consider citing our paper:Jiang, Qin, et al. "Scale Invariance of Graph Neural Networks." arXiv preprint arXiv:2411.19392 (2024).)
 
