@@ -118,8 +118,5 @@ MIT License
 The code is implemented based on [GraphSHA](https://github.com/wenzhilics/GraphSHA), [DiGCN](https://github.com/flyingtango/DiGCN),  [DirGNN](https://github.com/emalgorithm/directed-graph-neural-network)and 
 [MagNet](https://github.com/matthew-hirn/magnet).
 
-[//]: # (## Citation)
 
-[//]: # ()
-[//]: # (If you find this work is helpful to your research, please consider citing our paper:???)
 

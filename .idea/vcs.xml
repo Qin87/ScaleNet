@@ -3,20 +3,5 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/dgl" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/dgl/third_party/GKlib" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/dgl/third_party/METIS" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/dgl/third_party/cccl" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/dgl/third_party/cuco" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/dgl/third_party/dlpack" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/dgl/third_party/dmlc-core" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/dgl/third_party/googletest" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/dgl/third_party/liburing" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/dgl/third_party/libxsmm" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/dgl/third_party/nanoflann" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/dgl/third_party/pcg" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/dgl/third_party/phmap" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/dgl/third_party/taskflow" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/dgl/third_party/tsl_robin_map" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/mamba" vcs="Git" />
   </component>
 </project>
