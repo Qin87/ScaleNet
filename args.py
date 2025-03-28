@@ -104,7 +104,7 @@ def parse_args():
     parser.add_argument('--to_undirected', '-tud', type=int, default=0, help='if convert graph to undirected')
     parser.add_argument('--to_reverse_edge', '-tre', type=int, default=0, help='if reverse direction of edges')
     parser.add_argument('--rm_bidirect_edge', '-rbe', type=int, default=0, help='make all edges directed')
-    parser.add_argument('--Ak', '-Ak', type=int, default=2, help='use A^k as adjacency matrix, 0 or 1 is not')
+    parser.add_argument('--Ak', '-Ak', type=int, default=1, help='use A^k as adjacency matrix, 0 or 1 is not')
     parser.add_argument('--num_edge', '-nedge', type=int, default=0, help='1 to print number of edges of Ak')
 
     parser.add_argument('--feat_proximity', action='store_true', help='filter out non similar nodes in scaled graph')
