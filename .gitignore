@@ -14,3 +14,4 @@
 *.idea
 *.iml
 /data/film
+!figureDraw/tel_400_noloop.png

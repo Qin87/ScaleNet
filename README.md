@@ -1,3 +1,11 @@
+The image below shows the performance as the number of layers increases 
+for the Telegram dataset, without adding self-loops. 
+
+The model used is [ScaleNet](https://github.com/Qin87/ScaleNet/tree/July25), 
+which is equivalent to [DirGNN](https://github.com/emalgorithm/directed-graph-neural-network) with bi-directional aggregation, 
+but without the jumping-knowledge function. 
+This ensures that the performance reflects the effect of exactly the specified number of layers.
+
 ![tel_400_noloop.png](figureDraw/tel_400_noloop.png)
 
 #  MPNN Demystified
@@ -57,12 +65,17 @@ Specify the name of the dataset you want to use. The available datasets are cate
 ### How to Run
 
 - **(1) To run and get the result in Figure 3**:
-  - Comment out relative settings in best_hyperparameters.yml, then run: 
+  - For Chameleon and Squirrel dataset:
+    - Comment out relative settings in best_hyperparameters.yml, then run: 
 
-    ```
-    python3 main.py  --net='GCN'   --to_reverse_edge=1 --use_best_hyperparams=1   --Dataset='WikipediaNetwork/chameleon'  --add_selfloop=0
-    ```
-  - Then copy the results to ./figureDraw/nochange_draw.py and run to draw figures.
+      ```
+      python3 main.py  --net='GCN'   --to_reverse_edge=1 --use_best_hyperparams=1   --Dataset='WikipediaNetwork/chameleon'  --add_selfloop=0
+      ```
+    - Then copy the results to ./figureDraw/nochange_draw.py and run to draw figures.
+  - For Telegram dataset:
+    - Comment out relative settings in best_hyperparameters.yml, then run this batch file:
+      ./nest_tel.h
+    - Then copy the results to ./figureDraw/tele_layer.py and run to draw figures.
   
 - **(2) To run and get the results in Figure 4**:
  - To get the blue line of growing layers:
