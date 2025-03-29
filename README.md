@@ -1,3 +1,5 @@
+![tel_400_noloop.png](figureDraw/tel_400_noloop.png)
+
 #  MPNN Demystified
 Our paper [Demystifying MPNNs: Message Passing as Merely Efficient Matrix Multiplication].
 
