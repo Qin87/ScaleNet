@@ -69,7 +69,7 @@ Specify the name of the dataset you want to use. The available datasets are cate
     - Comment out relative settings in best_hyperparameters.yml, then run: 
 
       ```
-      python3 main.py  --net='GCN'   --to_reverse_edge=1 --use_best_hyperparams=1   --Dataset='WikipediaNetwork/chameleon'  --add_selfloop=0
+      python3 main.py  --net='ScaleNet'  --use_best_hyperparams=1   --Dataset='WikipediaNetwork/chameleon'  --add_selfloop=0
       ```
     - Then copy the results to ./figureDraw/nochange_draw.py and run to draw figures.
   - For Telegram dataset:
