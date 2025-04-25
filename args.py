@@ -7,7 +7,7 @@ def parse_args():
     parser.add_argument("--all1d", type=int, help="feature dimention in all 1, 0 is keep original d ", default=1)
 
     parser.add_argument("--degfea", type=int, help="degree as feature: in-degree 1, out-degree -1, both 2, no 0  ", default=0)
-    parser.add_argument("--use_best_hyperparams", type=int, default=0, help="whether use parameters in best_hyperparameters.yml")
+    parser.add_argument("--use_best_hyperparams", type=int, default=1, help="whether use parameters in best_hyperparameters.yml")
     parser.add_argument('--GPU', type=int, default=0, help='GPU device')
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
     parser.add_argument("--mlpIn", type=int, help="in ScaleNet, whether include mlp ", default=0)
@@ -43,11 +43,11 @@ def parse_args():
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc,'
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG)''Sym, 1ym')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='citeseer/', help='citeseer/ , cora_ml/, dgl/pubmed, telegram/,  WikiCS/, dgl/cora ,film/'
+    parser.add_argument('--Dataset', type=str, default='WikipediaNetwork/chameleon', help='citeseer/ , cora_ml/, dgl/pubmed, telegram/,  WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WikipediaNetwork/crocodile, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/, Amazon-Photo, Amazon-citeseer/Computers, malnet/tiny, dgl/Flickr, ')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout prob')
-    parser.add_argument('--layer', type=int, default=500, help='number of layers (2 or 3), default: 2')
+    parser.add_argument('--layer', type=int, default=10, help='number of layers (2 or 3), default: 2')
     parser.add_argument('--alpha', type=float, default=0.1, help='alpha teleport prob')
 
     parser.add_argument('-AP_K', '--AP_K', default=10, type=int)  # for APPNP
@@ -100,11 +100,11 @@ def parse_args():
     parser.add_argument("--has_1_order", type=int, help="Whether Ai* has 1-order edges:0/1", default=0)
     parser.add_argument('--paraD', action='store_true', help='ib is weighted sum')
     parser.add_argument('--gcn_norm', '-gcnnorm', type=int, default=1, help='GCNConv forward, normalize edge_index during training')
-    parser.add_argument('--add_selfloop',  type=int, default=1, help='add selfloop in before model 1, remove -1, 0')
+    parser.add_argument('--add_selfloop',  type=int, default=0, help='add selfloop in before model 1, remove -1, 0')
     parser.add_argument('--to_undirected', '-tud', type=int, default=0, help='if convert graph to undirected')
     parser.add_argument('--to_reverse_edge', '-tre', type=int, default=0, help='if reverse direction of edges')
     parser.add_argument('--rm_bidirect_edge', '-rbe', type=int, default=0, help='make all edges directed')
-    parser.add_argument('--Ak', '-Ak', type=int, default=1, help='use A^k as adjacency matrix, 0 or 1 is not')
+    parser.add_argument('--Ak', '-Ak', type=int, default=0, help='use A^k as adjacency matrix, 0 or 1 is not')
     parser.add_argument('--num_edge', '-nedge', type=int, default=0, help='1 to print number of edges of Ak')
 
     parser.add_argument('--feat_proximity', action='store_true', help='filter out non similar nodes in scaled graph')

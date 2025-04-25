@@ -2417,9 +2417,9 @@ def aggregate(x, alpha, lin0, adj0, lin1, adj1,  intersection, union, inci_norm=
     elif alpha == 3:
         out = lin0(intersection @ x)
     else:
-        # out = 0.5*(1+alpha)*(alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
-        m = lin0(x)
-        out = 0.5*(1+alpha)*(alpha * (adj0 @ m) + (1 - alpha) * lin1(adj1 @ x))
+        out = 1*(1+alpha)*(alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
+        # m = lin0(x)
+        # out = 0.5*(1+alpha)*(alpha * (adj0 @ m) + (1 - alpha) * lin1(adj1 @ x))
         # out = (alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
 
     return out
