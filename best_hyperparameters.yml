@@ -18,7 +18,7 @@ telegram/:
 #  jk: 'max'
   dropout: 0.0
   jk_inner: 0
-  alphaDir: 0.5     # 0.5, 0.2(94.8)
+#  alphaDir: 0.5     # 0.5, 0.2(94.8)
   betaDir: -1
   gamaDir: -1
   seed: 101   # 96.4±2.5(1), 94.8±2.9(11), 97.0±2.2(101)
@@ -138,16 +138,16 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   dropout: 0.0  # 0.5(acc65), 0.0(acc75)
   nonlinear: 1   # on diff in small layer, but deeper differs great, 0 is worse
   net: ScaleNet
-  layer: 5      # 80.1
+#  layer: 5      # 80.1
   lr: 0.005
   normalize: 1
   BN_model: 0  #  without layerNorm, very bad(but Dir-GNN prefer no LN)
   First_self_loop: 0
-  jk: 'max'
+#  jk: 'max'
   jk_inner: 0
   alphaDir: 1
-  betaDir: 1
-  gamaDir: 1
+#  betaDir: 1
+#  gamaDir: 1
   seed: 101   # tried 2099,
 
 # (1_1_-1) 74.7±2.4,   (1,-1,-1) 75.2±1.7
@@ -163,7 +163,7 @@ WikipediaNetwork/squirrel:
   inci_norm: "dir"  # 0(70.5),
   nonlinear: 1
   dropout: 0.0  # 0.5(acc72.7), 0.0(acc75)
-#  net: ScaleNet
+  net: ScaleNet
 #  layer: 6
   lr: 0.01
   normalize: 1
@@ -172,8 +172,8 @@ WikipediaNetwork/squirrel:
 #  jk: 'max'
   jk_inner: 0
   alphaDir: 1   # best is 1,1,-1
-  betaDir: 1    #-1
-  gamaDir: 1    # -1
+#  betaDir: 1    #-1
+#  gamaDir: 1    # -1
   seed: 11
 
 # 91.23 ± 0.32(0.5,-1,-1), 92.0±0.4(0.5,-1,-1),
