@@ -198,11 +198,12 @@ directed-roman-empire/:
 
 ogbn-arxiv/:
   nonlinear: 1
+  net: ScaleNet
 #  conv_type: dir-sage
   layer: 4    # 69.68(4layer)
   alphaDir: 0.5
-#  betaDir: -1     # OOM
-#  gamaDir: -1     # OOM
+  betaDir: -1     # OOM
+  gamaDir: -1     # OOM
 
 
 WebKB/Cornell:
