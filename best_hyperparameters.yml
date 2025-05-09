@@ -7,7 +7,7 @@ telegram/:
   NotImproved: 410
   epoch: 1500
   patience: 80
-  net: ScaleNet         # 1iGi3
+#  net: ScaleNet         # 1iGi3
   conv_type: "dir-gcn"
   nonlinear: 1
   layer: 4
@@ -134,10 +134,10 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   has_scheduler: 1
   feat_dim: 128
   conv_type: "dir-gcn"
-#  inci_norm: "dir"
+  inci_norm: "dir"
   dropout: 0.0  # 0.5(acc65), 0.0(acc75)
   nonlinear: 1   # on diff in small layer, but deeper differs great, 0 is worse
-  net: ScaleNet
+#  net: ScaleNet
   layer: 5      # 80.1
   lr: 0.005
 #  normalize: 1  # GCN without this
@@ -146,8 +146,8 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   jk: 'max'
   jk_inner: 0
   alphaDir: 1
-#  betaDir: 1
-#  gamaDir: 1
+  betaDir: 1
+  gamaDir: 1
   seed: 101   # tried 2099,
 
 
@@ -198,11 +198,11 @@ directed-roman-empire/:
 
 ogbn-arxiv/:
   nonlinear: 1
-  conv_type: dir-sage
+#  conv_type: dir-sage
   layer: 4    # 69.68(4layer)
   alphaDir: 0.5
-  betaDir: -1     # OOM
-  gamaDir: -1     # OOM
+#  betaDir: -1     # OOM
+#  gamaDir: -1     # OOM
 
 
 WebKB/Cornell:
