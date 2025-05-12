@@ -935,56 +935,90 @@ class DirGCNConv_2(torch.nn.Module):
         return x
 
 
-class AA_GNN(torch.nn.Module):
-    def __init__(self, input_dim, output_dim, args):
+# class AA_GNN(torch.nn.Module):
+#     def __init__(self, input_dim, output_dim, args):
+#         super().__init__()
+#         hidden_dim = output_dim
+#         self.gcn1 = GCNConv_inciNormOption(input_dim, hidden_dim, args)
+#         self.gcn2 = GCNConv_inciNormOption(hidden_dim, output_dim, args)
+#
+#     def forward(self, x, edge_index):
+#         x1 = self.gcn1(x, edge_index)      # First layer (1-hop)
+#         x2 = self.gcn2(x1, edge_index)     # Second layer (2-hop)
+#         return x2
+#
+# class AtA_GNN(torch.nn.Module):
+#     def __init__(self, input_dim, output_dim, args):
+#         super().__init__()
+#         hidden_dim = output_dim
+#         self.gcn1 = GCNConv_inciNormOption(input_dim, hidden_dim, args)
+#         self.gcn2 = GCNConv_inciNormOption(hidden_dim, output_dim, args)
+#
+#     def forward(self, x, edge_index):
+#         edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
+#         x1 = self.gcn1(x, edge_index_t)      # First layer (1-hop)
+#         x2 = self.gcn2(x1, edge_index)     # Second layer (2-hop)
+#         return x2
+#
+# class AAt_GNN(torch.nn.Module):
+#     def __init__(self, input_dim, output_dim, args):
+#         super().__init__()
+#         hidden_dim = output_dim
+#         self.gcn1 = GCNConv_inciNormOption(input_dim, hidden_dim, args)
+#         self.gcn2 = GCNConv_inciNormOption(hidden_dim, output_dim, args)
+#
+#     def forward(self, x, edge_index):
+#         edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
+#         x1 = self.gcn1(x, edge_index)
+#         x2 = self.gcn2(x1, edge_index_t)
+#         return x2
+#
+# class AtAt_GNN(torch.nn.Module):
+#     def __init__(self, input_dim, output_dim, args):
+#         super().__init__()
+#         hidden_dim = output_dim
+#         self.gcn1 = GCNConv_inciNormOption(input_dim, hidden_dim, args)
+#         self.gcn2 = GCNConv_inciNormOption(hidden_dim, output_dim, args)
+#
+#     def forward(self, x, edge_index):
+#         edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
+#         x1 = self.gcn1(x, edge_index_t)
+#         x2 = self.gcn2(x1, edge_index_t)
+#         return x2
+
+def get_conv_layer(input_dim, output_dim, args):
+    """Helper to select convolution type based on args"""
+    if args.conv_type == 'dir-sage':
+        return SAGEConv(input_dim, output_dim, root_weight=True)
+    elif args.conv_type == 'dir-gcn':
+        return GCNConv_inciNormOption(input_dim, output_dim, args)
+    elif args.conv_type == 'dir-gat':
+        heads = 1
+        return GATConv(input_dim, output_dim*heads, heads=heads, add_self_loops=False)
+    else:
+        raise NotImplementedError
+
+class Base2LayerGNN(torch.nn.Module):
+    """Generic 2-layer GNN with configurable edge direction handling"""
+
+    def __init__(self, input_dim, output_dim, args,
+                 edge1_fn=lambda x: x, edge2_fn=lambda x: x):
         super().__init__()
+        self.edge1_fn = edge1_fn
+        self.edge2_fn = edge2_fn
         hidden_dim = output_dim
-        self.gcn1 = GCNConv_inciNormOption(input_dim, hidden_dim, args)
-        self.gcn2 = GCNConv_inciNormOption(hidden_dim, output_dim, args)
+
+        self.gnn1 = get_conv_layer(input_dim, hidden_dim, args)
+        self.gnn2 = get_conv_layer(hidden_dim, output_dim, args)
 
     def forward(self, x, edge_index):
-        x1 = self.gcn1(x, edge_index)      # First layer (1-hop)
-        x2 = self.gcn2(x1, edge_index)     # Second layer (2-hop)
+        x1 = self.gnn1(x, edge_index)
+        x2 = self.gnn2(x1, edge_index)
         return x2
 
-class AtA_GNN(torch.nn.Module):
-    def __init__(self, input_dim, output_dim, args):
-        super().__init__()
-        hidden_dim = output_dim
-        self.gcn1 = GCNConv_inciNormOption(input_dim, hidden_dim, args)
-        self.gcn2 = GCNConv_inciNormOption(hidden_dim, output_dim, args)
 
-    def forward(self, x, edge_index):
-        edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
-        x1 = self.gcn1(x, edge_index_t)      # First layer (1-hop)
-        x2 = self.gcn2(x1, edge_index)     # Second layer (2-hop)
-        return x2
-
-class AAt_GNN(torch.nn.Module):
-    def __init__(self, input_dim, output_dim, args):
-        super().__init__()
-        hidden_dim = output_dim
-        self.gcn1 = GCNConv_inciNormOption(input_dim, hidden_dim, args)
-        self.gcn2 = GCNConv_inciNormOption(hidden_dim, output_dim, args)
-
-    def forward(self, x, edge_index):
-        edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
-        x1 = self.gcn1(x, edge_index)
-        x2 = self.gcn2(x1, edge_index_t)
-        return x2
-
-class AtAt_GNN(torch.nn.Module):
-    def __init__(self, input_dim, output_dim, args):
-        super().__init__()
-        hidden_dim = output_dim
-        self.gcn1 = GCNConv_inciNormOption(input_dim, hidden_dim, args)
-        self.gcn2 = GCNConv_inciNormOption(hidden_dim, output_dim, args)
-
-    def forward(self, x, edge_index):
-        edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
-        x1 = self.gcn1(x, edge_index_t)
-        x2 = self.gcn2(x1, edge_index_t)
-        return x2
+def transpose_edge_index(edge_index):
+    return torch.stack([edge_index[1], edge_index[0]], dim=0)
 
 class DirGCNConv_layer(torch.nn.Module):
     def __init__(self, input_dim, output_dim, args):
@@ -994,23 +1028,28 @@ class DirGCNConv_layer(torch.nn.Module):
         self.output_dim = output_dim
         self.coef = args.coef_agg
 
-        if args.conv_type == 'dir-gcn':
-            # 1-layer GCN
-            self.lin_src_to_dst = GCNConv_inciNormOption(input_dim, output_dim, args)
-            self.lin_dst_to_src = GCNConv_inciNormOption(input_dim, output_dim, args)
+        self.lin_src_to_dst = get_conv_layer(input_dim, output_dim, args)
+        self.lin_dst_to_src = get_conv_layer(input_dim, output_dim, args)
 
-            # 2-layer GCN
-            self.lin_in_in = AA_GNN(input_dim, output_dim, args)
-            self.lin_out_out = AtAt_GNN(input_dim, output_dim, args)
+        # 2-layer components
+        self.lin_in_in = Base2LayerGNN(input_dim, output_dim, args)
+        self.lin_out_out = Base2LayerGNN(
+            input_dim, output_dim, args,
+            edge1_fn=transpose_edge_index,
+            edge2_fn=transpose_edge_index
+        )
+        self.lin_in_out = Base2LayerGNN(
+            input_dim, output_dim, args,
+            edge2_fn=transpose_edge_index
+        )
+        self.lin_out_in = Base2LayerGNN(
+            input_dim, output_dim, args,
+            edge1_fn=transpose_edge_index
+        )
+        # self.linx = nn.ModuleList([Linear(input_dim, output_dim) for i in range(4)])
 
-            self.lin_in_out = AAt_GNN(input_dim, output_dim, args)
-            self.lin_out_in = AtA_GNN(input_dim, output_dim, args)
-
-
-            self.linx = nn.ModuleList([Linear(input_dim, output_dim) for i in range(4)])
-
-            self.batch_norm2 = nn.BatchNorm1d(output_dim)
-            self.conv2_1 = Linear(output_dim*2, output_dim)
+        self.batch_norm2 = nn.BatchNorm1d(output_dim)
+        self.conv2_1 = Linear(output_dim*2, output_dim)
 
         self.First_self_loop = args.First_self_loop
 
@@ -1043,55 +1082,55 @@ class DirGCNConv_layer(torch.nn.Module):
         row, col = edge_index
         num_nodes = x.shape[0]
 
-        if self.conv_type == 'dir-gcn':
-            edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
-            alpha = self.alpha
-            lin0 = self.lin_src_to_dst
-            lin1 = self.lin_dst_to_src
-            out1 = (1 + alpha) * ((1 - alpha) * lin0(x, edge_index) + alpha * lin1(x, edge_index_t))
-            if not (self.beta == -1 and self.gama == -1):
-                if self.beta != -1:
-                    lin0 = self.lin_in_in
-                    lin1 = self.lin_out_out
-                    out2 = (1 + alpha) * ((1 - alpha) * lin0(x, edge_index) + alpha * lin1(x, edge_index))
-                else:
-                    out2 = torch.zeros_like(out1)
-                if self.gama != -1:
-                    lin0 = self.lin_in_out
-                    lin1 = self.lin_out_in
-                    out3 = (1 + alpha) * ((1 - alpha) * lin0(x, edge_index) + alpha * lin1(x, edge_index))
-                else:
-                    out3 = torch.zeros_like(out1)
-
+        # if self.conv_type == 'dir-gcn':
+        edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
+        alpha = self.alpha
+        lin0 = self.lin_src_to_dst
+        lin1 = self.lin_dst_to_src
+        out1 = (1 + alpha) * ((1 - alpha) * lin0(x, edge_index) + alpha * lin1(x, edge_index_t))
+        if not (self.beta == -1 and self.gama == -1):
+            if self.beta != -1:
+                lin0 = self.lin_in_in
+                lin1 = self.lin_out_out
+                out2 = (1 + alpha) * ((1 - alpha) * lin0(x, edge_index) + alpha * lin1(x, edge_index))
             else:
                 out2 = torch.zeros_like(out1)
-                out3 = torch.zeros_like(out1)
-
-
-        elif self.conv_type in ['dir-gat', 'dir-sage']:
-            edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
-
-            out1 = aggregate_index(x, self.alpha, self.lin_src_to_dst, edge_index, self.lin_dst_to_src, edge_index_t, self.Intersect_alpha, self.Union_alpha)
-            if not (self.beta == -1 and self.gama == -1):
-                if self.beta != -1:
-                    out2 = aggregate_index(x, self.beta, self.linx[0], self.edge_in_out, self.linx[1], self.edge_out_in, self.Intersect_beta, self.Union_beta)
-                else:
-                    out2 = torch.zeros_like(out1)
-                if self.gama != -1:
-                    out3 = aggregate_index(x, self.gama, self.linx[2], self.edge_in_in, self.linx[3], self.edge_out_out, self.Intersect_gama, self.Union_gama)
-                else:
-                    out3 = torch.zeros_like(out1)
-
+            if self.gama != -1:
+                lin0 = self.lin_in_out
+                lin1 = self.lin_out_in
+                out3 = (1 + alpha) * ((1 - alpha) * lin0(x, edge_index) + alpha * lin1(x, edge_index))
             else:
-                out2 = torch.zeros_like(out1)
                 out3 = torch.zeros_like(out1)
 
         else:
-            raise NotImplementedError
+            out2 = torch.zeros_like(out1)
+            out3 = torch.zeros_like(out1)
+
+
+        # elif self.conv_type in ['dir-gat', 'dir-sage']:
+        #     edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
+        #
+        #     out1 = aggregate_index(x, self.alpha, self.lin_src_to_dst, edge_index, self.lin_dst_to_src, edge_index_t, self.Intersect_alpha, self.Union_alpha)
+        #     if not (self.beta == -1 and self.gama == -1):
+        #         if self.beta != -1:
+        #             out2 = aggregate_index(x, self.beta, self.linx[0], self.edge_in_out, self.linx[1], self.edge_out_in, self.Intersect_beta, self.Union_beta)
+        #         else:
+        #             out2 = torch.zeros_like(out1)
+        #         if self.gama != -1:
+        #             out3 = aggregate_index(x, self.gama, self.linx[2], self.edge_in_in, self.linx[3], self.edge_out_out, self.Intersect_gama, self.Union_gama)
+        #         else:
+        #             out3 = torch.zeros_like(out1)
+        #
+        #     else:
+        #         out2 = torch.zeros_like(out1)
+        #         out3 = torch.zeros_like(out1)
+        #
+        # else:
+        #     raise NotImplementedError
 
         xs = [out1, out2, out3]
 
-        x = 0.5*sum(out for out in xs)
+        x = self.coef *sum(out for out in xs)
 
         if self.BN_model:
             x = self.batch_norm2(x)

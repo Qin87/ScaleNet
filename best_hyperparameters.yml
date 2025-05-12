@@ -8,7 +8,7 @@ telegram/:
   epoch: 1500
   patience: 80
 #  net: ScaleNet         # 1iGi3
-  conv_type: "dir-gcn"
+#  conv_type: "dir-gcn"
   nonlinear: 1
   layer: 4
   lr: 0.01
@@ -19,8 +19,8 @@ telegram/:
   dropout: 0.0
   jk_inner: 0
 #  alphaDir: 0.5     # 0.5, 0.2(94.8)
-  betaDir: -1
-  gamaDir: -1
+#  betaDir: -1
+#  gamaDir: -1
   seed: 101   # 96.4±2.5(1), 94.8±2.9(11), 97.0±2.2(101)
 
 
@@ -198,12 +198,12 @@ directed-roman-empire/:
 
 ogbn-arxiv/:
   nonlinear: 1
-  net: ScaleNet
-  conv_type: dir-sage
-  layer: 4    # 69.68(4layer)
+#  net: ScaleNet
+#  conv_type: dir-sage
+#  layer: 4    # 69.68(4layer)
   alphaDir: 0.5
-  betaDir: -1     # OOM
-  gamaDir: -1     # OOM
+#  betaDir: -1     # OOM
+#  gamaDir: -1     # OOM
 
 
 WebKB/Cornell:
