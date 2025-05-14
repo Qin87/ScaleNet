@@ -177,7 +177,7 @@ WikipediaNetwork/squirrel:
 #  gamaDir: 1    # -1
   seed: 11
 
-# 91.23 ± 0.32(0.5,-1,-1), 92.0±0.4(0.5,-1,-1),
+# 91.23 ± 0.32(0.5,-1,-1) for Dir-GNN, 92.0±0.4(0.5,-1,-1),
 directed-roman-empire/:
   nonlinear: 1    # must have this, or acc is 85
   has_scheduler: 0
@@ -199,15 +199,31 @@ directed-roman-empire/:
 ogbn-arxiv/:
   nonlinear: 1
 #  net: ScaleNet
-#  conv_type: dir-sage
-#  layer: 4    # 69.68(4layer)
+  conv_type: dir-sage
+  layer: 4    # 69.68(4layer)
   alphaDir: 0.5
-#  betaDir: -1     # OOM
-#  gamaDir: -1     # OOM
+  betaDir: 0.5     # OOM for ScaleNet
+  gamaDir: 0.5     # OOM for ScaleNet
 
-
+# 64.08 ± 0.26 for dir-GNN
 arxiv-year/:
-  First_self_loop: 0 # just for position, maybe 1 better
+  lr: 0.005
+  feat_dim: 256
+  layer: 6
+  jk: "cat"
+  patience: 200
+  conv_type: "dir-gcn"
+
+
+# 73.95 ± 0.05 for dir-GNN,
+snap-patents/:
+  lr: 0.01
+  feat_dim: 32
+  layer: 5
+  jk: "max"
+  patience: 200
+  normalize: True
+  conv_type: "dir-gcn"
 
 WebKB/Cornell:
   nonlinear: 1
