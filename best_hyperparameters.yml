@@ -206,6 +206,9 @@ ogbn-arxiv/:
 #  gamaDir: -1     # OOM
 
 
+arxiv-year/:
+  First_self_loop: 0 # just for position, maybe 1 better
+
 WebKB/Cornell:
   nonlinear: 1
   conv_type: dir-sage
