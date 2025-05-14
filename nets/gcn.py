@@ -1052,3 +1052,73 @@ class GCNConv(MessagePassing):
             out = out + self.bias
 
         return out
+
+def gcn_norm(edge_index, edge_weight=None, num_nodes=None, improved=False,
+             add_self_loops=True, flow="source_to_target", dtype=None):
+    '''
+copy from torch-geometric, but they are wrong.
+    '''
+
+    fill_value = 2. if improved else 1.
+
+    if isinstance(edge_index, SparseTensor):
+        assert edge_index.size(0) == edge_index.size(1)
+
+        adj_t = edge_index
+
+        if not adj_t.has_value():
+            adj_t = adj_t.fill_value(1., dtype=dtype)
+        if add_self_loops:
+            adj_t = torch_sparse.fill_diag(adj_t, fill_value)
+
+        idx = 0 if flow == 'source_to_target' else 1
+        deg = torch_sparse.sum(adj_t, dim=idx)  # Qin dim from 1 to 0
+        deg_inv_sqrt = deg.pow_(-0.5)
+        # deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0.)
+        deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 1.)   # TODO
+        adj_t = torch_sparse.mul(adj_t, deg_inv_sqrt.view(-1, 1))
+        adj_t = torch_sparse.mul(adj_t, deg_inv_sqrt.view(1, -1))
+
+        return adj_t
+
+    if is_torch_sparse_tensor(edge_index):
+        assert edge_index.size(0) == edge_index.size(1)
+
+        if edge_index.layout == torch.sparse_csc:
+            raise NotImplementedError("Sparse CSC matrices are not yet "
+                                      "supported in 'gcn_norm'")
+
+        adj_t = edge_index
+        if add_self_loops:
+            adj_t, _ = add_self_loops_fn(adj_t, None, fill_value, num_nodes)
+
+        edge_index, value = to_edge_index(adj_t)
+        row, col = edge_index[0], edge_index[1]
+        idx = col if flow == 'source_to_target' else row
+
+        deg = scatter(value, idx, 0, dim_size=num_nodes, reduce='sum')
+        deg_inv_sqrt = deg.pow_(-0.5)
+        deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0)
+        value = deg_inv_sqrt[row] * value * deg_inv_sqrt[col]
+
+        return set_sparse_value(adj_t, value), None
+
+    assert flow in ['source_to_target', 'target_to_source']
+    num_nodes = maybe_num_nodes(edge_index, num_nodes)
+
+    if add_self_loops:
+        edge_index, edge_weight = add_remaining_self_loops(
+            edge_index, edge_weight, fill_value, num_nodes)
+
+    if edge_weight is None:
+        edge_weight = torch.ones((edge_index.size(1), ), dtype=dtype,
+                                 device=edge_index.device)
+
+    row, col = edge_index[0], edge_index[1]
+    idx = col if flow == 'source_to_target' else row
+    deg = scatter(edge_weight, idx, dim=0, dim_size=num_nodes, reduce='sum')
+    deg_inv_sqrt = deg.pow_(-0.5)   # modifies the tensor in-place (notice the underscore)
+    deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0)
+    edge_weight = deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
+
+    return edge_index, edge_weight

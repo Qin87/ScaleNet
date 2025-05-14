@@ -1,11 +1,11 @@
 #!/bin/bash
 
-net_values="  ScaleLayer "
+net_values="  GCN "
 # layer_values=" 0.05 200 160 150 140 120 110 100 50 40 32 20 16 8 4 2 1 0.5 0.4 0.3 0.2 0.1  0.04 0.03 0.01 0.005 0.001 0.0005 0.00005 5e-6 3e-6 2e-6 1e-6 9e-7 5e-7 5e-8 "
 layer_values="1 2 3 4 5 6 7 "  # 8 9 10 11 12 13 14 15 16 17 18 19 20
 
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'     --net="$net"  'WikipediaNetwork/chameleon'
-Direct_dataset=(   'WikipediaNetwork/chameleon'     )
+Direct_dataset=(   'ogbn-arxiv/'     )
 Direct_dataset_filename=$(echo $Direct_dataset | sed 's/\//_/g')
 generate_timestamp() {
   date +"%d%H%Ms%S"
