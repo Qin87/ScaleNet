@@ -1074,8 +1074,8 @@ copy from torch-geometric, but they are wrong.
         idx = 0 if flow == 'source_to_target' else 1
         deg = torch_sparse.sum(adj_t, dim=idx)  # Qin dim from 1 to 0
         deg_inv_sqrt = deg.pow_(-0.5)
-        # deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0.)
-        deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 1.)   # TODO
+        deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0.)
+        # deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 1.)   #
         adj_t = torch_sparse.mul(adj_t, deg_inv_sqrt.view(-1, 1))
         adj_t = torch_sparse.mul(adj_t, deg_inv_sqrt.view(1, -1))
 
