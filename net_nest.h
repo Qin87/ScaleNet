@@ -5,7 +5,7 @@ net_values="  Dir-GNN ScaleLayer "
 layer_values=" 3  "  # 8 9 10 11 12 13 14 15 16 17 18 19 20
 
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'     --net="$net"  'WikipediaNetwork/chameleon'
-Direct_dataset=(   'arxiv-year/'     )
+Direct_dataset=(   'snap-patents/'     )
 Direct_dataset_filename=$(echo $Direct_dataset | sed 's/\//_/g')
 generate_timestamp() {
   date +"%d%H%Ms%S"

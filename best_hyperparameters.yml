@@ -197,6 +197,7 @@ directed-roman-empire/:
 
 
 ogbn-arxiv/:
+  dropout: 0.0
   nonlinear: 1
 #  net: ScaleNet
   conv_type: dir-sage
@@ -207,12 +208,21 @@ ogbn-arxiv/:
 
 # 64.08 ± 0.26 for dir-GNN
 arxiv-year/:
+  nonlinear: 1
+  dropout: 0.0
+  l2: 0  #
   lr: 0.005
   feat_dim: 256
   layer: 6
   jk: "cat"
+  has_scheduler: 1
+  NotImproved: 810
+  epoch: 10000
   patience: 200
   conv_type: "dir-gcn"
+  inci_norm: "dir"
+  betaDir: 0.5     # OOM for ScaleNet
+  gamaDir: 0.5     # OOM for ScaleNet
 
 
 # 73.95 ± 0.05 for dir-GNN,
@@ -224,6 +234,8 @@ snap-patents/:
   patience: 200
   normalize: True
   conv_type: "dir-gcn"
+  betaDir: 0.5     # OOM for ScaleNet
+  gamaDir: 0.5     # OOM for ScaleNet
 
 WebKB/Cornell:
   nonlinear: 1
