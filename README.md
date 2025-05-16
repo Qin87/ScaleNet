@@ -1,7 +1,5 @@
-# MPNN demystified
-After paper [Demystifying MPNNs: Message Passing as Merely Efficient Matrix Multiplication]().
+# ScaleNet
 
-Work better in 2025
 ## Requirements
 
 This repository has been tested with the following packages:
@@ -29,8 +27,7 @@ Specify the name of the dataset you want to use. The available datasets are cate
   - **Assortative Graph**:
     - `citeseer/`
     - `cora_ml/`
-    - `WikiCS/`[//]: # (## Citation)
-
+    - `WikiCS/`
     - `telegram/`
     - `dgl/pubmed`
   
@@ -120,4 +117,8 @@ MIT License
 
 The code is implemented based on [GraphSHA](https://github.com/wenzhilics/GraphSHA), [DiGCN](https://github.com/flyingtango/DiGCN),  [DirGNN](https://github.com/emalgorithm/directed-graph-neural-network)and 
 [MagNet](https://github.com/matthew-hirn/magnet).
+
+[//]: # (## Citation)
+
+[//]: # ()
 
