@@ -942,9 +942,6 @@ class DirGCNConv_2(torch.nn.Module):
 
         if args.conv_type == 'dir-gcn':
             self.lin_src_to_dst = Linear(input_dim, output_dim)
-            # from torch_geometric.nn.dense.linear import Linear
-            # self.lin_src_to_dst = Linear(input_dim, output_dim, bias=False,
-            #               weight_initializer='glorot')
             self.lin_dst_to_src = Linear(input_dim, output_dim)
 
             self.linx = nn.ModuleList([Linear(input_dim, output_dim) for i in range(4)])

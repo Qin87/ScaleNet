@@ -236,7 +236,6 @@ if args.Ak:
 if args.num_edge:
     results = matrix_power_analysis(edges, data_x.shape[0], k_max=20)
 
-
 # result = longest_hop_direct(edges[torch.tensor([1, 0])], data_x.shape[0])
 
 

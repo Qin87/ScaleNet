@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-dataset = 'cite'
+dataset = 'tel'
 
 if dataset is 'cite':
     data_name = 'Citeseer'

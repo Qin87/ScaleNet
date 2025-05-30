@@ -7,7 +7,7 @@ telegram/:
   NotImproved: 410
   epoch: 1500
   patience: 80
-  net: ScaleNet         # 1iGi3
+#  net: ScaleNet         # 1iGi3
   conv_type: "dir-gcn"
   nonlinear: 1
 #  layer: 4
@@ -137,12 +137,12 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   inci_norm: "dir"
   dropout: 0.0  # 0.5(acc65), 0.0(acc75)
   nonlinear: 1   # on diff in small layer, but deeper differs great, 0 is worse
-  net: ScaleNet
+#  net: ScaleNet
 #  layer: 5      # 80.1
   lr: 0.005
   normalize: 1
   BN_model: 0  #  without layerNorm, very bad(but Dir-GNN prefer no LN)
-  First_self_loop: 0
+#  First_self_loop: 0
 #  jk: 'max'
   jk_inner: 0
   alphaDir: 1
