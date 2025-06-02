@@ -22,7 +22,7 @@ for Didataset in "${Direct_dataset[@]}"; do
             log_output="${Didataset//\//_}_${timestamp}_${net}_layer${layer}q${q_value}.log"
 
             # Run the Python script with parameters and log output
-            python3 main.py  --net="$net"  --layer=1  --Ak="$layer" --to_reverse_edge=0 --use_best_hyperparams=1  --add_selfloop=0  --to_undirected=0 \
+            python3 main.py  --net="$net"  --layer=1  --Ak="$layer" --to_reverse_edge=0 --use_best_hyperparams=1  --add_selfloop=1  --to_undirected=0 \
             --Dataset="$Didataset" > "$log_output"
              2>&1
             wait $pid
