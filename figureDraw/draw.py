@@ -274,6 +274,49 @@ elif data== 'Chameleon' and Adj == 'At':
                     1.7, 1.7, 4.3, 6.3, 3.5, 2.4, 2.8, 3.1, 2.8, 2.6]
     noAdd_density = [0.6963, 2.9770, 7.2869, 12.0339, 17.2202, 22.2649, 26.3078, 29.3717, 31.7714, 33.7638, 34.7209, 34.9747, 35.0842, 35.1454, 35.1823, 35.2013, 35.2087, 35.2124, 35.2134, 35.2139]
 
+elif data== 'Squirrel' and Adj == 'A':
+    layers = list(range(1, 21))
+    Add_Ak_mean = [27.0, 27.1, 30.0, 31.0, 31.0, 32.1, 32.0, 31.9, 32.1, 32.2, 32.3, 32.2, 32.3, 32.2, 32.2, 32.2, 32.2, 32.2, 32.2, 32.2, 32.2]
+    Add_Ak_std = [1.0, 1.2, 1.2, 1.0, 1.2, 1.4, 1.1, 1.0, 1.0, 1.0, 1.1, 1.1, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    Add_layer_mean = [62.3, 67.6, 67.2, 66.4, 65.7, 65.5, 65.2, 64.6, 65.0, 64.9,
+                      63.7, 63.5, 62.8, 63.3, 62.9, 62.8, 60.3, 62.0, 60.5, 60.7]
+    Add_layer_std = [2.2, 2.2, 2.4, 2.5, 1.8, 1.9, 2.6, 3.2, 2.4, 2.3,
+                     2.0, 2.0, 2.4, 2.6, 2.6, 2.5, 3.3, 2.8, 3.5, 3.5]
+    Add_density = []
+    noAdd_layer_mean = []
+    noAdd_layer_std = []
+    noAdd_Ak_mean = []
+    noAdd_Ak_std = []
+    noAdd_density = []
+elif data== 'Squirrel' and Adj == 'At':
+    layers = list(range(1, 21))
+    Add_Ak_mean = []
+    Add_layer_mean = []
+    Add_Ak_std = []
+    Add_layer_std = []
+    Add_density = []
+    noAdd_layer_mean = []
+    noAdd_layer_std = []
+    noAdd_Ak_mean = []
+    noAdd_Ak_std = []
+    noAdd_density = []
+elif data== 'Squirrel' and Adj == 'Undirect':
+    layers = list(range(1, 21))
+    Add_Ak_mean = [47.4, 50.7, 49.5, 38.3, 31.3, 21.4, 19.3, 18.9, 18.8, 18.8,
+                 18.8, 18.8, 18.8, 18.8, 18.8, 18.8, 18.8, 18.8, 18.8, 18.8, 18.8]
+    Add_layer_mean = []
+    Add_Ak_std = [1.4, 1.5, 1.3, 2.4, 1.7, 3.4, 0.5, 0.5, 0.6, 0.6,
+                0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+    Add_layer_std = []
+    Add_density = []
+    noAdd_layer_mean = []
+    noAdd_layer_std = []
+    noAdd_Ak_mean = [56.3, 50.6, 49.3, 38.3, 31.2, 21.6, 19.3, 18.9, 18.8, 18.8,
+            18.8, 18.8, 18.8, 18.8, 18.8, 18.8, 18.8, 18.8, 18.8, 18.8]
+    noAdd_Ak_std = [1.8, 2.0, 1.9, 2.5, 1.7, 3.8, 0.5, 0.5, 0.6, 0.6,
+           0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6]
+    noAdd_density = []
+
 
 # Calculate standard error from variance
 std_err_1 = Add_layer_std    # np.sqrt(Add_layer_std)
