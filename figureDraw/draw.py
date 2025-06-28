@@ -203,9 +203,9 @@ elif data== 'WikiCS' and Adj == 'A':
     layers = list(range(1, 16))
     Ak_layers = list(range(1, 5))
     den_layers = list(range(1, 15))
-    Add_Ak_mean = [75.4, 70.7, 70.7, 65.1]
+    Add_Ak_mean = [75.4, 70.7, 65.1]
     Add_layer_mean = [75.4, 76.5, 75.8, 74.9, 73.9, 72.8, 71.9, 70.4, 68.7, 67.6, 67.3, 66.0, 65.4, 64.2, 63.2]
-    Add_Ak_std = [0.4, 0.6, 0.6, 1.0]
+    Add_Ak_std = [0.4, 0.6, 1.0]
     Add_layer_std = [0.4, 0.6, 0.6, 0.7, 0.8, 0.8, 0.8, 0.9, 1.4, 1.2, 1.2, 1.8, 1.4, 1.6, 2.5]
     GCNAk_layers = list(range(1, 3))
     Akmlp_mean = [75.9, 71.1]
