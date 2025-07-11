@@ -110,7 +110,8 @@ Specify the name of the dataset you want to use. The available datasets are cate
   python3 main.py   --net='GCN'   --use_best_hyperparams=1  --inci_norm='row'   --all1=1
   ```
 
-
+### Others
+GCN in this branch used the official GCN, not my revision.
 
 
 ## License
@@ -118,6 +119,6 @@ MIT License
 
 ## Acknowledgements
 
-The code is implemented based on [GraphSHA](https://github.com/wenzhilics/GraphSHA), [DiGCN](https://github.com/flyingtango/DiGCN),  [DirGNN](https://github.com/emalgorithm/directed-graph-neural-network)and 
+The code is implemented based on [DiGCN](https://github.com/flyingtango/DiGCN),  [DirGNN](https://github.com/emalgorithm/directed-graph-neural-network)and 
 [MagNet](https://github.com/matthew-hirn/magnet).
 
