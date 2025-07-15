@@ -1,6 +1,7 @@
 ################################
 # this version to ensure that when I stop the process half way, it still could print the result.
 ################################
+import socket, uuid
 import sys
 import os
 
@@ -241,6 +242,8 @@ if args.num_edge:
 
 with open(log_directory + log_file_name_with_timestamp, 'w') as log_file:
     print(args, file=log_file)
+    print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=log_file)
+    print('Running Branch Dec12', file=log_file)
 
     # result = longest_hop_direct(edges, data_x.shape[0])
     # count = sum(1 for x in result if x > args.layer)

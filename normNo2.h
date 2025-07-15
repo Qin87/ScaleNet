@@ -1,7 +1,7 @@
 #!/bin/bash
 
 net_values="  GCN    "
-layer_values=" 22 23 24 25 26 27 28 29 30 "
+layer_values=" 21 22 23 24 25 26 27 28 29 30 "
 #layer_values="   1  15 16 17 18 19 20 30 40 50 60 70 "
 
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'     --net="$net"  'WikipediaNetwork/chameleon'
@@ -21,7 +21,7 @@ for Didataset in "${Direct_dataset[@]}"; do
             log_output="gcnNorm_${Didataset//\//_}_${timestamp}_${net}_layer${layer}.log"
 
             # Run the Python script with parameters and log output
-            python3 main.py --num_edge=0  --net="$net"  --layer="$layer"  --to_reverse_edge=0  --to_undirected=1  --use_best_hyperparams=1 --gcn_norm=0 \
+            python3 main.py --num_edge=0  --net="$net"  --layer="$layer"  --to_reverse_edge=0  --to_undirected=1  --use_best_hyperparams=1 --gcn_norm=1 \
             --Dataset="$Didataset" > "$log_output"
              2>&1
             wait $pid
