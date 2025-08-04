@@ -1,5 +1,5 @@
 # ScaleNet
-After paper [Scale Invariance of Graph Neural Networks](https://arxiv.org/abs/2411.19392).
+After paper [Scale Invariance of Graph Neural Networks].
 
 ## Requirements
 
