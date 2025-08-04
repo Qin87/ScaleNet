@@ -19,9 +19,7 @@ Performance may vary slightly with different version of Python, GPU, cuda, PyTor
 
 By following these steps, you can resolve compatibility issues and avoid segmentation faults.
 
-
-## Important Hyper-parameters
-### Dataset
+## Dataset
 Specify the name of the dataset you want to use. The available datasets are categorized as follows:
 
 - **Directed Datasets**:
@@ -36,7 +34,7 @@ Specify the name of the dataset you want to use. The available datasets are cate
     - `WikipediaNetwork/squirrel`
     - `WikipediaNetwork/chameleon`
 
-### GNN Backbone 
+## GNN Backbone 
 - **GNN baselines**:
   - `MLP`  
   - `GCN`
@@ -116,7 +114,7 @@ MIT License
 
 ## Acknowledgements
 
-The code is implemented based on [GraphSHA](https://github.com/wenzhilics/GraphSHA), [DiGCN](https://github.com/flyingtango/DiGCN),  [DirGNN](https://github.com/emalgorithm/directed-graph-neural-network)and 
+The code is implemented based on [DiGCN](https://github.com/flyingtango/DiGCN),  [DirGNN](https://github.com/emalgorithm/directed-graph-neural-network)and 
 [MagNet](https://github.com/matthew-hirn/magnet).
 
 [//]: # (## Citation)
