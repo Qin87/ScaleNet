@@ -29,8 +29,6 @@ def parse_args():
     parser.add_argument("--differ_AAt", type=int, default=0,  help="Whether test AAt-A-At")
     parser.add_argument('--num_split', type=int, default=20, help='num of run in spite of many splits')
 
-    parser.add_argument('--MakeImbalance', '-imbal', action='store_true', help='if convert graph to undirecteds')
-    parser.add_argument('--imb_ratio', type=float, default=20, help='imbalance ratio')
 
     parser.add_argument('--net', type=str, default='ScaleNet', help='mlp, Dir-GNN, ScaleNet, '
                      'Mag, Sig, QuaNet, '
@@ -102,6 +100,8 @@ def parse_args():
     parser.add_argument('--ibx1', action='store_true', help='share the same ibx block in DiGSymCatib')
     parser.add_argument('--log_root', type=str, default='../logs/', help='the path saving model.t7 and the training process')
 
+    parser.add_argument('--MakeImbalance', '-imbal', action='store_true', help='if convert graph to undirecteds')
+    parser.add_argument('--imb_ratio', type=float, default=20, help='imbalance ratio')
 
     args = parser.parse_args()
 

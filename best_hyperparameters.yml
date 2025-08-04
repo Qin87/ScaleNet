@@ -7,7 +7,7 @@ telegram/:
   NotImproved: 410
   epoch: 1500
   patience: 80
-#  net: ScaleNet         # 1iGi3
+  net: ScaleNet         # 1iGi3
   conv_type: "dir-gcn"
   nonlinear: 1
   layer: 4
@@ -22,8 +22,6 @@ telegram/:
   betaDir: -1
   gamaDir: -1
   seed: 101   # 96.4±2.5(1), 94.8±2.9(11), 97.0±2.2(101)
-
-
 
 #
 cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
@@ -199,32 +197,3 @@ ogbn-arxiv/:
   alphaDir: 0.5
   betaDir: -1     # OOM
   gamaDir: -1     # OOM
-
-
-WebKB/Cornell:
-  nonlinear: 1
-  conv_type: dir-sage
-  layer: 3
-  alphaDir: 0.5
-  betaDir: -1     #
-  gamaDir: -1     #
-
-
-WebKB/Texas:
-  lr: 0.001  # bettern than 0.01
-  mlp: 1  # 0(some split very bad)
-  nonlinear: 1    # 1>0
-  conv_type: dir-gcn
-  layer: 2
-  alphaDir: 0.5
-  betaDir: -1     #
-  gamaDir: -1     #
-  BN_model: 0  #
-  normalize: 0  #  for SAGE
-  dropout: 0.5    # for ScaleNEt0.5, for SAGE0.0
-
-WebKB/Wisconsin:
-  lr: 0.0005
-  has_scheduler: 0
-  dropout: 0.0  # Mag(0),
-  NotImproved: 500
