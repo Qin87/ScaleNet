@@ -563,7 +563,7 @@ def Qin_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
     # type 2: only GCN_norm
     elif norm == 'sym':
         edge_weight = normalize_row_edges(edge_index, num_nodes).to(device)
-    elif norm is None:
+    elif norm == 0 or norm is None:
         edge_weight = torch.ones((edge_index.size(1), ), dtype=dtype,
                                      device=edge_index.device)
 
