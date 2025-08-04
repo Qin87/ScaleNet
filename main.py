@@ -3,13 +3,9 @@
 ################################
 import sys
 import os
-
 import numpy as np
 from torch_geometric.utils import add_self_loops
-from torch_sparse import SparseTensor
 
-from longest import  longest_hop_undirect, longest_hop_direct
-from nets.geometric_baselines import add_self_loop_qin
 
 print("Python Path:", sys.path)
 print("Current Working Directory:", os.getcwd())
@@ -29,7 +25,6 @@ from edge_nets.edge_data import get_second_directed_adj, get_second_directed_adj
     WCJ_get_directed_adj, Qin_get_second_directed_adj, Qin_get_directed_adj, get_appr_directed_adj2, Qin_get_second_directed_adj0, Qin_get_second_adj, Qin_get_all_directed_adj, normalize_row_edges
 from data_model import CreatModel, log_file, get_name, load_dataset, feat_proximity, delete_edges, make_imbalanced, count_homophilic_nodes, calculate_metrics, create_mask, print_x
 from nets.DiG_NoConv import union_edges
-from nets.models import random_walk_pe
 from nets.src2 import laplacian
 from nets.src2.quaternion_laplacian import process_quaternion_laplacian
 from data.preprocess import  F_in_out, F_in_out0
@@ -37,11 +32,7 @@ from utils import CrossEntropy, use_best_hyperparams
 from sklearn.metrics import balanced_accuracy_score, f1_score
 
 import warnings
-
 warnings.filterwarnings("ignore")
-
-
-
 
 
 def signal_handler(sig, frame):
