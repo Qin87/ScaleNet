@@ -999,9 +999,9 @@ class DirGCNConv_2(torch.nn.Module):
 
         num_scale = 3
         self.mlp = None
-        if args.mlpIn:
-            nhid = 64
-            self.mlp = torch.nn.Linear(input_dim, output_dim)
+        # if args.mlpIn:
+        #     nhid = 64
+        #     self.mlp = torch.nn.Linear(input_dim, output_dim)
         #     num_scale += 1
         jumping_knowledge = args.jk_inner
         self.jumping_knowledge_inner = jumping_knowledge
@@ -2872,18 +2872,6 @@ class GCN_JKNet(torch.nn.Module):
             self.convs.append(DirGCNConv_2(nhid, output_dim, args))
 
         num_scale = layer
-        self.mlp = None
-        if args.mlpOut:
-            self.mlp = torch.nn.Sequential(
-                # torch.nn.Linear(nfeat, nhid),
-                # torch.nn.ReLU(),
-                # torch.nn.Linear(nhid, nhid),
-                # torch.nn.ReLU(),
-                # torch.nn.BatchNorm1d(nhid),
-                torch.nn.Linear(nfeat, output_dim)
-            # ,torch.nn.BatchNorm1d(output_dim)
-            )
-            num_scale += 1
         if jumping_knowledge:
             input_dim = hidden_dim * num_scale if jumping_knowledge == "cat" else hidden_dim
             self.lin = Linear(input_dim, nclass)
@@ -2895,10 +2883,7 @@ class GCN_JKNet(torch.nn.Module):
         self.normalize = normalize
         self.nonlinear = nonlinear
 
-
     def forward(self, x, edge_index):
-        if self.mlp:
-            x_mlp = self.mlp(x)
         xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index)
@@ -2909,9 +2894,6 @@ class GCN_JKNet(torch.nn.Module):
                 if self.normalize:
                     x = F.normalize(x, p=2, dim=1)
             xs += [x]
-
-        if self.mlp not in [None, 0]:
-            xs += [x_mlp]
 
         if self.jumping_knowledge:
             x = self.jump(xs)
