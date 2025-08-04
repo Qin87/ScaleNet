@@ -34,7 +34,7 @@ Specify the name of the dataset you want to use. The available datasets are cate
     - `WikipediaNetwork/squirrel`
     - `WikipediaNetwork/chameleon`
 
-## GNN Backbone 
+## GNN Models 
 - **GNN baselines**:
   - `MLP`  
   - `GCN`
