@@ -25,12 +25,10 @@ from nets.DiG_NoConv import (create_DiG_MixIB_SymCat_Sym_nhid,
                              create_DiG_IB_nhid_para, create_DiSAGESimple_nhid, create_Di_IB_nhid, Si_IB_X_nhid, DiGCN_IB_XBN_nhid_para, Di_IB_XBN_nhid_ConV, DiSAGE_xBN_nhid_BN,
                              create_DiSAGESimple_nhid0, DiSAGE_x_nhid, DiSAGE_xBN_nhid, DiGCN_IB_X_nhid_para, Si_IB_X_nhid, DiSAGE_1BN_nhid,
                              DiSAGE_2BN_nhid, DiGCN_IB_X_nhid_para_Jk, Di_IB_XBN_nhid_ConV_JK)
-# from nets.DiG_NoConv import  create_DiG_IB
 from nets.GIN_Ben import create_GIN
 from nets.Sym_Reg import create_SymReg_add, create_SymReg_para_add
 from nets.sagcn import SAGCN, SAGCNXBN
 from nets.gcn import GraphSAGEXBatNorm
-# from nets.UGCL import UGCL_Model_Qin
 from nets.sparse_magnet import ChebNet_Ben, ChebNet_BenQin, ChebNet_Ben_05
 import torch.nn.init as init
 
