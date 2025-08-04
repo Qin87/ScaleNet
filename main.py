@@ -425,7 +425,7 @@ try:
                 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.l2)
 
             if args.has_scheduler:
-                scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience, verbose=True)
+                scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience)
 
             if splits == 1:
                 data_train_mask, data_val_mask, data_test_mask = (data_train_maskOrigin.clone(),data_val_maskOrigin.clone(),data_test_maskOrigin.clone())
