@@ -33,7 +33,6 @@ python3 main.py   --alphaDir="$alphadir"  --betaDir="$betadir"    --gamaDir="$ga
 "$log_output"
              2>&1
             wait $pid
-          #done
         done
        done
        done
