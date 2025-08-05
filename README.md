@@ -4,7 +4,7 @@ After paper [Scale Invariance of Graph Neural Networks].
 ## Requirements
 
 This repository has been tested with the following packages:
-- Python == 3.9 or 3.10
+- Python == 3.9 - 3.12
 - PyTorch == 2.1.2
 - PyTorch Geometric == 2.4.0
 - torch-scatter==2.1.2
