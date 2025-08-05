@@ -1,11 +1,10 @@
 ################################
-# this version to ensure that when I stop the process half way, it still could print the result.
+# This Branch is for Multi-scale Paper
 ################################
 import sys
 import os
 import numpy as np
 from torch_geometric.utils import add_self_loops
-
 
 print("Python Path:", sys.path)
 print("Current Working Directory:", os.getcwd())
@@ -206,7 +205,6 @@ seed_everything(args.seed)
 no_in, homo_ratio_A, no_out,   homo_ratio_At, in_homophilic_nodes, out_homophilic_nodes, in_heterophilic_nodes, out_heterophilic_nodes, no_in_nodes, no_out_nodes = count_homophilic_nodes(edges, data_y)
 if args.to_reverse_edge:
     edges = edges[torch.tensor([1, 0])]
-
 
 with open(log_directory + log_file_name_with_timestamp, 'w') as log_file:
     print(args, file=log_file)

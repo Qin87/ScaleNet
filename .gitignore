@@ -14,3 +14,4 @@
 *.idea
 *.iml
 /data/film
+.idea/*   # JetBrains IDE settings
