@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from torch_scatter import scatter_add
 
+from link_model import LINK
 from nets.gat import GATConvQin, StandGAT1BN_Qin
 from nets.gcn import ParaGCNXBN, StandGCNXBN
 from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model, Sloop_JKNet, ScaleNet, RandomNet, High_Frequent
@@ -48,7 +49,9 @@ def init_model(model):
             module.reset_parameters()  # Res
 
 def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
-    if args.net.lower() == 'pgnn':
+    if args.net.lower() == 'link':
+        model = LINK(args.num_node, args.num_classes)
+    elif args.net.lower() == 'pgnn':
         model = create_pgnn(nfeat=num_features, nhid=args.feat_dim, nclass=n_cls,
                             mu=args.mu,
                             p=args.p,
@@ -393,7 +396,7 @@ def load_dataset(args):
             data = random_planetoid_splits(data, data_y, train_ratio=0.48, val_ratio=0.1, num_splits=10, Flag=0)
             data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
 
-        elif args.Dataset in ['ogbn-arxiv/'] or (len(data.train_mask.shape) > 1 and data.train_mask.size(-1) > 9):
+        elif args.Dataset in ['ogbn-arxiv/', 'arxiv_year', 'fb100/penn94'] or (len(data.train_mask.shape) > 1 and data.train_mask.size(-1) > args.num_split-1):
             data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
         else:
             data = random_planetoid_splits(data, data_y, percls_trn=20, val_lb=30, Flag=1)
@@ -405,8 +408,9 @@ def load_dataset(args):
         except:
             dataset_num_features = data_x.shape[1]
 
-    IsDirectedGraph = test_directed(edges)        # time consuming
-    print("This is directed graph: ", IsDirectedGraph)
+    IsDirectedGraph = True
+    # IsDirectedGraph = test_directed(edges)        # time consuming
+    # print("This is directed graph: ", IsDirectedGraph)
     # print("data_x", data_x.shape)  # [11701, 300])
 
     if IsDirectedGraph and args.to_undirected:

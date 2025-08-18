@@ -202,7 +202,7 @@ if args.add_selfloop:
 
 seed_everything(args.seed)
 
-no_in, homo_ratio_A, no_out,   homo_ratio_At, in_homophilic_nodes, out_homophilic_nodes, in_heterophilic_nodes, out_heterophilic_nodes, no_in_nodes, no_out_nodes = count_homophilic_nodes(edges, data_y)
+# no_in, homo_ratio_A, no_out,   homo_ratio_At, in_homophilic_nodes, out_homophilic_nodes, in_heterophilic_nodes, out_heterophilic_nodes, no_in_nodes, no_out_nodes = count_homophilic_nodes(edges, data_y)
 if args.to_reverse_edge:
     edges = edges[torch.tensor([1, 0])]
 
@@ -244,7 +244,11 @@ device = set_device(args)
 data_x = data_x.to(device)
 if args.all1:
     data_x = torch.ones_like(data_x)
-data_y = data_y.to(device)
+#
+try:
+    data_y = data_y.squeeze(1).to(device)
+except:
+    data_y = data_y.to(device)
 edges = edges.to(device)
 
 data_train_maskOrigin = data_train_maskOrigin.to(device)
@@ -382,13 +386,15 @@ Set_exit = False
 
 num_run = args.num_split if args.num_split<splits else splits
 preprocess_time = time.time()
+args.num_classes, args.edge_index, args.num_node = data_y.shape[0], edges, data_x.shape[0]
+
 try:
     with open(log_directory + log_file_name_with_timestamp, 'a') as log_file:
         print('Using Device: ', device, file=log_file)
         for split in range(num_run):
             model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device)
             if split==0:
-                print('no_in, homo_in, no_out, homo_out:', no_in, homo_ratio_A, no_out, homo_ratio_At, file=log_file)
+                # print('no_in, homo_in, no_out, homo_out:', no_in, homo_ratio_A, no_out, homo_ratio_At, file=log_file)
                 print(model, file=log_file)
                 print(model)
                 if args.net.startswith('ym'):
@@ -441,46 +447,46 @@ try:
                     except:
                         data_test_mask = data_test_maskOrigin.clone()
 
-            all_list = [
-                ("no_in_nodes", no_in_nodes),
-                ("in_homophilic_nodes", in_homophilic_nodes),
-                ("in_heterophilic_nodes", in_heterophilic_nodes),
-                ("no_out_nodes", no_out_nodes),
-                ("out_homophilic_nodes", out_homophilic_nodes),
-                ("out_heterophilic_nodes", out_heterophilic_nodes)
-            ]
+            # all_list = [
+            #     ("no_in_nodes", no_in_nodes),
+            #     ("in_homophilic_nodes", in_homophilic_nodes),
+            #     ("in_heterophilic_nodes", in_heterophilic_nodes),
+            #     ("no_out_nodes", no_out_nodes),
+            #     ("out_homophilic_nodes", out_homophilic_nodes),
+            #     ("out_heterophilic_nodes", out_heterophilic_nodes)
+            # ]
+            #
+            # noIn_noOut_nodes = list(set(no_in_nodes) & set(no_out_nodes))
+            # noIn_outHomo_nodes = list(set(no_in_nodes) & set(out_homophilic_nodes))
+            # noIn_outHetero_nodes = list(set(no_in_nodes) & set(out_heterophilic_nodes))
+            # inHomo_noOut_nodes = list(set(in_homophilic_nodes) & set(no_out_nodes))
+            # inHomo_outHomo_nodes = list(set(in_homophilic_nodes) & set(out_homophilic_nodes))
+            # inHomo_outHetero_nodes = list(set(in_homophilic_nodes) & set(out_heterophilic_nodes))
+            # inHetero_noOut_nodes = list(set(in_heterophilic_nodes) & set(no_out_nodes))
+            # inHetero_outHomo_nodes = list(set(in_heterophilic_nodes) & set(out_homophilic_nodes))
+            # inHetero_outHetero_nodes = list(set(in_heterophilic_nodes) & set(out_heterophilic_nodes))
 
-            noIn_noOut_nodes = list(set(no_in_nodes) & set(no_out_nodes))
-            noIn_outHomo_nodes = list(set(no_in_nodes) & set(out_homophilic_nodes))
-            noIn_outHetero_nodes = list(set(no_in_nodes) & set(out_heterophilic_nodes))
-            inHomo_noOut_nodes = list(set(in_homophilic_nodes) & set(no_out_nodes))
-            inHomo_outHomo_nodes = list(set(in_homophilic_nodes) & set(out_homophilic_nodes))
-            inHomo_outHetero_nodes = list(set(in_homophilic_nodes) & set(out_heterophilic_nodes))
-            inHetero_noOut_nodes = list(set(in_heterophilic_nodes) & set(no_out_nodes))
-            inHetero_outHomo_nodes = list(set(in_heterophilic_nodes) & set(out_homophilic_nodes))
-            inHetero_outHetero_nodes = list(set(in_heterophilic_nodes) & set(out_heterophilic_nodes))
-
-            # New combined list with intersections
-            combined_intersection_list = [
-                ("noIn_noOut_nodes", noIn_noOut_nodes),
-                ("noIn_outHomo_nodes", noIn_outHomo_nodes),
-                ("noIn_outHetero_nodes", noIn_outHetero_nodes),
-                ("inHomo_noOut_nodes", inHomo_noOut_nodes),
-                ("inHomo_outHomo_nodes", inHomo_outHomo_nodes),
-                ("inHomo_outHetero_nodes", inHomo_outHetero_nodes),
-                ("inHetero_noOut_nodes", inHetero_noOut_nodes),
-                ("inHetero_outHomo_nodes", inHetero_outHomo_nodes),
-                ("inHetero_outHetero_nodes", inHetero_outHetero_nodes)
-                ,('all nodes', list(range(data_x.shape[0])))
-            ]
-
-            for name, lst in combined_intersection_list:
-                if len(lst) == 0:
-                    print(f"{name}:No Node")
-                    continue
-                mask = create_mask(lst, data_x.shape[0]).to(device)
-                train_temp, val_temp, test_temp = mask & data_train_mask, mask & data_val_mask, mask & data_test_mask
-                # print(f"{name}: Train={train_temp.sum().item()}, Val={val_temp.sum().item()}, Test={test_temp.sum().item()}")
+            # # New combined list with intersections
+            # combined_intersection_list = [
+            #     ("noIn_noOut_nodes", noIn_noOut_nodes),
+            #     ("noIn_outHomo_nodes", noIn_outHomo_nodes),
+            #     ("noIn_outHetero_nodes", noIn_outHetero_nodes),
+            #     ("inHomo_noOut_nodes", inHomo_noOut_nodes),
+            #     ("inHomo_outHomo_nodes", inHomo_outHomo_nodes),
+            #     ("inHomo_outHetero_nodes", inHomo_outHetero_nodes),
+            #     ("inHetero_noOut_nodes", inHetero_noOut_nodes),
+            #     ("inHetero_outHomo_nodes", inHetero_outHomo_nodes),
+            #     ("inHetero_outHetero_nodes", inHetero_outHetero_nodes)
+            #     ,('all nodes', list(range(data_x.shape[0])))
+            # ]
+            #
+            # for name, lst in combined_intersection_list:
+            #     if len(lst) == 0:
+            #         print(f"{name}:No Node")
+            #         continue
+            #     mask = create_mask(lst, data_x.shape[0]).to(device)
+            #     train_temp, val_temp, test_temp = mask & data_train_mask, mask & data_val_mask, mask & data_test_mask
+            #     # print(f"{name}: Train={train_temp.sum().item()}, Val={val_temp.sum().item()}, Test={test_temp.sum().item()}")
 
             n_data0 = []  # num of train in each class
             for i in range(n_cls):

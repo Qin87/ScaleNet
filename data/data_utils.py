@@ -1,6 +1,6 @@
 import os
 import random
-from torch_geometric.datasets import QM9, MalNetTiny
+from torch_geometric.datasets import QM9, MalNetTiny, LINKXDataset
 import scipy
 from torch_geometric.data import download_url
 from torch_geometric.datasets import (
@@ -152,7 +152,44 @@ from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
 def load_directedData(args):
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     load_func, subset = args.Dataset.split('/')[0], args.Dataset.split('/')[1]
-    if load_func in ['malnet']:
+    if load_func in ['fb100']:
+        dataset = LINKXDataset(root=args.data_path, name=subset, transform=transforms.NormalizeFeatures())
+        dataset._data.y = dataset._data.y.unsqueeze(-1)
+        num_nodes = dataset._data.y.shape[0]
+
+        # elif name in ["penn94", "genius"]:
+        if subset == "penn94":
+            name = "fb100-Penn94"
+        # Datasets from https://arxiv.org/pdf/2110.14446.pdf have five splits stored
+        # in https://github.com/CUAI/Non-Homophily-Large-Scale/tree/82f8f05c5c3ec16bd5b505cc7ad62ab5e09051e6/data/splits
+        # num_nodes = data["y"].shape[0]
+        github_url = f"https://github.com/CUAI/Non-Homophily-Large-Scale/raw/master/data/splits/"
+        split_file_name = f"{name}-splits.npy"
+        local_dir = os.path.join(args.data_path, name, "raw")
+
+        download_url(os.path.join(github_url, split_file_name), local_dir, log=False)
+        splits = np.load(os.path.join(local_dir, split_file_name), allow_pickle=True)
+        # split_idx = splits[split_number % len(splits)]
+
+        # download_url(os.path.join(github_url, split_file_name), local_dir, log=False)
+        # splits = np.load(os.path.join(local_dir, split_file_name), allow_pickle=True)
+
+        train_masks = []
+        val_masks = []
+        test_masks = []
+
+        for split_idx in splits:
+            train_masks.append(get_mask(split_idx["train"], num_nodes))
+            val_masks.append(get_mask(split_idx["valid"], num_nodes))
+            test_masks.append(get_mask(split_idx["test"], num_nodes))
+
+        # Stack into tensors of shape (num_nodes, num_splits)
+        dataset._data.train_mask = torch.stack(train_masks, dim=1)
+        dataset._data.val_mask = torch.stack(val_masks, dim=1)
+        dataset._data.test_mask = torch.stack(test_masks, dim=1)
+
+
+    elif load_func in ['malnet']:
         dataset = MalNetTiny(root=args.data_path, split='train')
 
         # Access the first graph in the dataset
@@ -177,16 +214,15 @@ def load_directedData(args):
         # return dataset
     elif load_func in ['arxiv-year']:
         path = args.data_path
+        # arxiv-year uses the same graph and features as ogbn-arxiv, but with different labels
         dataset = PygNodePropPredDataset(name="ogbn-arxiv", transform=transforms.ToSparseTensor(), root=path)
         evaluator = Evaluator(name="ogbn-arxiv")
         y = even_quantile_labels(dataset._data.node_year.flatten().numpy(), nclasses=5, verbose=False)
-        # dataset._data.y = torch.as_tensor(y).reshape(-1, 1)
         dataset._data.y = torch.as_tensor(y)
 
         # if name in ["arxiv-year"]:
             # Datasets from https://arxiv.org/pdf/2110.14446.pdf have five splits stored
             # in https://github.com/CUAI/Non-Homophily-Large-Scale/tree/82f8f05c5c3ec16bd5b505cc7ad62ab5e09051e6/data/splits
-        split_number = 10
         num_nodes = y.shape[0]
         github_url = f"https://github.com/CUAI/Non-Homophily-Large-Scale/raw/master/data/splits/"
         split_file_name = f"{load_func}-splits.npy"
@@ -194,18 +230,21 @@ def load_directedData(args):
 
         download_url(os.path.join(github_url, split_file_name), local_dir, log=False)
         splits = np.load(os.path.join(local_dir, split_file_name), allow_pickle=True)
-        split_idx = splits[split_number % len(splits)]
 
-        dataset._data.train_mask = get_mask(split_idx["train"], num_nodes)
-        dataset._data.val_mask = get_mask(split_idx["valid"], num_nodes)
-        dataset._data.test_mask = get_mask(split_idx["test"], num_nodes)
+        train_masks = []
+        val_masks = []
+        test_masks = []
 
-        # return train_mask, val_mask, test_mask
-        # Tran, val and test masks are required during preprocessing. Setting them here to dummy values as
-        # they are overwritten later for this dataset (see get_dataset_split function below)
-        # dataset._data.train_mask, dataset._data.val_mask, dataset._data.test_mask = 0, 0, 0
-        # Create directory for this dataset
-        # os.makedirs(os.path.join(path, name.replace("-", "_"), "raw"), exist_ok=True)
+        for split_idx in splits:
+            train_masks.append(get_mask(split_idx["train"], num_nodes))
+            val_masks.append(get_mask(split_idx["valid"], num_nodes))
+            test_masks.append(get_mask(split_idx["test"], num_nodes))
+
+        # Stack into tensors of shape (num_nodes, num_splits)
+        dataset._data.train_mask = torch.stack(train_masks, dim=1)
+        dataset._data.val_mask = torch.stack(val_masks, dim=1)
+        dataset._data.test_mask = torch.stack(test_masks, dim=1)
+
     elif load_func in ['snap-patents']:
         dataset = load_snap_patents_mat(n_classes=5, root=args.data_path)
     elif load_func == "Cora" or load_func == "CiteSeer" or load_func == "PubMed":
@@ -300,6 +339,7 @@ def load_dgl_graph(subset):
     else:
         raise NotImplementedError
     return dataset
+
 
 def random_planetoid_splits(data, y, train_ratio=0.7, val_ratio=0.1, percls_trn=20,  val_lb=30, num_splits=10, Flag=1):
     # Set new random planetoid splits based on provided ratios

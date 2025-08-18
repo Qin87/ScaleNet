@@ -197,3 +197,12 @@ ogbn-arxiv/:
   alphaDir: 0.5
   betaDir: -1     # OOM
   gamaDir: -1     # OOM
+
+
+fb100/penn94:
+  epoch: 10000
+  num_split: 5
+
+arxiv-year/:
+  num_split: 5
+  epoch: 10000

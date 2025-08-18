@@ -30,14 +30,14 @@ def parse_args():
     parser.add_argument('--num_split', type=int, default=20, help='num of run in spite of many splits')
 
 
-    parser.add_argument('--net', type=str, default='ScaleNet', help='mlp, Dir-GNN, ScaleNet, '
+    parser.add_argument('--net', type=str, default='link', help='mlp, Dir-GNN, ScaleNet, '
                      'Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc, ParaGCN, SimGAT, SloopNet, tSNE,RandomNet, HFNet '
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym')
     parser.add_argument('--seed', type=int, default=1, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='telegram/', help='telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
+    parser.add_argument('--Dataset', type=str, default='fb100/penn94', help='telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WikipediaNetwork/crocodile, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
-        'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/,  malnet/tiny')
+        'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/,  malnet/tiny, fb100/penn94')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout prob')
     parser.add_argument('--layer', type=int, default=6, help='number of layers (2 or 3), default: 2')
     parser.add_argument('--alpha', type=float, default=0.1, help='alpha teleport prob in DiG(ib)')
@@ -74,7 +74,7 @@ def parse_args():
     parser.add_argument('--qua_bias', '-B', action='store_true', help='quaternion bias options')
 
     parser.add_argument('--log_path', type=str, default='test', help='the path saving model.t7 and the training process, the name of folder will be log/(current time)')
-    parser.add_argument('--data_path', type=str, default='../dataset/data/tmp/', help='data set folder, for default format see dataset/cora/cora.edges and cora.node_labels')
+    parser.add_argument('--data_path', type=str, default='../dataset/data/', help='data set folder, for default format see dataset/cora/cora.edges and cora.node_labels')
 
     # for GPRGN
     parser.add_argument('--ppnp', default='GPR_prop',choices=['PPNP', 'GPR_prop'])
