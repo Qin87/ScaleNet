@@ -386,7 +386,7 @@ Set_exit = False
 
 num_run = args.num_split if args.num_split<splits else splits
 preprocess_time = time.time()
-args.num_classes, args.edge_index, args.num_node = data_y.shape[0], edges, data_x.shape[0]
+args.num_classes, args.edge_index, args.num_node = n_cls, edges, data_x.shape[0]
 
 try:
     with open(log_directory + log_file_name_with_timestamp, 'a') as log_file:
@@ -588,9 +588,9 @@ try:
                     # print('test_f1 CountNotImproved reset to 0 in epoch', epoch, file=log_file)
                     # Store the calculated metrics in variables instead of printing
 
-                    for name, lst in combined_intersection_list:
-                        metrics_temp = calculate_metrics(logits, data_test_mask, data_y, lst, edges)
-                        metrics_list.append((name, metrics_temp))
+                    # for name, lst in combined_intersection_list:
+                    #     metrics_temp = calculate_metrics(logits, data_test_mask, data_y, lst, edges)
+                    #     metrics_list.append((name, metrics_temp))
 
                 else:
                     CountNotImproved += 1

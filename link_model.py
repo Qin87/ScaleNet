@@ -63,7 +63,7 @@ class LINK(nn.Module):
     """ logistic regression on adjacency matrix """
 
     def __init__(self, num_nodes, out_channels):
-        super(LINK, self).__init__()
+        super().__init__()
         self.W = nn.Linear(num_nodes, out_channels)
         self.num_nodes = num_nodes
 
@@ -88,7 +88,7 @@ class LINK_Concat(nn.Module):
     """ concate A and X as joint embeddings i.e. MLP([A;X])"""
 
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers, num_nodes, dropout=.5, cache=True):
-        super(LINK_Concat, self).__init__()
+        super().__init__()
         self.mlp = MLP(in_channels + num_nodes, hidden_channels, out_channels, num_layers, dropout=dropout)
         self.in_channels = in_channels
         self.cache = cache
@@ -125,7 +125,7 @@ class H2GCNConv(nn.Module):
     """ Neighborhood aggregation step """
 
     def __init__(self):
-        super(H2GCNConv, self).__init__()
+        super().__init__()
 
     def reset_parameters(self):
         pass
@@ -142,7 +142,7 @@ class H2GCN(nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, edge_index, num_nodes,
                  num_layers=2, dropout=0.5, save_mem=False, num_mlp_layers=1,
                  use_bn=True, conv_dropout=True):
-        super(H2GCN, self).__init__()
+        super().__init__()
 
         self.feature_embed = MLP(in_channels, hidden_channels,
                                  hidden_channels, num_layers=num_mlp_layers, dropout=dropout)
@@ -246,7 +246,7 @@ class MLP(nn.Module):
     """ adapted from https://github.com/CUAI/CorrectAndSmooth/blob/master/gen_models.py """
     def __init__(self, in_channels, hidden_channels, out_channels, num_layers,
                  dropout=.5):
-        super(MLP, self).__init__()
+        super().__init__()
         self.lins = nn.ModuleList()
         self.bns = nn.ModuleList()
         if num_layers == 1:

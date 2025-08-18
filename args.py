@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument('--num_split', type=int, default=20, help='num of run in spite of many splits')
 
 
-    parser.add_argument('--net', type=str, default='link', help='mlp, Dir-GNN, ScaleNet, '
+    parser.add_argument('--net', type=str, default='linkx', help='mlp, Dir-GNN, ScaleNet, '
                      'Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc, ParaGCN, SimGAT, SloopNet, tSNE,RandomNet, HFNet '
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym')
@@ -86,6 +86,12 @@ def parse_args():
 
     parser.add_argument('--W_degree', type=int, default=5, help='using in-degree_0, out-degree_1, full-degree_2 for DiG edge-weight, 3 is random[1,100], 4 is random[0.1,1], 5 is random[0.0001, '
                                                                 '10000], 50 is abs(sin(random5))')
+
+    # for linkx
+    parser.add_argument('--link_init_layers_A', type=int, default=1)
+    parser.add_argument('--link_init_layers_X', type=int, default=1)
+    parser.add_argument('--inner_activation', action='store_true', help='Whether linkV3 uses inner activation')
+    parser.add_argument('--inner_dropout', action='store_true', help='Whether linkV3 uses inner dropout')
 
 
     # not use for ScaleNet

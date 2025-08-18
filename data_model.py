@@ -3,9 +3,11 @@ from datetime import datetime
 
 import numpy as np
 import torch
+from torch_geometric.nn import LINKX
 from torch_scatter import scatter_add
 
-from link_model import LINK
+from link_model import LINK, LINK_Concat
+# from link_model import LINK, LINK_Concat, LINKX
 from nets.gat import GATConvQin, StandGAT1BN_Qin
 from nets.gcn import ParaGCNXBN, StandGCNXBN
 from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model, Sloop_JKNet, ScaleNet, RandomNet, High_Frequent
@@ -50,7 +52,27 @@ def init_model(model):
 
 def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
     if args.net.lower() == 'link':
-        model = LINK(args.num_node, args.num_classes)
+        model = LINK(args.num_node, n_cls)
+    elif args.net.lower() == 'link_concat':
+        model = LINK_Concat(num_features, args.feat_dim, n_cls, args.layer, args.num_node, dropout=args.dropout).to(device)
+    elif args.net.lower() == 'linkx':
+        model = LINKX(num_nodes=args.num_nodes, in_channels= , hidden_channels=args.feat_dim, out_channels=n_cls, num_layers=args.layer,
+                      inner_activation=args.inner_activation, inner_dropout=args.inner_dropout, dropout=args.dropout, init_layers_A=args.link_init_layers_A, init_layers_X=args.link_init_layers_X).to(
+            device)
+
+        def __init__(
+                self,
+                num_nodes: int,
+                in_channels: int,
+                hidden_channels: int,
+                out_channels: int,
+                num_layers: int,
+                num_edge_layers: int = 1,
+                num_node_layers: int = 1,
+                dropout: float = 0.0,
+        ):
+
+
     elif args.net.lower() == 'pgnn':
         model = create_pgnn(nfeat=num_features, nhid=args.feat_dim, nclass=n_cls,
                             mu=args.mu,
