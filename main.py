@@ -575,7 +575,12 @@ try:
                 accs, baccs, f1s, logits, class_detail = test()
                 train_acc, val_acc, tmp_test_acc = accs
                 train_f1, val_f1, tmp_test_f1 = f1s
-                if val_acc > best_val_acc:
+
+                monitor_metric = val_acc if args.monitor == 'acc' else -val_loss  # Use -val_loss to handle minimization
+                best_metric = best_val_acc if args.monitor == 'acc' else -best_val_loss
+
+                if monitor_metric > best_metric:
+                # if val_acc > best_val_acc:
                 # if val_loss < best_val_loss:
                     metrics_list = []
                     best_val_acc = val_acc

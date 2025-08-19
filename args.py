@@ -2,6 +2,7 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--monitor", type=str, help="optimiser monitor: val_acc(acc), val_loss(loss)", default="acc")
     parser.add_argument("--all1", type=int, help="feature all 1 ", default=0)
     parser.add_argument("--use_best_hyperparams", type=int, default=1, help="whether use parameters in best_hyperparameters.yml")
     parser.add_argument('--GPUdevice', type=int, default=0, help='device')
@@ -41,7 +42,7 @@ def parse_args():
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/,  malnet/tiny, '
         'fb100/penn94, ')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout prob')
-    parser.add_argument('--layer', type=int, default=3, help='number of layers (2 or 3), default: 2')
+    parser.add_argument('--layer', type=int, default=2, help='number of layers (2 or 3), default: 2')
     parser.add_argument('--alpha', type=float, default=0.1, help='alpha teleport prob in DiG(ib)')
 
     parser.add_argument('-AP_K', '--AP_K', default=10, type=int)  # for APPNP
