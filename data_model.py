@@ -56,21 +56,21 @@ def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
     elif args.net.lower() == 'link_concat':
         model = LINK_Concat(num_features, args.feat_dim, n_cls, args.layer, args.num_node, dropout=args.dropout).to(device)
     elif args.net.lower() == 'linkx':
-        model = LINKX(num_nodes=args.num_nodes, in_channels= , hidden_channels=args.feat_dim, out_channels=n_cls, num_layers=args.layer,
-                      inner_activation=args.inner_activation, inner_dropout=args.inner_dropout, dropout=args.dropout, init_layers_A=args.link_init_layers_A, init_layers_X=args.link_init_layers_X).to(
+        model = LINKX(num_nodes=args.num_node, in_channels= num_features, hidden_channels=args.feat_dim, out_channels=n_cls, num_layers=args.layer,
+                       dropout=args.dropout).to(
             device)
 
-        def __init__(
-                self,
-                num_nodes: int,
-                in_channels: int,
-                hidden_channels: int,
-                out_channels: int,
-                num_layers: int,
-                num_edge_layers: int = 1,
-                num_node_layers: int = 1,
-                dropout: float = 0.0,
-        ):
+        # def __init__(
+        #         self,
+        #         num_nodes: int,
+        #         in_channels: int,
+        #         hidden_channels: int,
+        #         out_channels: int,
+        #         num_layers: int,
+        #         num_edge_layers: int = 1,
+        #         num_node_layers: int = 1,
+        #         dropout: float = 0.0,
+        # ):
 
 
     elif args.net.lower() == 'pgnn':

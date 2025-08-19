@@ -71,8 +71,6 @@ class LINK(nn.Module):
         self.W.reset_parameters()
 
     def forward(self, x, edge_index):
-        # N = data.graph['num_nodes']
-        # edge_index = data.graph['edge_index']
         N = x.shape[0]
         if isinstance(edge_index, torch.Tensor):
             row, col = edge_index
@@ -97,17 +95,16 @@ class LINK_Concat(nn.Module):
     def reset_parameters(self):
         self.mlp.reset_parameters()
 
-    def forward(self, data):
+    def forward(self, x, edge_index):
         if (not self.cache) or (not isinstance(self.x, torch.Tensor)):
-            N = data.graph['num_nodes']
-            feat_dim = data.graph['node_feat']
-            row, col = data.graph['edge_index']
+            N = x.shape[0]
+            row, col = edge_index
             col = col + self.in_channels
-            feat_nz = data.graph['node_feat'].nonzero(as_tuple=True)
+            feat_nz = x.nonzero(as_tuple=True)
             feat_row, feat_col = feat_nz
             full_row = torch.cat((feat_row, row))
             full_col = torch.cat((feat_col, col))
-            value = data.graph['node_feat'][feat_nz]
+            value = x[feat_nz]
             full_value = torch.cat((value,
                                     torch.ones(row.shape[0], device=value.device)))
             x = SparseTensor(row=full_row, col=full_col,
