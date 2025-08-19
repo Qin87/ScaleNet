@@ -22,10 +22,6 @@ from torch_geometric.utils import add_remaining_self_loops, to_dense_batch
 from torch_geometric.utils.num_nodes import maybe_num_nodes
 from torch_geometric.nn.inits import reset, glorot, zeros
 
-from nets.SAGCN2 import SAGCN2
-from nets.sagcn import SAGCN
-from nets.sage import SAGEConv_SHA
-from nets.src2.sage_qin import SAGEConv_QinNov
 
 
 def gcn_norm0(edge_index, edge_weight=None, num_nodes=None, improved=False,

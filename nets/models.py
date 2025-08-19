@@ -149,9 +149,6 @@ def create_MLP(nfeat, nhid, nclass, dropout, nlayer):
         model = MLPNetX(nfeat, nhid, nclass, dropout, nlayer)
     return model
 
-def create_pan(nfeat, nhid, nclass, dropout):
-    model = DiG_SimpleXBN_nhid_Pan(nfeat, nhid, nclass, dropout, layer=5)
-    return model
 
 def create_pgnn(nfeat, nhid, nclass,mu=0.1,p=2,K=2, dropout=0.5, layer=3):
     if layer == 1:
@@ -170,39 +167,6 @@ def create_SGC(nfeat, nhid, nclass, dropout, nlayer, K):
     else:
         model = SGCNetX(nfeat, nhid, nclass, dropout, nlayer, K)
     return model
-
-
-class GCNNet(torch.nn.Module):
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 num_hid=16,
-                 dropout=0.5,
-                 cached=True):
-        super().__init__()
-        self.dropout = dropout
-        self.conv1 = GCNConv(in_channels, num_hid, cached=cached)
-        self.conv2 = GCNConv(num_hid, out_channels, cached=cached)
-
-    def forward(self, x, edge_index, edge_weight):
-        x = F.relu(self.conv1(x, edge_index, edge_weight))
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = self.conv2(x, edge_index, edge_weight)
-        return F.log_softmax(x, dim=1)
-
-
-class GCN_Encoder(torch.nn.Module):
-    def __init__(self,
-                 in_channels,
-                 num_hid=16):
-        super().__init__()
-        self.conv = GCNConv(in_channels, num_hid, cached=True)
-        self.prelu = torch.nn.PReLU(num_hid)
-
-    def forward(self, x, edge_index, edge_weight=None):
-        x = self.conv(x, edge_index, edge_weight)
-        x = self.prelu(x)
-        return x
 
 
 class SGCNet1(torch.nn.Module):
@@ -733,17 +697,3 @@ class GraphModel(torch.nn.Module):
         return self.mlp(x)
 
 
-def random_walk_pe(adj, walk_length):
-    device = adj.device
-    num_nodes = adj.size(0)
-    pe = torch.zeros((num_nodes, walk_length), dtype=torch.long, device=device)
-    for node in range(num_nodes):
-        current_node = torch.tensor([node], device=device)
-        for step in range(walk_length):
-            pe[node, step] = current_node
-            next_nodes = torch.nonzero(adj[current_node]).squeeze(1)
-            if len(next_nodes) > 0:
-                current_node = next_nodes[torch.randint(0, len(next_nodes), (1,), device=device)]
-            else:
-                break
-    return pe

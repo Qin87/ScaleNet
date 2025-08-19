@@ -5,7 +5,6 @@ from torch_geometric.typing import Adj, OptTensor, PairTensor
 import torch
 import torch.nn as nn
 from torch import Tensor
-from torch.nn import Parameter
 import torch.nn.functional as F
 from torch_scatter import scatter_add
 from torch_geometric.nn.conv import MessagePassing

@@ -10,8 +10,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from nets.sparse_magnet import complex_relu_layer_Ben, complex_relu_layer_SigBen
-
 
 class complex_relu_layer(nn.Module):
     """The complex ReLU layer from the `MagNet: A Neural Network for Directed Graphs. <https://arxiv.org/pdf/2102.11391.pdf>`_ paper.

@@ -7,8 +7,7 @@ from torch_geometric.nn import LINKX
 from torch_scatter import scatter_add
 
 from link_model import LINK, LINK_Concat, LINKX_Github
-# from link_model import LINK, LINK_Concat, LINKX
-from nets.gat import GATConvQin, StandGAT1BN_Qin
+from nets.gat import StandGAT1BN_Qin
 from nets.gcn import ParaGCNXBN, StandGCNXBN
 from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model, Sloop_JKNet, ScaleNet, RandomNet, High_Frequent
 from nets.models import JKNet, create_MLP, create_SGC, create_pgnn, GPRGNNNet1, GraphModel
@@ -16,18 +15,15 @@ from nets.models import JKNet, create_MLP, create_SGC, create_pgnn, GPRGNNNet1, 
 from nets.Signum_quaternion import QuaNet_node_prediction_one_laplacian_Qin
 from nets.Signum import SigMaNet_node_prediction_one_laplacian_Qin
 from edge_nets.edge_data import to_undirectedBen
-from utils import test_directed
 from nets import  create_gat
 
 from data.data_utils import random_planetoid_splits, load_directedData
 from nets.APPNP_Ben import APPNP_Model, ChebModel, SymModel, GCNModel_Cheb
-# from nets.DGCN import SymModel
-# from nets.DiGCN import DiModel, DiGCN_IB
 from nets.DiG_NoConv import (create_DiG_MixIB_SymCat_Sym_nhid,
                              create_DiG_MixIB_SymCat_nhid, create_DiG_IB_SymCat_nhid, create_DiG_IB_Sym_nhid, create_DiG_IB_Sym_nhid_para,
-                             create_DiG_IB_nhid_para, create_DiSAGESimple_nhid, create_Di_IB_nhid, Si_IB_X_nhid, DiGCN_IB_XBN_nhid_para, Di_IB_XBN_nhid_ConV, DiSAGE_xBN_nhid_BN,
-                             create_DiSAGESimple_nhid0, DiSAGE_x_nhid, DiSAGE_xBN_nhid, DiGCN_IB_X_nhid_para, Si_IB_X_nhid, DiSAGE_1BN_nhid,
-                             DiSAGE_2BN_nhid, DiGCN_IB_X_nhid_para_Jk, Di_IB_XBN_nhid_ConV_JK)
+                              create_Di_IB_nhid,  DiGCN_IB_XBN_nhid_para, Di_IB_XBN_nhid_ConV,
+                         DiSAGE_x_nhid, DiSAGE_xBN_nhid,
+                              DiGCN_IB_X_nhid_para_Jk, Di_IB_XBN_nhid_ConV_JK)
 from nets.GIN_Ben import create_GIN
 from nets.Sym_Reg import create_SymReg_add, create_SymReg_para_add
 from nets.sagcn import SAGCN, SAGCNXBN
