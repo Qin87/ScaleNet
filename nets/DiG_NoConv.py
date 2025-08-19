@@ -25,7 +25,7 @@ from nets.geometric_baselines import DirGCNConv, DirGCNConv_Qin
 
 class InceptionBlock_Qinlist(torch.nn.Module):
     def __init__(self, in_dim, out_dim):
-        super(InceptionBlock_Qinlist, self).__init__()
+        super().__init__()
         self.ln = Linear(in_dim, out_dim)
         # self.conv1 = DIGCNConv(in_dim, out_dim)
         # self.conv2 = DIGCNConv(in_dim, out_dim)
@@ -45,7 +45,7 @@ class InceptionBlock_Qinlist(torch.nn.Module):
 
 class InceptionBlock_Di_list(torch.nn.Module):
     def __init__(self, m, in_dim, out_dim,args):
-        super(InceptionBlock_Di_list, self).__init__()
+        super().__init__()
         self.ln = Linear(in_dim, out_dim)
         head = args.heads
         K = args.K
@@ -77,7 +77,7 @@ class InceptionBlock_Di_list(torch.nn.Module):
 
 class InceptionBlock_Di(torch.nn.Module):
     def __init__(self, m, in_dim, out_dim, args):
-        super(InceptionBlock_Di, self).__init__()
+        super().__init__()
         head = args.heads
         K = args.K
         self.dropout = args.dropout
@@ -131,7 +131,7 @@ def union_edges(num_node, edge_index_tuple, device, mode):
 
 class InceptionBlock_Si(torch.nn.Module):
     def __init__(self, m, in_dim, out_dim, args):
-        super(InceptionBlock_Si, self).__init__()
+        super().__init__()
         head = args.heads
         K = args.K
 
@@ -165,7 +165,7 @@ class InceptionBlock_Si(torch.nn.Module):
 
 class InceptionBlock_Di0(torch.nn.Module):
     def __init__(self, m, in_dim, out_dim, head=8):
-        super(InceptionBlock_Di0, self).__init__()
+        super().__init__()
 
         self.ln = Linear(in_dim, out_dim)
         if m == 'S':
@@ -210,7 +210,7 @@ class DIChebConv(MessagePassing):
     """
     def __init__(self, in_channels, out_channels, K, normalization: Optional[str] = 'sym',
                  bias=True, **kwargs):
-        super(DIChebConv, self).__init__(aggr='add', **kwargs)
+        super().__init__(aggr='add', **kwargs)
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -337,7 +337,7 @@ class DIGCNConv(MessagePassing):
 
     def __init__(self, in_channels, out_channels, improved=False, cached=False,
                  bias=True, **kwargs):
-        super(DIGCNConv, self).__init__(aggr='add', **kwargs)
+        super().__init__(aggr='add', **kwargs)
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -441,7 +441,7 @@ class GATConv_Qin(MessagePassing):       # change from GAT
                  negative_slope: float = 0.2, dropout: float = 0.0,
                  bias: bool = True, **kwargs):      # concat should be False. true case haven't try
         kwargs.setdefault('aggr', 'add')
-        super(GATConv_Qin, self).__init__(node_dim=0, **kwargs)
+        super().__init__(node_dim=0, **kwargs)
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -586,7 +586,7 @@ class GATConv_Qin(MessagePassing):       # change from GAT
 class DiGATConv(MessagePassing):
     def __init__(self, in_channels, out_channels, heads=8, concat=False,
                  negative_slope=0.2, dropout=0.6, bias=True, **kwargs):
-        super(DiGATConv, self).__init__(node_dim=0, **kwargs)
+        super().__init__(node_dim=0, **kwargs)
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -671,7 +671,7 @@ class DiSAGEConv(MessagePassing):      #    Qin from Claude
     """
 
     def __init__(self, in_channels, out_channels, normalize=False,  cached=True, bias=True, **kwargs):
-        super(DiSAGEConv, self).__init__(aggr='mean', **kwargs)
+        super().__init__(aggr='mean', **kwargs)
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -737,7 +737,7 @@ class DiSAGEConv(MessagePassing):      #    Qin from Claude
 
 class DiG_Simple1(nn.Module):
     def __init__(self, input_dim, nhid, out_dim,  dropout, layer=1):
-        super(DiG_Simple1, self).__init__()
+        super().__init__()
         self.dropout = dropout
 
         self.conv1 = DIGCNConv(input_dim, out_dim)
@@ -765,7 +765,7 @@ class DiG_Simple1(nn.Module):
 
 class DiG_Simple2(nn.Module):
     def __init__(self, input_dim, nhid, out_dim, dropout, layer=2):
-        super(DiG_Simple2, self).__init__()
+        super().__init__()
         self.dropout = dropout
 
         self.conv1 = DIGCNConv(input_dim, nhid)
@@ -795,7 +795,7 @@ class DiG_Simple2(nn.Module):
 
 class DiG_SimpleX(torch.nn.Module):
     def __init__(self, input_dim,  nhid, out_dim, dropout, layer=3):
-        super(DiG_SimpleX, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.conv1 = DIGCNConv(input_dim, nhid)
         self.conv2 = DIGCNConv(nhid, out_dim)
@@ -830,7 +830,7 @@ class DiG_SimpleX(torch.nn.Module):
 
 class DiG_Simple1BN(nn.Module):
     def __init__(self, input_dim, nhid, out_dim,  dropout, layer=1):
-        super(DiG_Simple1BN, self).__init__()
+        super().__init__()
         self.dropout = dropout
 
         self.conv1 = DIGCNConv(input_dim, out_dim)
@@ -851,7 +851,7 @@ class DiG_Simple1BN(nn.Module):
 
 class DiG_Simple1BN_nhid(nn.Module):
     def __init__(self, input_dim, nhid, out_dim,  dropout, layer=1):
-        super(DiG_Simple1BN_nhid, self).__init__()
+        super().__init__()
         self.dropout = dropout
 
         self.conv1 = DIGCNConv(input_dim, nhid)
@@ -885,9 +885,9 @@ def Conv_Out(x, Conv):
 
 class DiSAGE_1_nhid(nn.Module):
     def __init__(self, m, in_dim, out_dim,  args):
-        super(DiSAGE_1_nhid, self).__init__()
+        super().__init__()
         self.dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         head = args.heads
 
@@ -923,7 +923,7 @@ class DiSAGE_1_nhid(nn.Module):
 
 class DiSAGE_1BN_nhid0(nn.Module):
     def __init__(self, m, in_dim, nhid, out_dim,  args, layer=1,  head=8):
-        super(DiSAGE_1BN_nhid0, self).__init__()
+        super().__init__()
         self.dropout = args.dropout
         if m == 'S':
             self.conv1 = DiSAGEConv(in_dim, nhid)
@@ -961,7 +961,7 @@ class DiSAGE_1BN_nhid0(nn.Module):
 
 class DiG_Simple2BN_nhid(nn.Module):
     def __init__(self, input_dim, nhid, ncls, dropout, layer=2):
-        super(DiG_Simple2BN_nhid, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.conv1 = DIGCNConv(input_dim, nhid)
         self.conv2 = DIGCNConv(nhid, nhid)
@@ -991,7 +991,7 @@ class DiG_Simple2BN_nhid(nn.Module):
 
 # class DiSAGE_2BN_nhid0(nn.Module):
 #     def __init__(self, m, input_dim, nhid, ncls, dropout, layer=2, head=8):
-#         super(DiSAGE_2BN_nhid0, self).__init__()
+#         super().__init__()
 #         self.dropout = dropout
 #
 #         self.Conv = nn.Conv1d(nhid, ncls, kernel_size=1)
@@ -1042,9 +1042,9 @@ class DiG_Simple2BN_nhid(nn.Module):
 
 class DiSAGE_2BN_nhid(nn.Module):
     def __init__(self, m, input_dim,  ncls, args):
-        super(DiSAGE_2BN_nhid, self).__init__()
+        super().__init__()
         self.dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         head = args.heads
         K = args.K
@@ -1097,9 +1097,9 @@ class DiSAGE_2BN_nhid(nn.Module):
 
 class DiSAGE_2_nhid(nn.Module):
     def __init__(self, m, input_dim,  ncls, args):
-        super(DiSAGE_2_nhid, self).__init__()
+        super().__init__()
         self.dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         head = args.heads
         K = args.K
@@ -1144,9 +1144,9 @@ class DiSAGE_2_nhid(nn.Module):
 
 class DiSAGE_xBN_nhid0(torch.nn.Module):
     def __init__(self, m, input_dim,  out_dim, args, layer=3, head=8):
-        super(DiSAGE_xBN_nhid0, self).__init__()
+        super().__init__()
         self.dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         head = args.heads
         K = args.K
@@ -1202,9 +1202,9 @@ class DiSAGE_xBN_nhid0(torch.nn.Module):
 
 class DiSAGE_xBN_nhid(torch.nn.Module):
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiSAGE_xBN_nhid, self).__init__()
+        super().__init__()
         self.dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         self.layer = args.layer
         head = args.heads
@@ -1293,9 +1293,9 @@ class DiSAGE_xBN_nhid(torch.nn.Module):
 
 class DiSAGE_1BN_nhid(nn.Module):
     def __init__(self, m, in_dim, out_dim,  args):
-        super(DiSAGE_1BN_nhid, self).__init__()
+        super().__init__()
         self.dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         head = args.heads
 
@@ -1337,9 +1337,9 @@ class DiSAGE_1BN_nhid(nn.Module):
 
 class DiSAGE_x_nhid(torch.nn.Module):
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiSAGE_x_nhid, self).__init__()
+        super().__init__()
         self.dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         self.layer = args.layer
         head = args.heads
@@ -1445,9 +1445,9 @@ class DiSAGE_x_nhid(torch.nn.Module):
 
 class DiSAGE_xBN_nhid_BN(torch.nn.Module):
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiSAGE_xBN_nhid_BN, self).__init__()
+        super().__init__()
         self.dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         head = args.heads
         K = args.K
@@ -1500,7 +1500,7 @@ class DiSAGE_xBN_nhid_BN(torch.nn.Module):
 
 class DiG_SimpleXBN_nhid(torch.nn.Module):
     def __init__(self, input_dim,  nhid, out_dim, dropout, layer=3):
-        super(DiG_SimpleXBN_nhid, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.conv1 = DIGCNConv(input_dim, nhid)
         self.conv2 = DIGCNConv(nhid, nhid)
@@ -1538,7 +1538,7 @@ class DiG_SimpleXBN_nhid(torch.nn.Module):
 
 class DiG_SimpleXBN_nhid_Pan(torch.nn.Module):
     def __init__(self, input_dim,  nhid, out_dim, dropout, layer=3):
-        super(DiG_SimpleXBN_nhid_Pan, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.conv1 = DIGCNConv(input_dim, nhid)
         self.conv2 = DIGCNConv(nhid, nhid)
@@ -1609,7 +1609,7 @@ class DiG_SimpleXBN_nhid_Pan(torch.nn.Module):
 
 class DiG_Simple2BN(nn.Module):
     def __init__(self, input_dim, nhid, out_dim, dropout, layer=2):
-        super(DiG_Simple2BN, self).__init__()
+        super().__init__()
         self.dropout = dropout
 
         self.conv1 = DIGCNConv(input_dim, nhid)
@@ -1637,7 +1637,7 @@ class DiG_Simple2BN(nn.Module):
         return x
 class DiG_SimpleXBN(torch.nn.Module):
     def __init__(self, input_dim,  nhid, out_dim, dropout, layer=3):
-        super(DiG_SimpleXBN, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.conv1 = DIGCNConv(input_dim, nhid)
         self.conv2 = DIGCNConv(nhid, out_dim)
@@ -1720,9 +1720,9 @@ def create_DiGSimple_batch_nhid(m, nfeat, nclass, args):
 
 class Di_IB_1_nhid(torch.nn.Module):
     def __init__(self, m, input_dim, n_cls, args):
-        super(Di_IB_1_nhid, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, n_cls, args)
         self.Conv = nn.Conv1d(nhid, n_cls, kernel_size=1)
         self.batch_norm1 = nn.BatchNorm1d(n_cls)
@@ -1739,9 +1739,9 @@ class Di_IB_1_nhid(torch.nn.Module):
 
 class Di_IB_1BN_nhid0(torch.nn.Module):
     def __init__(self, m, input_dim,  n_cls, args):
-        super(Di_IB_1BN_nhid0, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.Conv = nn.Conv1d(nhid, n_cls, kernel_size=1)
         self.batch_norm1 = nn.BatchNorm1d(n_cls)
@@ -1764,9 +1764,9 @@ class Di_IB_1BN_nhid0(torch.nn.Module):
 
 class DiGCN_IB_1BN_nhid(torch.nn.Module):
     def __init__(self, m, input_dim,  n_cls, args):
-        super(DiGCN_IB_1BN_nhid, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.batch_norm1 = nn.BatchNorm1d(n_cls)
         self.Conv = nn.Conv1d(nhid, n_cls, kernel_size=1)
@@ -1789,7 +1789,7 @@ class DiGCN_IB_1BN_nhid(torch.nn.Module):
 
 class DiGCN_IB_1BN_nhid_para(torch.nn.Module):
     def __init__(self, input_dim, nhid, n_cls, dropout=0.5, layer=1):
-        super(DiGCN_IB_1BN_nhid_para, self).__init__()
+        super().__init__()
         self.ib1 = InceptionBlock_Qinlist(input_dim, nhid)
         self.coef1 = nn.ParameterList([nn.Parameter(torch.tensor(1.0)) for _ in range(20)])  # coef for ib1
         self._dropout = dropout
@@ -1824,7 +1824,7 @@ class DiGCN_IB_1BN_batch(torch.nn.Module):
     for large dataset, using small batches not the whole graph
     '''
     def __init__(self,m,  input_dim, out_dim, args):
-        super(DiGCN_IB_1BN_batch, self).__init__()
+        super().__init__()
         self.ib1 = InceptionBlock_Di(m, input_dim, out_dim, args)
         self._dropout = args.dropout
         self.batch_size = args.batch_size
@@ -1872,11 +1872,11 @@ class DiGCN_IB_1BN_batch_nhid(torch.nn.Module):
     '''
 
     def __init__(self, m, input_dim,   out_dim, args):
-        super(DiGCN_IB_1BN_batch_nhid, self).__init__()
+        super().__init__()
 
         self._dropout = args.dropout
         self.batch_size = args.batch_size
-        nhid = args.feat_dim
+        nhid = args.hid_dim
 
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.batch_norm1 = nn.BatchNorm1d(nhid)
@@ -1926,8 +1926,8 @@ class DiGCN_IB_1BN_batch_nhid(torch.nn.Module):
 
 class DiGCN_IB_2BN_nhid(torch.nn.Module):
     def __init__(self,m,  input_dim, out_dim, args):
-        super(DiGCN_IB_2BN_nhid, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self._dropout = args.dropout
@@ -1957,9 +1957,9 @@ class DiGCN_IB_2BN_nhid(torch.nn.Module):
 
 class Di_IB_2_nhid(torch.nn.Module):
     def __init__(self, m, input_dim,  out_dim, args):
-        super(Di_IB_2_nhid, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
 
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, nhid, out_dim, args)
@@ -1979,9 +1979,9 @@ class Di_IB_2_nhid(torch.nn.Module):
 
 class Di_IB_2BN_nhid0(torch.nn.Module):
     def __init__(self, m, input_dim, out_dim, args):
-        super(Di_IB_2BN_nhid0, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self.batch_norm1 = nn.BatchNorm1d(nhid)
@@ -2009,7 +2009,7 @@ class Di_IB_2BN_nhid0(torch.nn.Module):
 
 class DiGCN_IB_2BN_nhid_para(torch.nn.Module):
     def __init__(self, input_dim, out_dim, args):
-        super(DiGCN_IB_2BN_nhid_para, self).__init__()
+        super().__init__()
         self.ib1 = InceptionBlock_Qinlist(input_dim, nhid)
         self.ib2 = InceptionBlock_Qinlist(nhid, nhid)
         self.coef1 = nn.ParameterList([nn.Parameter(torch.tensor(1.0)) for _ in range(20)])  # coef for ib1
@@ -2054,8 +2054,8 @@ class DiGCN_IB_2BN_nhid_para(torch.nn.Module):
 
 class DiGCN_IB_2BN_batch(torch.nn.Module):
     def __init__(self, m, input_dim, out_dim, args):
-        super(DiGCN_IB_2BN_batch, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid,  out_dim)
         self._dropout = args.dropout
@@ -2131,10 +2131,10 @@ class DiGCN_IB_2BN_batch(torch.nn.Module):
 
 class DiGCN_IB_2BN_batch_nhid(torch.nn.Module):
     def __init__(self,m,  input_dim, out_dim, args):
-        super(DiGCN_IB_2BN_batch_nhid, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
         self.batch_size = args.batch_size
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self.Conv = nn.Conv1d(nhid,  out_dim, kernel_size=1)
@@ -2212,7 +2212,7 @@ class DiGCN_IB_2BN_batch_nhid(torch.nn.Module):
 
 class DiGCN_IB_2BN_samebatch(torch.nn.Module):
     def __init__(self,m,  input_dim, out_dim, args):
-        super(DiGCN_IB_2BN_samebatch, self).__init__()
+        super().__init__()
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid,  out_dim)
         self._dropout = args.dropout
@@ -2287,9 +2287,9 @@ class DiGCN_IB_1BN_Sym(torch.nn.Module):
     revised for edge_index confusion
     '''
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_1BN_Sym, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, out_dim, args)
         self.batch_norm1 = nn.BatchNorm1d(out_dim)
 
@@ -2325,8 +2325,8 @@ class DiGCN_IB_1BN_Sym_nhid(torch.nn.Module):
     revised for edge_index confusion
     '''
     def __init__(self, m, input_dim, out_dim, args):
-        super(DiGCN_IB_1BN_Sym_nhid, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         dropout = args.dropout
         layer = args.layer
         
@@ -2371,8 +2371,8 @@ class DiGIB_1BN_Sym_nhid_para(torch.nn.Module):
     revised for edge_index confusion
     '''
     def __init__(self, input_dim,  out_dim, args):
-        super(DiGIB_1BN_Sym_nhid_para, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self._dropout = args.dropout
         self.ib1 = InceptionBlock_Qinlist(input_dim, nhid)
         self.ib2 = InceptionBlock_Qinlist(nhid, nhid)
@@ -2418,8 +2418,8 @@ class DiGCN_IB_1BN_Sym_batch_nhid(torch.nn.Module):
 
     '''
     def __init__(self,m,  input_dim,  out_dim, args, batch_size=1024):
-        super(DiGCN_IB_1BN_Sym_batch_nhid, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self.batch_size = args.batch_size
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
@@ -2508,9 +2508,9 @@ class DiGCN_IB_1BN_Sym_batchConvOut(torch.nn.Module):
     '''
 
     def __init__(self,m,  input_dim,  out_dim, args):
-        super(DiGCN_IB_1BN_Sym_batchConvOut, self).__init__()
+        super().__init__()
         self.batch_size = args.batch_size
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self._dropout = args.dropout
@@ -2599,8 +2599,8 @@ class DiGCN_IB_2BN_Sym_batch_nhid(torch.nn.Module):
 
     '''
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_2BN_Sym_batch_nhid, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self.batch_size = args.batch_size
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
@@ -2738,8 +2738,8 @@ class DiGCN_IB_2BN_Sym_batch_nhid(torch.nn.Module):
         return x
 class DiGCN_IB_2BN_Sym(torch.nn.Module):
     def __init__(self,m,  input_dim,  out_dim, args):
-        super(DiGCN_IB_2BN_Sym, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self._dropout = args.dropout
@@ -2786,8 +2786,8 @@ class DiGCN_IB_2BN_Sym(torch.nn.Module):
         return x
 class DiGIB_2BN_Sym_nhid_para(torch.nn.Module):
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGIB_2BN_Sym_nhid_para, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Qinlist(input_dim, nhid)
         self.ib2 = InceptionBlock_Qinlist(nhid, nhid)
         self.coef1 = nn.ParameterList([nn.Parameter(torch.tensor(1.0, requires_grad=True)) for _ in range(20)])        # coef for ib1
@@ -2850,9 +2850,9 @@ class DiGIB_2BN_Sym_nhid_para(torch.nn.Module):
         return x
 class DiGCN_IB_2BN_Sym_nhid(torch.nn.Module):
     def __init__(self,m, input_dim, out_dim,args):
-        super(DiGCN_IB_2BN_Sym_nhid, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         
         
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
@@ -2911,8 +2911,8 @@ class DiGCN_IB_XBN_Sym(torch.nn.Module):
     revised for edge_index confusion
     '''
     def __init__(self,m,  input_dim,  out_dim, args):
-        super(DiGCN_IB_XBN_Sym, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self._dropout = args.dropout
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
@@ -2977,9 +2977,9 @@ class DiGCN_IB_XBN_Sym_nhid(torch.nn.Module):
     revised for edge_index confusion
     '''
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_XBN_Sym_nhid, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
@@ -3050,8 +3050,8 @@ class DiGIB_XBN_Sym_nhid_para(torch.nn.Module):
     revised for edge_index confusion
     '''
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGIB_XBN_Sym_nhid_para, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Qinlist(input_dim, nhid)
         self.ib2 = InceptionBlock_Qinlist(nhid, nhid)
         self.ibx = InceptionBlock_Qinlist(nhid, nhid)
@@ -3138,9 +3138,9 @@ class DiGCN_IB_XBN_Sym_batch_nhid(torch.nn.Module):
 
     '''
     def __init__(self, m,  input_dim, out_dim, args):
-        super(DiGCN_IB_XBN_Sym_batch_nhid, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         self.batch_size = args.batch_size
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
@@ -3340,9 +3340,9 @@ class DiGCN_IB_2BN_SymCat_nhid(torch.nn.Module):
     all ib ends with nhid
     '''
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_2BN_SymCat_nhid, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
@@ -3417,9 +3417,9 @@ class DiGCN_IB_2BN_SymCat_batch_nhid(torch.nn.Module):
     only has nhid version
     '''
     def __init__(self, m, input_dim, nhid, out_dim, args):
-        super(DiGCN_IB_2BN_SymCat_batch_nhid, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         self.batch_size = args.batch_size  # Define your batch size
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
@@ -3575,9 +3575,9 @@ class DiGCN_IB_XBN_SymCat_nhid(torch.nn.Module):
     revised for edge_index confusion
     '''
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_XBN_SymCat_nhid, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.layer= args.layer
         layer = args.layer
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
@@ -3660,10 +3660,10 @@ class DiGCN_IB_XBN_SymCat_1ibx_nhid(torch.nn.Module):
     revised for edge_index confusionx
     '''
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_XBN_SymCat_1ibx_nhid, self).__init__()
+        super().__init__()
         self.layer= args.layer
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self.ibx = InceptionBlock_Di(m, nhid, nhid, args)
@@ -3747,9 +3747,9 @@ class DiGCN_IB_XBN_SymCat_batch_nhid(torch.nn.Module):
     only has nhid version
     '''
     def __init__(self,m, input_dim,  out_dim, args):
-        super(DiGCN_IB_XBN_SymCat_batch_nhid, self).__init__()
+        super().__init__()
         self.batch_size = args.batch_size  # Define your batch size
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self._dropout = args.dropout
         
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
@@ -3948,8 +3948,8 @@ class DiGCN_IB_1BN_SymCat_nhid(torch.nn.Module):
     revised for edge_index comfusion
     '''
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_1BN_SymCat_nhid, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self._dropout = args.dropout
         self.batch_norm1 = nn.BatchNorm1d(nhid)
@@ -3993,8 +3993,8 @@ class DiGCN_IB_1BN_SymCat_batch_nhid(torch.nn.Module):
 
     '''
     def __init__(self, m, input_dim,  out_dim, args,  batch_size=1024):
-        super(DiGCN_IB_1BN_SymCat_batch_nhid, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self.batch_size = args.batch_size  # Define your batch size
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self._dropout = args.dropout
@@ -4093,8 +4093,8 @@ class DiGCN_IB_1BN_SymCat_batchConvOut(torch.nn.Module):
     move all conv outside of batch
     '''
     def __init__(self, m, input_dim,  out_dim, args,  batch_size=1024):
-        super(DiGCN_IB_1BN_SymCat_batchConvOut, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self._dropout = args.dropout
         self.batch_size = args.batch_size  # Define your batch size
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
@@ -4191,8 +4191,8 @@ class DiGCN_IB_2MixBN_SymCat_nhid(torch.nn.Module):
     first layer is cat(Sym, DiGib), second layer is DiGib
     '''
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_2MixBN_SymCat_nhid, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self._dropout = args.dropout
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
@@ -4254,8 +4254,8 @@ class DiGCN_IB_2MixBN_SymCat(torch.nn.Module):
     '''
 
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_2MixBN_SymCat, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self._dropout = args.dropout
         
         self.ib1 = InceptionBlock_Di(m, input_dim, out_dim, args)
@@ -4312,8 +4312,8 @@ class DiGCN_IB_2MixBN_SymCat_batch(torch.nn.Module):
     first layer is cat(Sym, DiGib), second layer is DiGib
     '''
     def __init__(self,m,  input_dim,  out_dim, args, batch_size=1024):
-        super(DiGCN_IB_2MixBN_SymCat_batch, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self._dropout = args.dropout
         self.batch_size = args.batch_size  # Define your batch size
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
@@ -4423,8 +4423,8 @@ class DiGCN_IB_2MixBN_SymCat_batch_nhid(torch.nn.Module):
     '''
 
     def __init__(self, m, input_dim,  out_dim, args, batch_size=1024):
-        super(DiGCN_IB_2MixBN_SymCat_batch_nhid, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self.batch_size = args.batch_size  # Define your batch size
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, 2*nhid, 2*nhid)
@@ -4540,8 +4540,8 @@ class DiGCN_IB_2MixBN_SymCat_Sym(torch.nn.Module):
     first layer is cat(Sym, DiGib), second layer is addSym
     '''
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_2MixBN_SymCat_Sym, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self._dropout = args.dropout
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
@@ -4602,8 +4602,8 @@ class DiGCN_IB_2MixBN_SymCat_Sym_nhid(torch.nn.Module):
     nhid
     '''
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_2MixBN_SymCat_Sym_nhid, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self._dropout = args.dropout
@@ -4668,8 +4668,8 @@ class DiGCN_IB_2MixBN_SymCat_Sym_batch(torch.nn.Module):
     first layer is cat(Sym, DiGib), second layer is addSym
     '''
     def __init__(self, m, input_dim,  out_dim, args, batch_size=1024):
-        super(DiGCN_IB_2MixBN_SymCat_Sym_batch, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         self.batch_size = args.batch_size  # Define your batch size
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
@@ -4790,10 +4790,10 @@ class DiGCN_IB_2MixBN_SymCat_Sym_batch_nhid(torch.nn.Module):
     first layer is cat(Sym, DiGib), second layer is addSym
     '''
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_2MixBN_SymCat_Sym_batch_nhid, self).__init__()
+        super().__init__()
         self.batch_size = args.batch_size  # Define your batch size
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self.batch_norm1 = nn.BatchNorm1d(nhid)
@@ -4933,9 +4933,9 @@ class DiGCN_IB_3MixBN_SymCat_Sym_batch_nhid(torch.nn.Module):
     '''
 
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_3MixBN_SymCat_Sym_batch_nhid, self).__init__()
+        super().__init__()
         self.layer = args.layer
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.batch_size = args.batch_size  # Define your batch size
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
@@ -5127,10 +5127,10 @@ class DiGCN_IB_3MixBN_SymCat_Sym_batch(torch.nn.Module):
     first layer is cat(Sym, DiGib), second layer is addSym
     '''
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_3MixBN_SymCat_Sym_batch, self).__init__()
+        super().__init__()
         self.layer = args.layer
         self.batch_size = args.batch_size  # Define your batch size
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self._dropout = args.dropout
@@ -5316,9 +5316,9 @@ class DiGCN_IB_3MixBN_SymCat(torch.nn.Module):
         first layer is cat(Sym, DiGib), second layer is DiGib
         '''
         def __init__(self, m, input_dim,  out_dim, args):
-            super(DiGCN_IB_3MixBN_SymCat, self).__init__()
+            super().__init__()
             self.layer = args.layer
-            nhid = args.feat_dim
+            nhid = args.hid_dim
             self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
             self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
             self._dropout = args.dropout
@@ -5408,9 +5408,9 @@ class DiGCN_IB_3MixBN_SymCat_nhid(torch.nn.Module):
     '''
 
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_3MixBN_SymCat_nhid, self).__init__()
+        super().__init__()
         self.layer = args.layer
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self._dropout = args.dropout
@@ -5507,11 +5507,11 @@ class DiGCN_IB_3MixBN_SymCat_batch_nhid(torch.nn.Module):
     '''
 
     def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_3MixBN_SymCat_batch_nhid, self).__init__()
+        super().__init__()
         self.batch_size = args.batch_size
         self.layer = args.layer
         layer = args.layer
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self._dropout = args.dropout
@@ -5736,10 +5736,10 @@ class DiGCN_IB_3MixBN_SymCat_batch(torch.nn.Module):
     first layer is cat(Sym, DiGib), second layer is DiGib
     '''
     def __init__(self, m, input_dim,  out_dim, args, batch_size=1000):
-        super(DiGCN_IB_3MixBN_SymCat_batch, self).__init__()
+        super().__init__()
         self.batch_size = args.batch_size
         self.layer = args.layer
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self._dropout = args.dropout
@@ -5982,9 +5982,9 @@ class DiGCN_IB_3MixBN_SymCat_Sym_nhid(torch.nn.Module):
     first layer is cat(Sym, DiGib), second layer is addSym
     '''
     def __init__(self,m,  input_dim,  out_dim, args):
-        super(DiGCN_IB_3MixBN_SymCat_Sym_nhid, self).__init__()
+        super().__init__()
         self.layer = args.layer
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self._dropout = args.dropout
@@ -6077,9 +6077,9 @@ class DiGCN_IB_3MixBN_SymCat_Sym(torch.nn.Module):
     first layer is cat(Sym, DiGib), second layer is addSym
     '''
     def __init__(self,m,  input_dim,  out_dim, args):
-        super(DiGCN_IB_3MixBN_SymCat_Sym, self).__init__()
+        super().__init__()
         self.layer = args.layer
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self._dropout = args.dropout
@@ -6164,9 +6164,9 @@ class DiGCN_IB_3MixBN_SymCat_Sym(torch.nn.Module):
 
 class DiGCN_IB_XBN_nhid(torch.nn.Module):
     def __init__(self, m, input_dim, out_dim, args):
-        super(DiGCN_IB_XBN_nhid, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.layer = args.layer
         layer = args.layer
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
@@ -6204,9 +6204,9 @@ class DiGCN_IB_XBN_nhid(torch.nn.Module):
 
 class Di_IB_XBN_nhid_ConV(torch.nn.Module):
     def __init__(self, m, input_dim,   out_dim, args):
-        super(Di_IB_XBN_nhid_ConV, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         self.layer = args.layer
         self.BN_model = args.BN_model
@@ -6251,9 +6251,9 @@ class Di_IB_XBN_nhid_ConV(torch.nn.Module):
 
 class Di_IB_XBN_nhid_ConV_JK(torch.nn.Module):
     def __init__(self, m, input_dim,   out_dim, args):
-        super(Di_IB_XBN_nhid_ConV_JK, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.jk= args.jk
         self.BNorm = args.BN_model
 
@@ -6319,9 +6319,9 @@ class Di_IB_XBN_nhid_ConV_JK(torch.nn.Module):
 
 class Di_IB_X_nhid(torch.nn.Module):
     def __init__(self, m, input_dim,   out_dim, args):
-        super(Di_IB_X_nhid, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
 
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
@@ -6350,9 +6350,9 @@ class Di_IB_X_nhid(torch.nn.Module):
 
 class Si_IB_X_nhid(torch.nn.Module):
     def __init__(self, m, input_dim, out_dim, args):
-        super(Si_IB_X_nhid, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.layer = args.layer
 
         if self.layer == 1:
@@ -6385,8 +6385,8 @@ class Si_IB_X_nhid(torch.nn.Module):
 
 class DiGCN_IB_XBN_nhid_para(torch.nn.Module):
     def __init__(self, m, num_features, out_dim, args):
-        super(DiGCN_IB_XBN_nhid_para, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         if args.layer==1:
             self.ib1 = InceptionBlock_Di_list(m, num_features, out_dim, args)
         else:
@@ -6443,9 +6443,9 @@ class DiGCN_IB_XBN_nhid_para(torch.nn.Module):
 
 class DiGCN_IB_X_nhid_para_Jk(torch.nn.Module):
     def __init__(self, m, input_dim, out_dim, args):
-        super(DiGCN_IB_X_nhid_para_Jk, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.jumping_knowledge = args.jk
         num_layers = args.layer
         output_dim = nhid if self.jumping_knowledge else out_dim
@@ -6514,9 +6514,9 @@ class DiGCN_IB_X_nhid_para_Jk(torch.nn.Module):
 
 class DiGCN_IB_X_nhid_para(torch.nn.Module):
     def __init__(self, m, input_dim, out_dim, args):
-        super(DiGCN_IB_X_nhid_para, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         if args.layer==1:
             self.ib1 = InceptionBlock_Di_list(m, input_dim, out_dim, args)
         else:
@@ -6567,7 +6567,7 @@ class DiGCN_IB_X_nhid_para(torch.nn.Module):
 
 # class DiGCN_IB_XBN_nhid_para(torch.nn.Module):
 #     def __init__(self, num_features, hidden,  out_dim, dropout=0.5, layer=2):
-#         super(DiGCN_IB_XBN_nhid_para, self).__init__()
+#         super().__init__()
         self.ib1 = InceptionBlock_Qinlist(num_features, hidden)
 #         self.ib2 = InceptionBlock_Qinlist(hidden, hidden)
 #         self.coef1 = nn.ParameterList([nn.Parameter(torch.tensor(1.0)) for _ in range(5)])  # coef for ib1
@@ -6621,8 +6621,8 @@ class DiGCN_IB_X_nhid_para(torch.nn.Module):
 
 class DiGCN_IB_XBN_batch_nhid(torch.nn.Module):
     def __init__(self,m,  input_dim, out_dim, args):
-        super(DiGCN_IB_XBN_batch_nhid, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         layer = args.layer
         self._dropout = args.dropout
         self.batch_size = args.batch_size
@@ -6736,10 +6736,10 @@ class DiGCN_IB_XBN_batch_nhid(torch.nn.Module):
 
 class DiGCN_IB_XBN_batch(torch.nn.Module):
     def __init__(self,m,  input_dim, out_dim, args):
-        super(DiGCN_IB_XBN_batch, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
         self.batch_size = args.batch_size
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid,  out_dim)

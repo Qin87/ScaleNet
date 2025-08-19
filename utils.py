@@ -31,7 +31,7 @@ def test_directed(edge_index):
 
 class CrossEntropy(nn.Module):
     def __init__(self):
-        super(CrossEntropy, self).__init__()
+        super().__init__()
 
     def forward(self, input, target, weight=None, reduction='mean'):
         return F.cross_entropy(input, target, weight=weight, reduction=reduction)

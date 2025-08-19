@@ -23,7 +23,7 @@ def process(mul_L_real, mul_L_imag, weight, X_real, X_imag):
 
 class SDConv(nn.Module):
     def __init__(self, in_c, out_c, K, L_norm_real, L_norm_imag, bias=True):
-        super(SDConv, self).__init__()
+        super().__init__()
         L_norm_real, L_norm_imag = L_norm_real, L_norm_imag
         self.mul_L_real = L_norm_real  # [K, N, N]
         self.mul_L_imag = L_norm_imag  # [K, N, N]
@@ -56,7 +56,7 @@ class SDConv(nn.Module):
 
 class complex_relu_layer(nn.Module):
     def __init__(self, ):
-        super(complex_relu_layer, self).__init__()
+        super().__init__()
 
     def complex_relu(self, real, img):
         mask = 1.0 * (real >= 0)
@@ -73,7 +73,7 @@ class complex_relu_layer(nn.Module):
 
 class SDGCN_Edge(nn.Module):
     def __init__(self, in_c, L_norm_real, L_norm_imag, num_filter=2, K=2, label_dim=2, layer=2, dropout=False):
-        super(SDGCN_Edge, self).__init__()
+        super().__init__()
 
         activation_func = complex_relu_layer
         chebs = [SDConv(in_c=in_c, out_c=num_filter, K=K, L_norm_real=L_norm_real, L_norm_imag=L_norm_imag)]

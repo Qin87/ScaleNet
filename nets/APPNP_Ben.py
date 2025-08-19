@@ -8,7 +8,7 @@ from nets.Sym_Reg import DGCNConv
 
 class APPNP_ModelBen1(nn.Module):
     def __init__(self, input_dim, nhid, out_dim, dropout, layer=1,alpha=0.1):
-        super(APPNP_ModelBen1, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.line1 = nn.Linear(input_dim, out_dim)
         self.conv1 = APPNP(K=10, alpha=alpha)
@@ -23,7 +23,7 @@ class APPNP_ModelBen1(nn.Module):
 
 class APPNP_ModelBen2(nn.Module):
     def __init__(self, input_dim, nhid, out_dim, dropout, layer=2, alpha=0.1):
-        super(APPNP_ModelBen2, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.line1 = nn.Linear(input_dim, nhid)
         self.line2 = nn.Linear(nhid, out_dim)
@@ -47,7 +47,7 @@ class APPNP_ModelBen2(nn.Module):
 
 class APPNP_ModelBenX(nn.Module):
     def __init__(self, input_dim, nhid, out_dim, dropout, layer=3, alpha=0.1):
-        super(APPNP_ModelBenX, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.line1 = nn.Linear(input_dim, nhid)
         self.line2 = nn.Linear(nhid, out_dim)
@@ -93,7 +93,7 @@ def create_APPNP(nfeat, nhid, nclass, dropout, nlayer, alpha=0.1):
 #########################################################################
 class APPNP1LayerWithGCN(nn.Module):
     def __init__(self, in_features, hidden_dim, num_classes, dropout, alpha, K):
-        super(APPNP1LayerWithGCN, self).__init__()
+        super().__init__()
         self.conv1 = GCNConv(in_features, hidden_dim)
         self.propagate = APPNP(K=K, alpha=alpha)
         self.fc = nn.Linear(hidden_dim, num_classes)
@@ -107,7 +107,7 @@ class APPNP1LayerWithGCN(nn.Module):
 
 class APPNP2LayerWithGCN(nn.Module):
     def __init__(self, in_features, hidden_dim,num_classes, dropout, alpha, K):
-        super(APPNP2LayerWithGCN, self).__init__()
+        super().__init__()
         self.conv1 = GCNConv(in_features, hidden_dim)
         self.conv2 = GCNConv(hidden_dim, hidden_dim)
         self.propagate = APPNP(K=K, alpha=alpha)
@@ -123,7 +123,7 @@ class APPNP2LayerWithGCN(nn.Module):
 
 class APPNPXLayerWithGCN(nn.Module):
     def __init__(self, in_features, hidden_dim, num_classes, dropout, layer, alpha, K):
-        super(APPNPXLayerWithGCN, self).__init__()
+        super().__init__()
         self.conv1 = GCNConv(in_features, hidden_dim)
         self.conv2 = GCNConv(hidden_dim, hidden_dim)
         self.convx = nn.ModuleList([GCNConv(hidden_dim, hidden_dim) for _ in range(layer - 2)])
@@ -146,7 +146,7 @@ class APPNPXLayerWithGCN(nn.Module):
 
 class APPNP1BN(nn.Module):
     def __init__(self, in_features, hidden_dim, num_classes, dropout, alpha, K):
-        super(APPNP1BN, self).__init__()
+        super().__init__()
         self.conv1 = GCNConv(in_features, hidden_dim)
         self.propagate = APPNP(K=K, alpha=alpha)
         self.fc = nn.Linear(hidden_dim, num_classes)
@@ -161,7 +161,7 @@ class APPNP1BN(nn.Module):
 
 class APPNP2BN(nn.Module):
     def __init__(self, in_features, hidden_dim,num_classes, dropout, alpha, K):
-        super(APPNP2BN, self).__init__()
+        super().__init__()
         self.conv1 = GCNConv(in_features, hidden_dim)
         self.conv2 = GCNConv(hidden_dim, hidden_dim)
 
@@ -181,7 +181,7 @@ class APPNP2BN(nn.Module):
 
 class APPNPXBN(nn.Module):
     def __init__(self, in_features, hidden_dim, num_classes, dropout, layer, alpha, K):
-        super(APPNPXBN, self).__init__()
+        super().__init__()
         self.conv1 = GCNConv(in_features, hidden_dim)
         self.conv2 = GCNConv(hidden_dim, hidden_dim)
         self.convx = nn.ModuleList([GCNConv(hidden_dim, hidden_dim) for _ in range(layer - 2)])
@@ -208,7 +208,7 @@ class APPNPXBN(nn.Module):
 
 class APPNP1Simp_BN(nn.Module):
     def __init__(self, in_features, hidden_dim, num_classes, dropout, alpha, K):
-        super(APPNP1Simp_BN, self).__init__()
+        super().__init__()
         self.line1 = nn.Linear(in_features, num_classes)
         self.conv1 = APPNP(K=10, alpha=alpha)
 
@@ -225,7 +225,7 @@ class APPNP1Simp_BN(nn.Module):
 
 class APPNP2Simp_BN(nn.Module):
     def __init__(self, in_features, hidden_dim, num_classes, dropout, alpha, K):
-        super(APPNP2Simp_BN, self).__init__()
+        super().__init__()
         self.line1 = nn.Linear(in_features, hidden_dim)
         self.line2 = nn.Linear(hidden_dim, num_classes)
 
@@ -248,7 +248,7 @@ class APPNP2Simp_BN(nn.Module):
 
 class APPNP_Model(torch.nn.Module):
     def __init__(self, input_dim, out_dim, filter_num, alpha = 0.1, dropout = False, layer=3):
-        super(APPNP_Model, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.line1 = nn.Linear(input_dim, filter_num)
         self.line2 = nn.Linear(filter_num, filter_num)
@@ -292,7 +292,7 @@ class APPNP_Model(torch.nn.Module):
 
 class SymModel(torch.nn.Module):
     def __init__(self, input_dim, out_dim, filter_num, dropout=False, layer=2):
-        super(SymModel, self).__init__()
+        super().__init__()
         self.layer = layer
         self.dropout = dropout
         self.gconv = DGCNConv()
@@ -352,7 +352,7 @@ class SymModel(torch.nn.Module):
 
 class ChebModel(torch.nn.Module):
     def __init__(self, input_dim, out_dim, filter_num, K, dropout = False, layer=2):
-        super(ChebModel, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.conv1 = ChebConv(input_dim, filter_num, K)
         self.conv2 = ChebConv(filter_num, filter_num, K)
@@ -424,7 +424,7 @@ class GCNModel_Cheb(torch.nn.Module):
 
 class APPNPXSimp_BN(nn.Module):
     def __init__(self, in_features, hidden_dim, num_classes, dropout, layer, alpha, K):
-        super(APPNPXSimp_BN, self).__init__()
+        super().__init__()
 
         self.line1 = nn.Linear(in_features, hidden_dim)
         self.line2 = nn.Linear(hidden_dim, num_classes)

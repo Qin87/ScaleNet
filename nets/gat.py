@@ -67,7 +67,7 @@ class GATConv(MessagePassing):
                  negative_slope: float = 0.2, dropout: float = 0.0,
                  bias: bool = True, **kwargs):
         kwargs.setdefault('aggr', 'add')
-        super(GATConv, self).__init__(node_dim=0, **kwargs)
+        super().__init__(node_dim=0, **kwargs)
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -225,7 +225,7 @@ class GATConvQin(MessagePassing):
                  negative_slope: float = 0.2, dropout: float = 0.0,
                  bias: bool = True, **kwargs):
         kwargs.setdefault('aggr', 'add')
-        super(GATConvQin, self).__init__(node_dim=0, **kwargs)
+        super().__init__(node_dim=0, **kwargs)
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -372,7 +372,7 @@ class GATConvQin(MessagePassing):
 
 class StandGAT1(nn.Module):
     def __init__(self, nfeat, nhid, nclass, dropout,nlayer=1, is_add_self_loops=True, head=8):
-        super(StandGAT1, self).__init__()
+        super().__init__()
         self.conv1 = GATConv(nfeat, nclass,heads=head)
 
         self.is_add_self_loops = is_add_self_loops
@@ -390,7 +390,7 @@ class StandGAT1(nn.Module):
 
 class StandGAT2(nn.Module):
     def __init__(self, nfeat, nhid, nclass, dropout,nlayer=2):
-        super(StandGAT2, self).__init__()
+        super().__init__()
 
         num_head = 4
         head_dim = nhid//num_head
@@ -413,7 +413,7 @@ class StandGAT2(nn.Module):
 
 class StandGATX(nn.Module):
     def __init__(self, nfeat, nhid, nclass, dropout,nlayer=3):
-        super(StandGATX, self).__init__()
+        super().__init__()
 
         num_head = 4
         head_dim = nhid//num_head
@@ -445,7 +445,7 @@ class StandGATX(nn.Module):
 
 class StandGAT1BN(nn.Module):
     def __init__(self, nfeat, nhid, nclass, dropout,nlayer=1, is_add_self_loops=True, head=8):
-        super(StandGAT1BN, self).__init__()
+        super().__init__()
         self.dropout = dropout
         num_head = 1
         head_dim = nhid // num_head
@@ -476,7 +476,7 @@ class StandGAT1BN(nn.Module):
 
 class StandGAT1BN_Qin(nn.Module):
     def __init__(self, num_node, nfeat, nhid, nclass, dropout,nlayer=1, is_add_self_loops=True, head=8):
-        super(StandGAT1BN_Qin, self).__init__()
+        super().__init__()
         self.dropout = dropout
         num_head = 1
         head_dim = nhid // num_head
@@ -510,7 +510,7 @@ class StandGAT1BN_Qin(nn.Module):
 
 class StandGAT2BN(nn.Module):
     def __init__(self, nfeat, nhid, nclass, dropout,nlayer=2, head=8):
-        super(StandGAT2BN, self).__init__()
+        super().__init__()
         self.Conv = nn.Conv1d(nhid, nclass, kernel_size=1)
 
         num_head = 1
@@ -544,7 +544,7 @@ class StandGAT2BN(nn.Module):
 
 class StandGATXBN(nn.Module):
     def __init__(self, nfeat, nhid, nclass, dropout,nlayer=3, head=8):
-        super(StandGATXBN, self).__init__()
+        super().__init__()
         self.Conv = nn.Conv1d(nhid, nclass, kernel_size=1)
 
         num_head = 1

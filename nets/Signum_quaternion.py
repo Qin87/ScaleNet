@@ -18,7 +18,7 @@ class complex_relu_layer(nn.Module):
     """
 
     def __init__(self, ):
-        super(complex_relu_layer, self).__init__()
+        super().__init__()
 
     def complex_relu(self, real: torch.FloatTensor, imag_i: torch.FloatTensor, imag_j: torch.FloatTensor, imag_k: torch.FloatTensor):
         """
@@ -51,7 +51,7 @@ class complex_relu_layer_different(nn.Module):
     """
 
     def __init__(self, ):
-        super(complex_relu_layer_different, self).__init__()
+        super().__init__()
 
     def complex_relu(self, real: torch.FloatTensor, imag_i: torch.FloatTensor, imag_j: torch.FloatTensor, imag_k: torch.FloatTensor):
         """
@@ -87,7 +87,7 @@ class complex_Leaky_relu_layer_different(nn.Module):
     """
 
     def __init__(self, ):
-        super(complex_Leaky_relu_layer_different, self).__init__()
+        super().__init__()
 
     def complex_Leaky_relu(self, real: torch.FloatTensor, imag_i: torch.FloatTensor, imag_j: torch.FloatTensor, imag_k: torch.FloatTensor):
         """
@@ -120,7 +120,7 @@ class QuaNetConv(MessagePassing):
     def __init__(self, in_channels: int, out_channels: int, K: int, normalization: str = 'sym', bias: bool = True, edge_index=None,
                  norm_real=None, norm_imag_i=None, norm_imag_j=None, norm_imag_k=None, quaternion_weights=False, quaternion_bias=False, **kwargs):  # norm_imag_3=None,
         kwargs.setdefault('aggr', 'add')
-        super(QuaNetConv, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         assert K > 0
         assert normalization in [None, 'sym'], 'Invalid normalization'
@@ -264,7 +264,7 @@ class QuaNetConv_Qin(MessagePassing):
     def __init__(self, device, in_channels: int, out_channels: int, K: int, normalization: str = 'sym', bias: bool = True, edge_index=None,
                  norm_real=None, norm_imag_i=None, norm_imag_j=None, norm_imag_k=None, quaternion_weights=False, quaternion_bias=False, **kwargs):  # norm_imag_3=None,
         kwargs.setdefault('aggr', 'add')
-        super(QuaNetConv_Qin, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         # device = edge_index.device
         assert K > 0
         assert normalization in [None, 'sym'], 'Invalid normalization'
@@ -435,7 +435,7 @@ class QuaNet_link_prediction_one_laplacian(nn.Module):
                  activation: bool = True, layer: int = 2, dropout: float = 0.5, normalization: str = 'sym', \
                  unwind: bool = True, edge_index=None, norm_real=None, norm_imag_i=None, norm_imag_j=None, norm_imag_k=None, \
                  quaternion_weights: bool = False, quaternion_bias: bool = False):
-        super(QuaNet_link_prediction_one_laplacian, self).__init__()
+        super().__init__()
 
         chebs = nn.ModuleList()
         chebs.append(QuaNetConv(in_channels=num_features, out_channels=hidden, K=K, \
@@ -518,7 +518,7 @@ class QuaNet_node_prediction_one_laplacian(nn.Module):
                  activation: bool = True, layer: int = 2, dropout: float = 0.5, normalization: str = 'sym', \
                  unwind: bool = False, edge_index=None, norm_real=None, norm_imag_i=None, norm_imag_j=None, norm_imag_k=None, \
                  quaternion_weights: bool = False, quaternion_bias: bool = False):
-        super(QuaNet_node_prediction_one_laplacian, self).__init__()
+        super().__init__()
 
         chebs = nn.ModuleList()
         chebs.append(QuaNetConv(in_channels=num_features, out_channels=hidden, K=K, \
@@ -598,7 +598,7 @@ class QuaNet_node_prediction_one_laplacian_Qin(nn.Module):
                  activation: bool = True, layer: int = 2, dropout: float = 0.5, normalization: str = 'sym', \
                  unwind: bool = False,
                  quaternion_weights: bool = False, quaternion_bias: bool = False):
-        super(QuaNet_node_prediction_one_laplacian_Qin, self).__init__()
+        super().__init__()
 
         chebs = nn.ModuleList()
         chebs.append(QuaNetConv_Qin(device, in_channels=num_features, out_channels=hidden, K=K,

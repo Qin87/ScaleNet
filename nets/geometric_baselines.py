@@ -1845,7 +1845,7 @@ def directed_norm_weight(adj, edge_weight=None, rm_gen_sLoop=False):
 def get_model(num_features,  n_cls, args):
     return GNN(
         num_features=num_features,
-        hidden_dim=args.feat_dim,
+        hidden_dim=args.hid_dim,
         num_layers=args.layer,
         num_classes=n_cls,
         dropout=args.dropout,
@@ -1953,7 +1953,7 @@ class GCN_JKNet(torch.nn.Module):
         super().__init__()
         jumping_knowledge = args.jk
         layer = args.layer
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         hidden_dim = nhid
         normalize = args.normalize
         dropout = args.dropout
@@ -2003,7 +2003,7 @@ class High_Frequent(torch.nn.Module):
         super().__init__()
         jumping_knowledge = args.jk
         layer = args.layer
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         hidden_dim = nhid
         normalize = args.normalize
         dropout = args.dropout
@@ -2054,7 +2054,7 @@ class RandomNet(torch.nn.Module):
         super().__init__()
         jumping_knowledge = args.jk
         layer = args.layer
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         hidden_dim = nhid
         normalize = args.normalize
         dropout = args.dropout
@@ -2105,7 +2105,7 @@ class ScaleNet(torch.nn.Module):
         super().__init__()
         jumping_knowledge = args.jk
         layer = args.layer
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         hidden_dim = nhid
         normalize = args.normalize
         dropout = args.dropout
@@ -2156,7 +2156,7 @@ class Sloop_JKNet(torch.nn.Module):
         super().__init__()
         jumping_knowledge = args.jk
         layer = args.layer
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         hidden_dim = nhid
         normalize = args.normalize
         dropout = args.dropout

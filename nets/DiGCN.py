@@ -38,7 +38,7 @@ class DIGCNConv(MessagePassing):
 
     def __init__(self, in_channels, out_channels, improved=False, cached=False,
                  bias=True, **kwargs):
-        super(DIGCNConv, self).__init__(aggr='add', **kwargs)
+        super().__init__(aggr='add', **kwargs)
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -100,7 +100,7 @@ class DIGCNConv(MessagePassing):
 
 class DiModel(torch.nn.Module):
     def __init__(self, input_dim, out_dim, filter_num, dropout=False, layer=2):
-        super(DiModel, self).__init__()
+        super().__init__()
         self.conv1 = DIGCNConv(input_dim, filter_num)
         self.conv2 = DIGCNConv(filter_num, filter_num)
 
@@ -132,7 +132,7 @@ class DiModel(torch.nn.Module):
 
 class DiGCNet(torch.nn.Module):
     def __init__(self, input_dim, out_dim, hidden, dropout=False):
-        super(DiGCNet, self).__init__()
+        super().__init__()
         self.conv1 = DIGCNConv(input_dim, hidden)
         self.conv2 = DIGCNConv(hidden, hidden)
         self.linear = nn.Linear(hidden * 2, out_dim)
@@ -157,7 +157,7 @@ class DiGCNet(torch.nn.Module):
 
 class InceptionBlock(torch.nn.Module):
     def __init__(self, in_dim, out_dim):
-        super(InceptionBlock, self).__init__()
+        super().__init__()
         self.ln = Linear(in_dim, out_dim)
         self.conv1 = DIGCNConv(in_dim, out_dim)
         self.conv2 = DIGCNConv(in_dim, out_dim)
@@ -196,7 +196,7 @@ class InceptionBlock(torch.nn.Module):
 
 class InceptionBlock_Qin(torch.nn.Module):
     def __init__(self, in_dim, out_dim):
-        super(InceptionBlock_Qin, self).__init__()
+        super().__init__()
         self.ln = Linear(in_dim, out_dim)
         self.convx = nn.ModuleList([DIGCNConv(in_dim, out_dim) for _ in range(5)])
 
@@ -216,7 +216,7 @@ class InceptionBlock_Qin(torch.nn.Module):
 
 class InceptionBlock4batch(torch.nn.Module):
     def __init__(self, in_dim, out_dim):
-        super(InceptionBlock4batch, self).__init__()
+        super().__init__()
         self.ln = Linear(in_dim, out_dim)
         self.conv1 = DIGCNConv(in_dim, out_dim)
         self.conv2 = DIGCNConv(in_dim, out_dim)
@@ -234,7 +234,7 @@ class InceptionBlock4batch(torch.nn.Module):
 
 class InceptionBlock_Ben(torch.nn.Module):
     def __init__(self, in_dim, out_dim):
-        super(InceptionBlock_Ben, self).__init__()
+        super().__init__()
         self.ln = Linear(in_dim, out_dim)
         self.conv1 = DIGCNConv(in_dim, out_dim)
         self.conv2 = DIGCNConv(in_dim, out_dim)
@@ -252,7 +252,7 @@ class InceptionBlock_Ben(torch.nn.Module):
 
 class DiGCN_IB(torch.nn.Module):
     def __init__(self, num_features, hidden, num_classes, dropout=0.5, layer=2):
-        super(DiGCN_IB, self).__init__()
+        super().__init__()
         self.ib1 = InceptionBlock(num_features, hidden)
         self.ib2 = InceptionBlock(hidden, hidden)
         self._dropout = dropout
@@ -284,7 +284,7 @@ class DiGCN_IB(torch.nn.Module):
 
 class DiGCNet_IB(torch.nn.Module):
     def __init__(self, num_features, num_classes, hidden, dropout=False):
-        super(DiGCNet_IB, self).__init__()
+        super().__init__()
         self.ib1 = InceptionBlock(num_features, hidden)
         self.ib2 = InceptionBlock(hidden, hidden)
         self.linear = nn.Linear(hidden * 2, num_classes)

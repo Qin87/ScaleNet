@@ -73,7 +73,7 @@ class DGCNConv(MessagePassing):
                  bias: bool = True, **kwargs):
 
         kwargs.setdefault('aggr', 'add')
-        super(DGCNConv, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self.improved = improved
         self.cached = cached
@@ -132,7 +132,7 @@ class DGCNConv(MessagePassing):
 
 class SymModel(torch.nn.Module):
     def __init__(self, input_dim, out_dim, filter_num, dropout=False, layer=2):
-        super(SymModel, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.gconv = DGCNConv()
         self.Conv = nn.Conv1d(filter_num * 3, out_dim, kernel_size=1)
@@ -202,7 +202,7 @@ class SymModel(torch.nn.Module):
 
 class Sym_Link(torch.nn.Module):
     def __init__(self, input_dim, out_dim, filter_num, dropout=False):
-        super(Sym_Link, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.gconv = DGCNConv()
 

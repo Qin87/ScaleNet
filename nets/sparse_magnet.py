@@ -34,7 +34,7 @@ class ChebConv(nn.Module):
     """
 
     def __init__(self, in_c, out_c, K, L_norm_real, L_norm_imag, bias=True):
-        super(ChebConv, self).__init__()
+        super().__init__()
 
         L_norm_real, L_norm_imag = L_norm_real, L_norm_imag
 
@@ -82,7 +82,7 @@ class ChebConv_Qin_Direct(nn.Module):
     differ from ChebConv is parameter(X_real, X_imag) in __init__ move to forward.
     """
     def __init__(self, in_c, out_c, K, bias=True):
-        super(ChebConv_Qin_Direct, self).__init__()
+        super().__init__()
 
         self.weight = nn.Parameter(torch.Tensor(K + 1, in_c, out_c))  # [K+1, 1, in_c, out_c]
 
@@ -148,7 +148,7 @@ class ChebConv_Qin(nn.Module):
     differ from ChebConv is parameter(X_real, X_imag) in __init__ move to forward.
     """
     def __init__(self, in_c, out_c, K, bias=True):
-        super(ChebConv_Qin, self).__init__()
+        super().__init__()
 
         self.weight = nn.Parameter(torch.Tensor(K + 1, in_c, out_c))  # [K+1, 1, in_c, out_c]
 
@@ -220,7 +220,7 @@ class ChebConv_Qin_05(nn.Module):
     differ from ChebConv is parameter(X_real, X_imag) in __init__ move to forward.
     """
     def __init__(self, in_c, out_c, K, bias=True):
-        super(ChebConv_Qin_05, self).__init__()
+        super().__init__()
 
         self.weight = nn.Parameter(torch.Tensor(K + 1, in_c, out_c))  # [K+1, 1, in_c, out_c]
 
@@ -291,7 +291,7 @@ class ChebConv_QinDirect(nn.Module):
     differ from ChebConv is parameter(X_real, X_imag) in __init__ move to forward.
     """
     def __init__(self, in_c, out_c, K, bias=True):
-        super(ChebConv_QinDirect, self).__init__()
+        super().__init__()
 
         self.weight = nn.Parameter(torch.Tensor(K + 1, in_c, out_c))  # [K+1, 1, in_c, out_c]
 
@@ -362,7 +362,7 @@ class ChebConv_Qin_2bias(nn.Module):
     differ from ChebConv is parameter(X_real, X_imag) in __init__ move to forward.
     """
     def __init__(self, in_c, out_c, K, bias=True):
-        super(ChebConv_Qin_2bias, self).__init__()
+        super().__init__()
 
         self.weight = nn.Parameter(torch.Tensor(K + 1, in_c, out_c))  # [K+1, 1, in_c, out_c]
 
@@ -432,7 +432,7 @@ class ChebConv_Qin_2bias(nn.Module):
 
 class complex_relu_layer(nn.Module):
     def __init__(self, ):
-        super(complex_relu_layer, self).__init__()
+        super().__init__()
 
     def complex_relu(self, real, img):
         mask = 1.0 * (real >= 0)
@@ -469,7 +469,7 @@ class complex_relu_layer(nn.Module):
 
 class complex_relu_layer_Ben(nn.Module):
     def __init__(self, ):
-        super(complex_relu_layer_Ben, self).__init__()
+        super().__init__()
 
     def complex_relu(self, real, img):
         mask = 1.0 * (real >= 0)
@@ -488,7 +488,7 @@ class complex_relu_layer_Ben(nn.Module):
 
 class complex_relu_layer_SigBen(nn.Module):
     def __init__(self, ):
-        super(complex_relu_layer_SigBen, self).__init__()
+        super().__init__()
 
     def complex_relu(self, real, img):
         mask = 1.0 * (real >= 0)
@@ -514,7 +514,7 @@ class ChebNet(nn.Module):
         :param K: for cheb series
         :param L_norm_real, L_norm_imag: normalized laplacian
         """
-        super(ChebNet, self).__init__()
+        super().__init__()
 
         chebs = [ChebConv(in_c=in_c, out_c=num_filter, K=K, L_norm_real=L_norm_real, L_norm_imag=L_norm_imag)]
         # chebs = [ChebConv_Qin(in_c=in_c, out_c=num_filter, K=K)]
@@ -557,7 +557,7 @@ class ChebNet_BenQin(nn.Module):
         :param K: for cheb series
         :param L_norm_real, L_norm_imag: normalized laplacian
         """
-        super(ChebNet_BenQin, self).__init__()
+        super().__init__()
         self.dropout = dropout
 
         chebs = [ChebConv_Qin_Direct(in_c=in_c, out_c=num_filter, K=K)]
@@ -610,7 +610,7 @@ class ChebNet_Ben(nn.Module):
         :param K: for cheb series
         :param L_norm_real, L_norm_imag: normalized laplacian
         """
-        super(ChebNet_Ben, self).__init__()
+        super().__init__()
 
         chebs = [ChebConv_Qin(in_c=in_c, out_c=num_filter, K=K)]
         if activation:
@@ -663,7 +663,7 @@ class ChebNet_Ben_05(nn.Module):
         :param K: for cheb series
         :param L_norm_real, L_norm_imag: normalized laplacian
         """
-        super(ChebNet_Ben_05, self).__init__()
+        super().__init__()
 
         chebs = [ChebConv_Qin_05(in_c=in_c, out_c=num_filter, K=K)]
         if activation:
@@ -717,7 +717,7 @@ class ChebNet_BenX(nn.Module):
         :param K: for cheb series
         :param L_norm_real, L_norm_imag: normalized laplacian
         """
-        super(ChebNet_BenX, self).__init__()
+        super().__init__()
 
         chebs = [ChebConv(in_c=in_c, out_c=num_filter, K=K, L_norm_real=L_norm_real, L_norm_imag=L_norm_imag)]
         if activation:
@@ -756,7 +756,7 @@ class ChebNet_Edge(nn.Module):
         :param K: for cheb series
         :param L_norm_real, L_norm_imag: normalized laplacian
         """
-        super(ChebNet_Edge, self).__init__()
+        super().__init__()
 
         chebs = [ChebConv(in_c=in_c, out_c=num_filter, K=K, L_norm_real=L_norm_real, L_norm_imag=L_norm_imag)]
         if activation and (layer != 1):

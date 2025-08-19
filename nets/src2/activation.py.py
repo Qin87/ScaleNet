@@ -33,7 +33,7 @@ class CReLU(Module):
     inplace: bool
 
     def __init__(self, inplace: bool = False):
-        super(CReLU, self).__init__()
+        super().__init__()
         self.inplace = inplace
 
     def forward(self, input: Tensor) -> Tensor:
@@ -48,7 +48,7 @@ class zReLU(Module):
     inplace: bool
 
     def __init__(self, inplace: bool = False):
-        super(zReLU, self).__init__()
+        super().__init__()
         self.inplace = inplace
 
     def forward(self, input: Tensor) -> Tensor:
@@ -63,7 +63,7 @@ class modReLU(Module):
     inplace: bool
 
     def __init__(self, bias: int, inplace: bool = False):
-        super(modReLU, self).__init__()
+        super().__init__()
         self.inplace = inplace
         self.bias = bias
 
@@ -80,7 +80,7 @@ class CLeakyReLU(Module):
     negative_slope: float
 
     def __init__(self, negative_slope: float = 1e-2, inplace: bool = False) -> None:
-        super(CLeakyReLU, self).__init__()
+        super().__init__()
         self.negative_slope = negative_slope
         self.inplace = inplace
 
@@ -96,7 +96,7 @@ class modSoftmax(Module):
     dim: Optional[int]
 
     def __init__(self, dim: Optional[int] = None) -> None:
-        super(modSoftmax, self).__init__()
+        super().__init__()
         self.dim = dim
 
     def __setstate__(self, state):
@@ -115,7 +115,7 @@ class modLogSoftmax(Module):
     dim: Optional[int]
 
     def __init__(self, dim: Optional[int] = None) -> None:
-        super(modLogSoftmax, self).__init__()
+        super().__init__()
         self.dim = dim
 
     def __setstate__(self, state):
@@ -134,7 +134,7 @@ class CSoftmax(Module):
     dim: Optional[int]
 
     def __init__(self, dim: Optional[int] = None) -> None:
-        super(CSoftmax, self).__init__()
+        super().__init__()
         self.dim = dim
 
     def __setstate__(self, state):
@@ -153,7 +153,7 @@ class CLogSoftmax(Module):
     dim: Optional[int]
 
     def __init__(self, dim: Optional[int] = None) -> None:
-        super(CLogSoftmax, self).__init__()
+        super().__init__()
         self.dim = dim
 
     def __setstate__(self, state):

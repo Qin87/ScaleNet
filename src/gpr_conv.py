@@ -19,7 +19,7 @@ class GPR_prop(MessagePassing):
     '''
 
     def __init__(self, K, alpha, Init, Gamma=None, bias=True, **kwargs):
-        super(GPR_prop, self).__init__(aggr='add', **kwargs)
+        super().__init__(aggr='add', **kwargs)
         self.K = K
         self.Init = Init
         self.alpha = alpha

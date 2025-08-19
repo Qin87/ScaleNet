@@ -61,7 +61,7 @@ class DGCNConv(MessagePassing):
         self.in_channels = None
         self.out_channels = None
         kwargs.setdefault('aggr', 'add')
-        super(DGCNConv, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self.improved = improved
         self.cached = cached
@@ -121,7 +121,7 @@ class DGCNConv(MessagePassing):
 
 class SymRegLayer1(torch.nn.Module):
     def __init__(self, input_dim,  nhid, out_dim,dropout=False, layer=2):
-        super(SymRegLayer1, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.gconv = DGCNConv()
         self.Conv = nn.Conv1d(out_dim * 3, out_dim, kernel_size=1)
@@ -155,7 +155,7 @@ class SymRegLayer1(torch.nn.Module):
 
 class SymRegLayer2(torch.nn.Module):
     def __init__(self, input_dim, nhid, out_dim,dropout=False, layer=2):
-        super(SymRegLayer2, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.gconv = DGCNConv()
         self.Conv = nn.Conv1d(out_dim * 3, out_dim, kernel_size=1)
@@ -208,7 +208,7 @@ class SymRegLayer2(torch.nn.Module):
 
 class SymRegLayerX(torch.nn.Module):
     def __init__(self, input_dim,  nhid,out_dim, dropout=False, layer=3):
-        super(SymRegLayerX, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.gconv = DGCNConv()
         self.Conv = nn.Conv1d(out_dim * 3, out_dim, kernel_size=1)
@@ -282,7 +282,7 @@ class SymRegLayerX(torch.nn.Module):
         return x
 class SymRegLayer1BN(torch.nn.Module):
     def __init__(self, input_dim,  nhid, out_dim,dropout=False, layer=2):
-        super(SymRegLayer1BN, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.gconv = DGCNConv()
         self.Conv = nn.Conv1d(out_dim * 3, out_dim, kernel_size=1)
@@ -324,7 +324,7 @@ class SymRegLayer2BN(torch.nn.Module):
     Don't try again to simplify it by deleting Conv, because the catenation
     """
     def __init__(self, input_dim, nhid, out_dim,dropout=False, layer=2):
-        super(SymRegLayer2BN, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.gconv = DGCNConv()
         self.Conv = nn.Conv1d(out_dim * 3, out_dim, kernel_size=1)
@@ -390,7 +390,7 @@ class SymRegLayer2BN_add(torch.nn.Module):
     Don't try again to simplify it by deleting Conv, because the catenation
     """
     def __init__(self, input_dim, nhid, out_dim,dropout=False, layer=2):
-        super(SymRegLayer2BN_add, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.gconv = DGCNConv()
         self.Conv = nn.Conv1d(out_dim, out_dim, kernel_size=1)
@@ -436,7 +436,7 @@ class SymRegLayer2BN_para_add(torch.nn.Module):
     """
     """
     def __init__(self, input_dim, nhid, out_dim,dropout=False, layer=2):
-        super(SymRegLayer2BN_para_add, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.gconv = DGCNConv()
         self.Conv = nn.Conv1d(out_dim, out_dim, kernel_size=1)
@@ -488,7 +488,7 @@ class SymRegLayerXBN_add(torch.nn.Module):
     Don't try again to simplify it by deleting Conv, because the catenation
     """
     def __init__(self, input_dim, nhid, out_dim,dropout=False, layer=3):
-        super(SymRegLayerXBN_add, self).__init__()
+        super().__init__()
         self.layer = layer
         self.dropout = dropout
         self.gconv = DGCNConv()
@@ -538,9 +538,9 @@ class SymRegLayerXBN_add(torch.nn.Module):
 
 class BiasParameter(nn.Parameter):
     def __init__(self):
-        super(BiasParameter, self).__init__()
+        super().__init__()
         self.bias = (torch.randn(2))
-        # super(BiasParameter, self).__init__(torch.randn(2))
+        # super().__init__(torch.randn(2))
     def forward(self):
         return self.bias
 class SymRegLayerXBN_para_add(torch.nn.Module):
@@ -548,7 +548,7 @@ class SymRegLayerXBN_para_add(torch.nn.Module):
     Don't try again to simplify it by deleting Conv, because the catenation
     """
     def __init__(self, input_dim, nhid, out_dim,dropout=False, layer=3):
-        super(SymRegLayerXBN_para_add, self).__init__()
+        super().__init__()
         self.layer = layer
         self.dropout = dropout
         self.gconv = DGCNConv()
@@ -619,7 +619,7 @@ class SymRegLayer1BN_add(torch.nn.Module):
     """
     """
     def __init__(self, input_dim, nhid, out_dim,dropout=False, layer=2):
-        super(SymRegLayer1BN_add, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.gconv = DGCNConv()
         self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
@@ -656,7 +656,7 @@ class SymRegLayer1BN_para_add(torch.nn.Module):
     """
     """
     def __init__(self, input_dim, nhid, out_dim,dropout=False, layer=2):
-        super(SymRegLayer1BN_para_add, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.gconv = DGCNConv()
         self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
@@ -695,7 +695,7 @@ class SymRegLayer2BN_Qin(torch.nn.Module):
     Don't try again to simplify it by deleting Conv, because the catenation
     """
     def __init__(self, input_dim, nhid, out_dim,dropout=False, layer=2):
-        super(SymRegLayer2BN_Qin, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.gconv = DGCNConv()
         self.Conv = nn.Conv1d(out_dim * 5, out_dim, kernel_size=1)
@@ -763,7 +763,7 @@ class SymRegLayer2BN_Qin_add(torch.nn.Module):
     Don't try again to simplify it by deleting Conv, because the catenation
     """
     def __init__(self, input_dim, nhid, out_dim,dropout=False, layer=2):
-        super(SymRegLayer2BN_Qin_add, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.gconv = DGCNConv()
         self.Conv = nn.Conv1d(out_dim * 5, out_dim, kernel_size=1)
@@ -833,7 +833,7 @@ class SymRegLayer2BN_Qin2(torch.nn.Module):
     Don't try again to simplify it by deleting Conv, because the catenation
     """
     def __init__(self, input_dim, nhid, out_dim,dropout=False, layer=2):
-        super(SymRegLayer2BN_Qin2, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.gconv = DGCNConv()
         self.Conv = nn.Conv1d(out_dim * 4, out_dim, kernel_size=1)
@@ -903,7 +903,7 @@ class SymRegLayer2BN_Qinadd(torch.nn.Module):       # TODO add instead of cat
     Don't try again to simplify it by deleting Conv, because the catenation
     """
     def __init__(self, input_dim, nhid, out_dim,dropout=False, layer=2):
-        super(SymRegLayer2BN_Qinadd, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.gconv = DGCNConv()
         self.Conv = nn.Conv1d(out_dim * 4, out_dim, kernel_size=1)
@@ -970,7 +970,7 @@ class SymRegLayer2BN_Qinadd(torch.nn.Module):       # TODO add instead of cat
 
 class SymRegLayerXBN(torch.nn.Module):
     def __init__(self, input_dim,  nhid,out_dim, dropout=False, layer=3):
-        super(SymRegLayerXBN, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.gconv = DGCNConv()
         self.Conv = nn.Conv1d(out_dim * 3, out_dim, kernel_size=1)

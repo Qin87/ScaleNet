@@ -18,7 +18,7 @@ class complex_relu_layer(nn.Module):
     """
 
     def __init__(self, ):
-        super(complex_relu_layer, self).__init__()
+        super().__init__()
 
     def complex_relu(self, real: torch.FloatTensor, img: torch.FloatTensor):
         """
@@ -50,7 +50,7 @@ class SigMaNetConv(MessagePassing):
     def __init__(self, in_channels: int, out_channels: int, K: int, i_complex: bool = False, follow_math: bool = True, gcn: bool = False, net_flow: bool = True,
                  normalization: str = 'sym', bias: bool = True, edge_index=None, norm_real=None, norm_imag=None, **kwargs):
         kwargs.setdefault('aggr', 'add')
-        super(SigMaNetConv, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         assert K > 0
         assert normalization in [None, 'sym'], 'Invalid normalization'
@@ -271,7 +271,7 @@ class SigMaNetConv_Qin(MessagePassing):
     def __init__(self, in_channels: int, out_channels: int, K: int, i_complex: bool = False, follow_math: bool = True, gcn: bool = False, net_flow: bool = True,
                  normalization: str = 'sym', bias: bool = True, **kwargs):
         kwargs.setdefault('aggr', 'add')
-        super(SigMaNetConv_Qin, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         assert K > 0
         assert normalization in [None, 'sym'], 'Invalid normalization'
@@ -492,7 +492,7 @@ class SigMaNet_link_prediction_one_laplacian(nn.Module):
                  activation: bool = True, layer: int = 2, dropout: float = 0.5, normalization: str = 'sym', \
                  i_complex: bool = True, follow_math: bool = False, gcn: bool = False, net_flow: bool = True, unwind: bool = False,
                  edge_index=None, norm_real=None, norm_imag=None):
-        super(SigMaNet_link_prediction_one_laplacian, self).__init__()
+        super().__init__()
 
         chebs = nn.ModuleList()
         chebs.append(SigMaNetConv(in_channels=num_features, out_channels=hidden, K=K, \
@@ -585,7 +585,7 @@ class SigMaNet_node_prediction_one_laplacian(nn.Module):
                  activation: bool = True, layer: int = 2, dropout: float = 0.5, normalization: str = 'sym', \
                  i_complex: bool = True, follow_math: bool = False, gcn: bool = False, net_flow: bool = True, unwind: bool = False,
                  edge_index=None, norm_real=None, norm_imag=None):
-        super(SigMaNet_node_prediction_one_laplacian, self).__init__()
+        super().__init__()
 
         chebs = nn.ModuleList()
         chebs.append(SigMaNetConv(in_channels=num_features, out_channels=hidden, K=K, \
@@ -662,7 +662,7 @@ class SigMaNet_node_prediction_one_laplacian_Qin(nn.Module):
                  activation: bool = True, layer: int = 2, dropout: float = 0.5, normalization: str = 'sym', \
                  i_complex: bool = True, follow_math: bool = False, gcn: bool = False, net_flow: bool = True, unwind: bool = False):
 
-        super(SigMaNet_node_prediction_one_laplacian_Qin, self).__init__()
+        super().__init__()
 
         chebs = nn.ModuleList()
         chebs.append(SigMaNetConv_Qin(in_channels=num_features, out_channels=hidden, K=K, i_complex=i_complex, follow_math=follow_math,

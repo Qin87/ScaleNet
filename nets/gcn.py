@@ -178,7 +178,7 @@ class GCNConv_SHA(MessagePassing):
                  normalize: bool = True, bias: bool = True, **kwargs):
 
         kwargs.setdefault('aggr', 1)
-        super(GCNConv_SHA, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -257,7 +257,7 @@ class GCNConv_SHA(MessagePassing):
 
 class StandGCN1(nn.Module):
     def __init__(self, nfeat, nhid, nclass, dropout,nlayer=1):
-        super(StandGCN1, self).__init__()
+        super().__init__()
         self.conv1 = GCNConv_SHA(nfeat, nclass, cached=False, normalize=True)
         self.reg_params = []
         self.non_reg_params = self.conv1.parameters()
@@ -273,7 +273,7 @@ class StandGCN1(nn.Module):
 
 class StandGCN2(nn.Module):
     def __init__(self, nfeat, nhid, nclass, dropout,nlayer=2):
-        super(StandGCN2, self).__init__()
+        super().__init__()
         self.conv1 = GCNConv_SHA(nfeat, nhid, cached= False, normalize=True)
         self.conv2 = GCNConv_SHA(nhid, nclass, cached=False, normalize=True)
         self.dropout_p = dropout
@@ -308,7 +308,7 @@ class StandGCN2(nn.Module):
 
 class StandGCNX(nn.Module):
     def __init__(self, nfeat, nhid, nclass, dropout,nlayer=3):
-        super(StandGCNX, self).__init__()
+        super().__init__()
         self.conv1 = GCNConv_SHA(nfeat, nhid, cached= False, normalize=True)
         self.conv2 = GCNConv_SHA(nhid, nclass, cached=False, normalize=True)
         self.convx = nn.ModuleList([GCNConv_SHA(nhid, nhid) for _ in range(nlayer-2)])
@@ -393,7 +393,7 @@ class StandGCN2BN(nn.Module):
 class StandGCNXBN(nn.Module):
     def __init__(self, nfeat, nclass, args):
         super().__init__()
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         dropout = args.dropout
         nlayer = args.layer
         is_add_self_loops = args.First_self_loop
@@ -449,7 +449,7 @@ class GraphSAGEXBatNorm(nn.Module):
     def __init__(self,  nfeat, nclass, args):
         super().__init__()
         self.dropout_p = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         nlayer= args.layer
         # self.Conv = nn.Conv1d(nhid*2 , nclass, kernel_size=1)
         # SAGEConv(input_dim, output_dim, root_weight=False)
@@ -641,7 +641,7 @@ class ParaGCNXBN2(nn.Module):
 
 class ParaGCNXBN1(nn.Module):
     def __init__(self,num_node, num_edges, nfeat, nhid, nclass, dropout, nlayer=3, norm=True):
-        super(ParaGCNXBN1, self).__init__()
+        super().__init__()
 
         self.conv2 = GCNConv(nhid, nclass, cached=False, normalize=False)
         self.convx = nn.ModuleList([GCNConv(nhid, nhid, cached=False, normalize=False) for _ in range(nlayer-2)])
@@ -741,7 +741,7 @@ class ParaGCNXBN1(nn.Module):
 
 class ParaGCNXBN(nn.Module):
     def __init__(self,num_node, num_edges, nfeat, nhid, nclass, dropout, nlayer=3, norm=True):
-        super(ParaGCNXBN, self).__init__()
+        super().__init__()
 
         self.conv2 = GCNConv(nhid, nclass, cached=False, normalize=False)
         self.convx = nn.ModuleList([GCNConv(nhid, nhid, cached=False, normalize=False) for _ in range(nlayer-2)])

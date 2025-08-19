@@ -17,7 +17,7 @@ class pGNNNet1(torch.nn.Module):
                  K=2,
                  dropout=0.5,
                  cached=False):
-        super(pGNNNet1, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.lin1 = torch.nn.Linear(in_channels, num_hid)
         self.conv1 = pGNNConv(num_hid, out_channels, mu, p, K, cached=cached)
@@ -38,7 +38,7 @@ class pGNNNet2(torch.nn.Module):
                  K=2,
                  dropout=0.5,
                  cached=False):
-        super(pGNNNet2, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.lin1 = torch.nn.Linear(in_channels, num_hid)
         self.conv1 = pGNNConv(num_hid, num_hid, mu, p, K, cached=cached)
@@ -63,7 +63,7 @@ class pGNNNetX(torch.nn.Module):
                  K=2,
                  dropout=0.5,layer=3,
                  cached=False):
-        super(pGNNNetX, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.lin1 = torch.nn.Linear(in_channels, num_hid)
         self.layerx = nn.ModuleList([pGNNConv(num_hid, num_hid, mu, p, K, cached=cached) for _ in range(layer-2)])
@@ -86,7 +86,7 @@ class MLPNet2(torch.nn.Module):
                  in_channels,num_hid,
                  out_channels,
                  dropout=0.5):
-        super(MLPNet2, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.layer1 = torch.nn.Linear(in_channels, num_hid)
         self.layer2 = torch.nn.Linear(num_hid, out_channels)
@@ -103,7 +103,7 @@ class MLPNetX(torch.nn.Module):
                  in_channels,num_hid,
                  out_channels,
                  dropout, layer=3):
-        super(MLPNetX, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.layer1 = torch.nn.Linear(in_channels, num_hid)
         self.layer2 = torch.nn.Linear(num_hid, out_channels)
@@ -129,7 +129,7 @@ class MLPNet1(torch.nn.Module):
                  in_channels,num_hid,
                  out_channels,
                  dropout=0.5):
-        super(MLPNet1, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.layer1 = torch.nn.Linear(in_channels, out_channels)
         # self.layer2 = torch.nn.Linear(num_hid, out_channels)
@@ -179,7 +179,7 @@ class GCNNet(torch.nn.Module):
                  num_hid=16,
                  dropout=0.5,
                  cached=True):
-        super(GCNNet, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.conv1 = GCNConv(in_channels, num_hid, cached=cached)
         self.conv2 = GCNConv(num_hid, out_channels, cached=cached)
@@ -195,7 +195,7 @@ class GCN_Encoder(torch.nn.Module):
     def __init__(self,
                  in_channels,
                  num_hid=16):
-        super(GCN_Encoder, self).__init__()
+        super().__init__()
         self.conv = GCNConv(in_channels, num_hid, cached=True)
         self.prelu = torch.nn.PReLU(num_hid)
 
@@ -211,7 +211,7 @@ class SGCNet1(torch.nn.Module):
                  out_channels,dropout,
                  K=2,
                  cached=False):
-        super(SGCNet1, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.conv1 = SGConv(in_channels, out_channels, K=K, cached=cached)
 
@@ -226,7 +226,7 @@ class SGCNet2(torch.nn.Module):
                  out_channels,dropout,
                  K=2,
                  cached=False):
-        super(SGCNet2, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.conv1 = SGConv(in_channels, nhid, K=K, cached=cached)
         self.conv2 = SGConv(nhid, out_channels, K=K, cached=cached)
@@ -245,7 +245,7 @@ class SGCNetX(torch.nn.Module):
                  out_channels,dropout=0.5, layer=3,
                  K=2,
                  cached=False):
-        super(SGCNetX, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.conv1 = SGConv(in_channels, nhid, K=K, cached=cached)
         self.conv2 = SGConv(nhid, out_channels, K=K, cached=cached)
@@ -271,7 +271,7 @@ class GATNet(torch.nn.Module):
                  dropout=0.6,
                  concat=False):
 
-        super(GATNet, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.conv1 = GATConv(in_channels, num_hid, heads=num_heads, dropout=dropout)
         self.conv2 = GATConv(num_heads * num_hid, out_channels, heads=1, concat=concat, dropout=dropout)
@@ -292,7 +292,7 @@ class JKNet(torch.nn.Module):
                  K=1,
                  alpha=0,
                  dropout=0.5,layer=4):
-        super(JKNet, self).__init__()
+        super().__init__()
         self.dropout = dropout
         self.conv1 = GCNConv(in_channels, num_hid)
         self.conv2 = GCNConv(num_hid, num_hid)
@@ -323,7 +323,7 @@ class APPNPNet(torch.nn.Module):
                  K=1,
                  alpha=0.1,
                  dropout=0.5):
-        super(APPNPNet, self).__init__()
+        super().__init__()
         self.lin1 = torch.nn.Linear(in_channels, num_hid)
         self.lin2 = torch.nn.Linear(num_hid, out_channels)
         self.prop1 = APPNP(K, alpha)
@@ -350,7 +350,7 @@ class GPRGNNNet1(torch.nn.Module):
                  Gamma=None,
                  dprate=0.5,
                  dropout=0.5):
-        super(GPRGNNNet1, self).__init__()
+        super().__init__()
         self.lin1 = torch.nn.Linear(in_channels, num_hid)
         self.lin2 = torch.nn.Linear(num_hid, out_channels)
         self.BN1 = nn.BatchNorm1d(num_hid)
@@ -394,7 +394,7 @@ class GPRGNNNet1_Qin(torch.nn.Module):
                  Gamma=None,
                  dprate=0.5,
                  dropout=0.5):
-        super(GPRGNNNet1_Qin, self).__init__()
+        super().__init__()
         self.lin1 = torch.nn.Linear(in_channels, num_hid)
         self.lin2 = torch.nn.Linear(num_hid, out_channels)
 
@@ -438,7 +438,7 @@ class GPRGNNNet2(torch.nn.Module):
                  Gamma=None,
                  dprate=0.5,
                  dropout=0.5):
-        super(GPRGNNNet2, self).__init__()
+        super().__init__()
         self.lin1 = torch.nn.Linear(in_channels, num_hid)
         self.lin2 = torch.nn.Linear(num_hid, out_channels)
 

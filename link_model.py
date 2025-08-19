@@ -9,7 +9,7 @@ import scipy.sparse
 from tqdm import tqdm
 
 
-class LINKX(nn.Module):
+class LINKX_Github(nn.Module):
     """ our LINKX method with skip connections
         a = MLP_1(A), x = MLP_2(X), MLP_3(sigma(W_1[a, x] + a + x))
     """
@@ -32,21 +32,14 @@ class LINKX(nn.Module):
         self.W.reset_parameters()
         self.mlp_final.reset_parameters()
 
-    # def forward(self, data):
     def forward(self, x, edge_index):
-        # m = data.graph['num_nodes']
-        m = x.shape[0]
-        # feat_dim = data.graph['node_feat']
-        feat_dim = x
-        # row, col = data.graph['edge_index']
         row, col = edge_index
-        row = row - row.min()
         A = SparseTensor(row=row, col=col,
-                         sparse_sizes=(m, self.num_nodes)
+                         sparse_sizes=(self.num_nodes, self.num_nodes)
                          ).to_torch_sparse_coo_tensor()
 
         xA = self.mlpA(A, input_tensor=True)
-        xX = self.mlpX(feat_dim, input_tensor=True)
+        xX = self.mlpX(x, input_tensor=True)
         x = torch.cat((xA, xX), axis=-1)
         x = self.W(x)
         if self.inner_dropout:
