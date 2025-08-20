@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+from mamba_ssm import Mamba
 from torch import nn
 from torch_geometric.nn import GCNConv, SGConv, GATConv, APPNP, JumpingKnowledge
 
@@ -226,28 +227,6 @@ class SGCNetX(torch.nn.Module):
         return F.log_softmax(x, dim=1)
 
 
-class GATNet(torch.nn.Module):
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 num_hid=8,
-                 num_heads=8,
-                 dropout=0.6,
-                 concat=False):
-
-        super().__init__()
-        self.dropout = dropout
-        self.conv1 = GATConv(in_channels, num_hid, heads=num_heads, dropout=dropout)
-        self.conv2 = GATConv(num_heads * num_hid, out_channels, heads=1, concat=concat, dropout=dropout)
-
-    def forward(self, x, edge_index, edge_weight=None):
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = F.elu(self.conv1(x, edge_index, edge_weight))
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = self.conv2(x, edge_index, edge_weight)
-        return F.log_softmax(x, dim=-1)
-
-
 class JKNet(torch.nn.Module):
     def __init__(self,
                  in_channels,
@@ -276,29 +255,6 @@ class JKNet(torch.nn.Module):
         x = self.JK([x1, x2])
         x = self.one_step(x, edge_index, edge_weight)
         x = self.lin1(x)
-        return F.log_softmax(x, dim=1)
-
-
-class APPNPNet(torch.nn.Module):
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 num_hid=16,
-                 K=1,
-                 alpha=0.1,
-                 dropout=0.5):
-        super().__init__()
-        self.lin1 = torch.nn.Linear(in_channels, num_hid)
-        self.lin2 = torch.nn.Linear(num_hid, out_channels)
-        self.prop1 = APPNP(K, alpha)
-        self.dropout = dropout
-
-    def forward(self, x, edge_index, edge_weight=None):
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = F.relu(self.lin1(x))
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = self.lin2(x)
-        x = self.prop1(x, edge_index, edge_weight)
         return F.log_softmax(x, dim=1)
 
 
@@ -343,113 +299,7 @@ class GPRGNNNet1(torch.nn.Module):
         return F.log_softmax(x, dim=1)
 
 
-class GPRGNNNet1_Qin(torch.nn.Module):
-    '''
-    Qin want to move prop before conv, worse
-    '''
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 num_hid,
-                 ppnp,
-                 K=10,
-                 alpha=0.1,
-                 Init='PPR',
-                 Gamma=None,
-                 dprate=0.5,
-                 dropout=0.5):
-        super().__init__()
-        self.lin1 = torch.nn.Linear(in_channels, num_hid)
-        self.lin2 = torch.nn.Linear(num_hid, out_channels)
-
-        if ppnp == 'PPNP':
-            self.prop1 = APPNP(K, alpha)
-        elif ppnp == 'GPR_prop':
-            self.prop1 = GPR_prop(K, alpha, Init, Gamma)
-
-        self.Init = Init
-        self.dprate = dprate
-        self.dropout = dropout
-
-    def reset_parameters(self):
-        self.prop1.reset_parameters()
-
-    def forward(self, x, edge_index, edge_weight=None):
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = F.relu(self.lin1(x))
-
-
-        if self.dprate != 0.0:
-            x = F.dropout(x, p=self.dprate, training=self.training)
-        x = self.prop1(x, edge_index, edge_weight)
-
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = self.lin2(x)
-        return F.log_softmax(x, dim=1)
-
-class GPRGNNNet2(torch.nn.Module):
-    '''
-    Qin want to move prop before conv,not use
-    '''
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 num_hid,
-                 ppnp,
-                 K=10,
-                 alpha=0.1,
-                 Init='PPR',
-                 Gamma=None,
-                 dprate=0.5,
-                 dropout=0.5):
-        super().__init__()
-        self.lin1 = torch.nn.Linear(in_channels, num_hid)
-        self.lin2 = torch.nn.Linear(num_hid, out_channels)
-
-        if ppnp == 'PPNP':
-            self.prop1 = APPNP(K, alpha)
-            self.prop2 = APPNP(K, alpha)
-        elif ppnp == 'GPR_prop':
-            self.prop1 = GPR_prop(K, alpha, Init, Gamma)
-            self.prop2 = GPR_prop(K, alpha, Init, Gamma)
-
-        self.Init = Init
-        self.dprate = dprate
-        self.dropout = dropout
-
-    def reset_parameters(self):
-        self.prop1.reset_parameters()
-
-    def forward(self, x, edge_index, edge_weight=None):
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = F.relu(self.lin1(x))
-
-
-
-        if self.dprate != 0.0:
-            x = F.dropout(x, p=self.dprate, training=self.training)
-        x = self.prop1(x, edge_index, edge_weight)
-
-        if self.dprate != 0.0:
-            x = F.dropout(x, p=self.dprate, training=self.training)
-        x = self.prop2(x, edge_index, edge_weight)
-
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = self.lin2(x)
-
-
-        return F.log_softmax(x, dim=1)
-
-
 from torch.nn import BatchNorm1d, Embedding, Linear, ModuleList, ReLU, Sequential
-# from torch.optim.lr_scheduler import ReduceLROnPlateau
-# import torch_geometric.transforms as T
-from torch_geometric.datasets import ZINC
-from torch_geometric.loader import DataLoader
-from torch_geometric.nn import GINEConv, global_add_pool
-import inspect
-from typing import Any, Dict, Optional
-from torch_geometric.loader import DataLoader
 from torch_geometric.nn import GINEConv, global_add_pool
 import inspect
 from typing import Any, Dict, Optional
