@@ -3,18 +3,16 @@ import random
 from torch_geometric.datasets import QM9, MalNetTiny, LINKXDataset
 import scipy
 from torch_geometric.data import download_url
-from torch_geometric.datasets import (
-    WikipediaNetwork,
-    CitationFull,
-)
+
 import torch_geometric.transforms as transforms
 
 from torch_geometric.datasets import Actor
 import torch_geometric.transforms as T
-from ogb.nodeproppred import PygNodePropPredDataset
 from torch_sparse import SparseTensor
-
-from utils import get_norm_adj
+import os.path as osp
+from typing import Callable, Optional
+import gdown
+from torch_geometric.data import Data, InMemoryDataset
 
 try:
     import dgl
@@ -22,7 +20,6 @@ try:
     FlickrDataset, YelpDataset, RedditDataset
 except:
     print("dgl not imported, install chardet!")
-import torch
 from torch_geometric.datasets import WebKB, WikipediaNetwork, WikiCS
 
 from data.Citation import citation_datasets
@@ -372,16 +369,7 @@ def random_planetoid_splits(data, y, train_ratio=0.7, val_ratio=0.1, percls_trn=
 
     return data
 
-import os.path as osp
-from typing import Callable, Optional
-try:
-    import gdown
-except:
-    pass
-import numpy as np
 
-import torch
-from torch_geometric.data import Data, InMemoryDataset
 class DirectedHeterophilousGraphDataset(InMemoryDataset):
     r"""The directed heterophilous graphs :obj:`"Roman-empire"`,
     :obj:`"Amazon-ratings"`, :obj:`"Minesweeper"`, :obj:`"Tolokers"` and
