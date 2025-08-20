@@ -64,11 +64,10 @@ class LINK(nn.Module):
         self.W.reset_parameters()
 
     def forward(self, x, edge_index):
-        N = x.shape[0]
         if isinstance(edge_index, torch.Tensor):
             row, col = edge_index
             row = row - row.min()  # for sampling
-            A = SparseTensor(row=row, col=col, sparse_sizes=(N, self.num_nodes)).to_torch_sparse_coo_tensor()
+            A = SparseTensor(row=row, col=col, sparse_sizes=(self.num_nodes, self.num_nodes)).to_torch_sparse_coo_tensor()
         elif isinstance(edge_index, SparseTensor):
             A = edge_index.to_torch_sparse_coo_tensor()
         logits = self.W(A)

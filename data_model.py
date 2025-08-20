@@ -220,6 +220,10 @@ def get_name(args, IsDirectedGraph):
         dataset_to_print = dataset_to_print + 'Undire'
     else:
         dataset_to_print = dataset_to_print + 'Direct'
+        if args.to_reverse_edge:
+            dataset_to_print = dataset_to_print + 'ReVerse'
+        else:
+            dataset_to_print = dataset_to_print + 'Origin'
     if args.net.startswith('Ri'):
         net_to_print = args.net + str(args.W_degree) + '_'
     elif args.net.startswith('Mag'):

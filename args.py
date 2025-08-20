@@ -28,10 +28,10 @@ def parse_args():
     parser.add_argument("--learn_alpha", action="store_true")
     parser.add_argument("--differ_AA", type=int, default=0, help="Whether test AA-A-At")
     parser.add_argument("--differ_AAt", type=int, default=0,  help="Whether test AAt-A-At")
-    parser.add_argument('--num_split', type=int, default=20, help='num of run in spite of many splits')
+    parser.add_argument('--num_split', type=int, default=1, help='num of run in spite of many splits')
 
 
-    parser.add_argument('--net', type=str, default='link', help='mlp, Dir-GNN, ScaleNet, '
+    parser.add_argument('--net', type=str, default='link_concat', help='mlp, Dir-GNN, ScaleNet, '
                      'Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc, ParaGCN, SimGAT, SloopNet, tSNE,RandomNet, HFNet '
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym' 
@@ -49,7 +49,7 @@ def parse_args():
 
     parser.add_argument('--hid_dim', type=int, default=32, help='feature dimension')
     parser.add_argument('--epoch', type=int, default=10000, help='epoch1500,')
-    parser.add_argument('--NotImproved', type=int, default=810, help='consecutively Not Improved, break, 500, 450, 410, 210, 60')
+    parser.add_argument('--NotImproved', type=int, default=80, help='consecutively Not Improved, break, 500, 450, 410, 210, 60')
 
     parser.add_argument('--lr', type=float, default=0.005, help='learning rate')
     parser.add_argument('--lrweight', type=float, default=0.4, help='learning rate for edge_weight')
@@ -100,8 +100,8 @@ def parse_args():
     parser.add_argument('--paraD', action='store_true', help='ib is weighted sum')
     parser.add_argument('--gcn_norm', '-gcnnorm', type=int, default=1, help='GCNConv forward, normalize edge_index during training')
     parser.add_argument('--add_selfloop',  type=int, default=0, help='add selfloop in before model')
-    parser.add_argument('--to_undirected', '-tud', type=int, default=1, help='if convert graph to undirected')
-    parser.add_argument('--to_reverse_edge', '-tre', type=int, default=0, help='if reverse direction of edges')
+    parser.add_argument('--to_undirected', '-tud', type=int, default=0, help='if convert graph to undirected')
+    parser.add_argument('--to_reverse_edge', '-tre', type=int, default=1, help='if reverse direction of edges')
 
     parser.add_argument('--feat_proximity', action='store_true', help='filter out non similar nodes in scaled graph')
     parser.add_argument('--ibx1', action='store_true', help='share the same ibx block in DiGSymCatib')
