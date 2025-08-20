@@ -58,18 +58,6 @@ def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
         model = LINKX_Github(num_features, args.hid_dim, n_cls, args.layer, args.num_node,
               inner_activation=args.inner_activation, inner_dropout=args.inner_dropout, dropout=args.dropout, init_layers_A=args.link_init_layers_A, init_layers_X=args.link_init_layers_X)
 
-        # def __init__(
-        #         self,
-        #         num_nodes: int,
-        #         in_channels: int,
-        #         hidden_channels: int,
-        #         out_channels: int,
-        #         num_layers: int,
-        #         num_edge_layers: int = 1,
-        #         num_node_layers: int = 1,
-        #         dropout: float = 0.0,
-        # ):
-
 
     elif args.net.lower() == 'pgnn':
         model = create_pgnn(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls,
@@ -237,8 +225,6 @@ def get_name(args, IsDirectedGraph):
     else:
         net_to_print = 'NoBNorm_' + net_to_print
 
-
-
     if args.net == 'GCN':
         if args.First_self_loop == 1 or args.add_selfloop:
             net_to_print = net_to_print + '_AddSloop'
@@ -252,7 +238,7 @@ def get_name(args, IsDirectedGraph):
         if args.add_selfloop:
             net_to_print = net_to_print + '_AddSloop'
 
-    if args.net[1] == 'i':
+    if args.net[1] == 'i' and not args.net.startswith('link'):
         if args.paraD:
             net_to_print = net_to_print + 'paraD' + str(args.coeflr)
 
@@ -263,10 +249,7 @@ def get_name(args, IsDirectedGraph):
         else:
             net_to_print = net_to_print + '_NoSloop'
 
-        # if args.feat_proximity:
-        #     net_to_print = net_to_print + '_feaProx'
-    # if args.hid_dim != 64:
-    net_to_print = net_to_print + str(args.hid_dim) + 'hid_'
+    net_to_print = net_to_print + '_hid' + str(args.hid_dim)
     if args.MakeImbalance:
         net_to_print = net_to_print + '_Imbal' + str(args.imb_ratio)
     else:
