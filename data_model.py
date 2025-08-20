@@ -6,7 +6,7 @@ import torch
 from torch_geometric.nn import LINKX
 from torch_scatter import scatter_add
 
-from link_model import LINK, LINK_Concat, LINKX_Github
+from nets.link_model import LINK, LINK_Concat, LINKX_Github
 from nets.gat import StandGAT1BN_Qin
 from nets.gcn import ParaGCNXBN, StandGCNXBN
 from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model, Sloop_JKNet, ScaleNet, RandomNet, High_Frequent
@@ -14,7 +14,7 @@ from nets.models import JKNet, create_MLP, create_SGC, create_pgnn, GPRGNNNet1, 
 
 from nets.Signum_quaternion import QuaNet_node_prediction_one_laplacian_Qin
 from nets.Signum import SigMaNet_node_prediction_one_laplacian_Qin
-from edge_data import to_undirectedBen
+from nets.edge_data import to_undirectedBen
 from nets import  create_gat
 
 from data.data_utils import random_planetoid_splits, load_directedData

@@ -37,7 +37,7 @@ def parse_args():
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym' 
                         'link, link_concat, linkx, linkx_git')
     parser.add_argument('--seed', type=int, default=1, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='fb100/penn94', help='telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
+    parser.add_argument('--Dataset', type=str, default='telegram/', help='telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WikipediaNetwork/crocodile, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/,  malnet/tiny, '
         'fb100/penn94, ')
@@ -106,8 +106,6 @@ def parse_args():
     parser.add_argument('--feat_proximity', action='store_true', help='filter out non similar nodes in scaled graph')
     parser.add_argument('--ibx1', action='store_true', help='share the same ibx block in DiGSymCatib')
 
-    parser.add_argument('--log_root', type=str, default='../logs/', help='the path saving model.t7 and the training process')
-    parser.add_argument('--log_path', type=str, default='test', help='the path saving model.t7 and the training process, the name of folder will be log/(current time)')
     parser.add_argument('--data_path', type=str, default='../dataset/data/', help='data set folder, for default format see dataset/cora/cora.edges and cora.node_labels')
 
     parser.add_argument('--MakeImbalance', '-imbal', action='store_true', help='if convert graph to undirecteds')

@@ -7,7 +7,7 @@ from torch.nn import Parameter, Linear
 from torch_geometric.nn import MessagePassing, JumpingKnowledge
 from torch_geometric.nn.inits import glorot, zeros
 
-from edge_data import normalize_row_edges
+from nets.edge_data import normalize_row_edges
 from nets.Sym_Reg import DGCNConv
 from typing import Union, Tuple, Optional
 from torch_geometric.typing import (OptPairTensor, Adj, Size, OptTensor)
