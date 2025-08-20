@@ -6,7 +6,7 @@ imbal="100  "
 Binary="0 1 "
 
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'  'WikipediaNetwork/chameleon' 'WikipediaNetwork/squirrel'
-Direct_dataset=(  'fb100/penn94' )
+Direct_dataset=(  'WikipediaNetwork/squirrel' )
 generate_timestamp() {
   date +"%d%H%Ms%S"
 }
