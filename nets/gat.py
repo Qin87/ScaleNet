@@ -370,79 +370,6 @@ class GATConvQin(MessagePassing):
     def __repr__(self):
         return '{}({}, {}, heads={})'.format(self.__class__.__name__,self.in_channels,self.out_channels, self.heads)
 
-class StandGAT1(nn.Module):
-    def __init__(self, nfeat, nhid, nclass, dropout,nlayer=1, is_add_self_loops=True, head=8):
-        super().__init__()
-        self.conv1 = GATConv(nfeat, nclass,heads=head)
-
-        self.is_add_self_loops = is_add_self_loops
-        self.reg_params = []
-        self.non_reg_params = self.conv1.parameters()
-
-    def forward(self, x, adj, edge_weight=None):
-
-        edge_index = adj
-        x, edge_index = self.conv1(x,edge_index, is_add_self_loops=self.is_add_self_loops)
-        # x = F.relu(x)
-
-        return x
-
-
-class StandGAT2(nn.Module):
-    def __init__(self, nfeat, nhid, nclass, dropout,nlayer=2):
-        super().__init__()
-
-        num_head = 4
-        head_dim = nhid//num_head
-
-        self.conv1 = GATConv(nfeat, head_dim, heads=num_head)
-        self.conv2 = GATConv(nhid,  nclass,   heads=1, concat=False)
-        self.dropout_p = dropout
-        self.is_add_self_loops = True
-
-        self.reg_params = list(self.conv1.parameters())
-        self.non_reg_params = self.conv2.parameters()
-
-    def forward(self, x, adj, edge_weight=None):
-        edge_index = adj
-        x, edge_index = self.conv1(x, edge_index, is_add_self_loops=self.is_add_self_loops)
-        x = F.relu(x)
-        x = F.dropout(x, p= self.dropout_p, training=self.training)
-        x, edge_index = self.conv2(x, edge_index, is_add_self_loops=self.is_add_self_loops)
-        return x
-
-class StandGATX(nn.Module):
-    def __init__(self, nfeat, nhid, nclass, dropout,nlayer=3):
-        super().__init__()
-
-        num_head = 4
-        head_dim = nhid//num_head
-
-        self.conv1 = GATConv(nfeat, head_dim, heads=num_head)
-        self.conv2 = GATConv(nhid, nclass)
-        self.convx = nn.ModuleList([GATConv(nhid, head_dim, heads=num_head) for _ in range(nlayer-2)])
-        self.dropout_p = dropout
-        self.is_add_self_loops = True
-
-        self.reg_params = list(self.conv1.parameters()) + list(self.convx.parameters())
-        self.non_reg_params = self.conv2.parameters()
-
-
-    def forward(self, x, adj, edge_weight=None):
-        edge_index = adj
-        x, edge_index = self.conv1(x, edge_index, is_add_self_loops=self.is_add_self_loops)
-        x = F.relu(x)
-
-        for iter_layer in self.convx:
-            x = F.dropout(x, p= self.dropout_p, training=self.training)
-            x, edge_index = iter_layer(x, edge_index, is_add_self_loops=self.is_add_self_loops)
-            x = F.relu(x)
-
-        x = F.dropout(x,p= self.dropout_p,  training=self.training)
-        x, edge_index = self.conv2(x, edge_index,edge_weight, is_add_self_loops=self.is_add_self_loops)
-
-        return x
-
 class StandGAT1BN(nn.Module):
     def __init__(self, nfeat, nhid, nclass, dropout,nlayer=1, is_add_self_loops=True, head=8):
         super().__init__()
@@ -595,13 +522,4 @@ def create_gat(nfeat, nhid, nclass, dropout, nlayer, head=8):
         model = StandGAT2BN(nfeat, nhid, nclass, dropout,nlayer,head=head)
     else:
         model = StandGATXBN(nfeat, nhid, nclass, dropout,nlayer,head=head)
-    return model
-
-def create_gat_0(nfeat, nhid, nclass, dropout, nlayer):
-    if nlayer == 1:
-        model = StandGAT1(nfeat, nhid, nclass, dropout,nlayer)
-    elif nlayer == 2:
-        model = StandGAT2(nfeat, nhid, nclass, dropout,nlayer)
-    else:
-        model = StandGATX(nfeat, nhid, nclass, dropout,nlayer)
     return model

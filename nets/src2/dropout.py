@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 from torch.nn.modules import Module
 
-import .functional as cF
+import functional as cF
 Tensor = torch.Tensor
 
 class _DropoutNd(Module):

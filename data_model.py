@@ -18,7 +18,7 @@ from edge_nets.edge_data import to_undirectedBen
 from nets import  create_gat
 
 from data.data_utils import random_planetoid_splits, load_directedData
-from nets.APPNP_Ben import APPNP_Model, ChebModel, SymModel, GCNModel_Cheb
+from nets.APPNP_Ben import APPNP_Model, ChebModel, SymModel
 from nets.DiG_NoConv import (create_DiG_MixIB_SymCat_Sym_nhid,
                              create_DiG_MixIB_SymCat_nhid, create_DiG_IB_SymCat_nhid, create_DiG_IB_Sym_nhid, create_DiG_IB_Sym_nhid_para,
                               create_Di_IB_nhid,  DiGCN_IB_XBN_nhid_para, Di_IB_XBN_nhid_ConV,

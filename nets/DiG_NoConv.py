@@ -512,7 +512,6 @@ class GATConv_Qin(MessagePassing):       # change from GAT
         return '{}({}, {}, heads={})'.format(self.__class__.__name__,self.in_channels,self.out_channels, self.heads)
 
 
-
 class DiSAGEConv(MessagePassing):      #    Qin from Claude
     r"""The Directed GraphSAGE operator.
     Args:
@@ -599,8 +598,6 @@ def Conv_Out(x, Conv):
     x = x.permute((0, 2, 1)).squeeze()
 
     return x
-
-
 
 
 class DiSAGE_xBN_nhid(torch.nn.Module):
@@ -849,32 +846,6 @@ class DiG_SimpleXBN_nhid_Pan(torch.nn.Module):
 
         return x
 
-    #     for iter_layer in self.convx:
-    #         x = F.dropout(x, self.dropout, training=self.training)
-    #         x = iter_layer(x, edge_index, edge_weight)
-    #         x = F.relu(x)
-    #
-    #     x = F.dropout(x, self.dropout, training=self.training)
-    #     x = self.conv2(x, edge_index, edge_weight)
-    #     x = self.batch_norm2(x)
-    #
-    #     x = x.unsqueeze(0)
-    #     x = x.permute((0, 2, 1))
-    #     x = self.Conv(x)
-    #     x = x.permute((0, 2, 1)).squeeze()
-    #
-    #     x = F.dropout(x, self.dropout, training=self.training)
-    #
-    #     return x
-    # def forward(self, x, edge_index):
-    #     out_list = []
-    #     for i in range(self.num_layers):
-    #         x = self.convs[i](x, edge_index)
-    #         if i < self.num_layers - 1:
-    #             x = F.relu(x)
-    #         out_list.append(F.log_softmax(x, dim=1))
-    #     return out_list
-
 
 class Di_IB_1_nhid(torch.nn.Module):
     def __init__(self, m, input_dim, n_cls, args):
@@ -1011,7 +982,6 @@ class DiGIB_1BN_Sym_nhid_para(torch.nn.Module):
         return x
 
 
-
 class DiGIB_2BN_Sym_nhid_para(torch.nn.Module):
     def __init__(self, m, input_dim,  out_dim, args):
         super().__init__()
@@ -1076,6 +1046,7 @@ class DiGIB_2BN_Sym_nhid_para(torch.nn.Module):
 
         x = F.dropout(x, p=self._dropout, training=self.training)
         return x
+
 class DiGCN_IB_2BN_Sym_nhid(torch.nn.Module):
     def __init__(self,m, input_dim, out_dim,args):
         super().__init__()
@@ -1208,6 +1179,7 @@ class DiGCN_IB_XBN_Sym_nhid(torch.nn.Module):
 
         x = F.dropout(x, p=self._dropout, training=self.training)
         return x
+
 class DiGIB_XBN_Sym_nhid_para(torch.nn.Module):
     '''
     revised for edge_index confusion
@@ -1843,8 +1815,8 @@ class DiGCN_IB_3MixBN_SymCat_Sym_nhid(torch.nn.Module):
         self.lin2 = torch.nn.Linear(nhid, nhid, bias=False)
         self.lin2_ = torch.nn.Linear(nhid, nhid, bias=False)
         if self.layer > 3:
-            self.ibx = nn.ModuleList([InceptionBlock_Di(m, nhid, nhid, args) for _ in range(layer - 3)])
-            self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(layer - 3)])
+            self.ibx = nn.ModuleList([InceptionBlock_Di(m, nhid, nhid, args) for _ in range(args.layer - 3)])
+            self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(args.layer - 3)])
 
         self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
         self.bias2 = nn.Parameter(torch.Tensor(1, nhid))
@@ -1990,8 +1962,6 @@ class Di_IB_XBN_nhid_ConV_JK(torch.nn.Module):
 
         self.reg_params = list(self.ib1.parameters()) + list(self.ibx.parameters())
         self.non_reg_params = self.ib2.parameters()
-
-
 
     def forward(self, x, edge_index_tuple, edge_weight_tuple):
         xs = []
