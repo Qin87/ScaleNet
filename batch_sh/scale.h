@@ -8,7 +8,6 @@ Dir="0 0.5 1 2 -1"
 # 'citeseer_npz/' 'cora_ml/'  'telegram/' 'dgl/pubmed' 'WikiCS/'
 #  'WikipediaNetwork/squirrel'  'WikipediaNetwork/chameleon'
 Direct_dataset=(  'telegram/'  )
-Direct_dataset_filename=$(echo $Direct_dataset | sed 's/\//_/g')
 generate_timestamp() {
   date +"%d%H%Ms%S"
 }
