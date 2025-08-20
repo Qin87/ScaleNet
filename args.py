@@ -101,7 +101,7 @@ def parse_args():
     parser.add_argument('--gcn_norm', '-gcnnorm', type=int, default=1, help='GCNConv forward, normalize edge_index during training')
     parser.add_argument('--add_selfloop',  type=int, default=0, help='add selfloop in before model')
     parser.add_argument("--all1", type=int, help="feature all 1 ", default=0)
-    parser.add_argument('--to_undirected', '-tud', type=int, default=1, help='if convert graph to undirected')
+    parser.add_argument('--to_undirected', '-tud', type=int, default=0, help='if convert graph to undirected')
     parser.add_argument('--to_reverse_edge', '-tre', type=int, default=0, help='if reverse direction of edges')
 
     parser.add_argument('--feat_proximity', action='store_true', help='filter out non similar nodes in scaled graph')
