@@ -76,8 +76,6 @@ def parse_args():
     parser.add_argument('--qua_weights', '-W', action='store_true', help='quaternion weights option')
     parser.add_argument('--qua_bias', '-B', action='store_true', help='quaternion bias options')
 
-    parser.add_argument('--log_path', type=str, default='test', help='the path saving model.t7 and the training process, the name of folder will be log/(current time)')
-    parser.add_argument('--data_path', type=str, default='../dataset/data/', help='data set folder, for default format see dataset/cora/cora.edges and cora.node_labels')
 
     # for GPRGN
     parser.add_argument('--ppnp', default='GPR_prop',choices=['PPNP', 'GPR_prop'])
@@ -107,7 +105,10 @@ def parse_args():
 
     parser.add_argument('--feat_proximity', action='store_true', help='filter out non similar nodes in scaled graph')
     parser.add_argument('--ibx1', action='store_true', help='share the same ibx block in DiGSymCatib')
+
     parser.add_argument('--log_root', type=str, default='../logs/', help='the path saving model.t7 and the training process')
+    parser.add_argument('--log_path', type=str, default='test', help='the path saving model.t7 and the training process, the name of folder will be log/(current time)')
+    parser.add_argument('--data_path', type=str, default='../dataset/data/', help='data set folder, for default format see dataset/cora/cora.edges and cora.node_labels')
 
     parser.add_argument('--MakeImbalance', '-imbal', action='store_true', help='if convert graph to undirecteds')
     parser.add_argument('--imb_ratio', type=float, default=20, help='imbalance ratio')
