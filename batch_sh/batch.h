@@ -24,10 +24,6 @@
 #  Activate Flight Environment
 #-------------------------------
 source "${flight_ROOT:-/opt/flight}"/etc/setup.sh
-
-#==============================
-#  Activate Package Ecosystem
-#------------------------------
 flight env activate conda@Apr15
 
 
@@ -43,7 +39,6 @@ mkdir -p "$RESULTS_DIR"
 #-------------------------------
 # Customize this section to suit your needs.
 net_values="QiGi2 QiGi3 QiGu3 QiGu2 QiGu4 QiGi4"
-q_value=0
 layer_values="1 2 3  4  "    #
 
 # 'citeseer_npz/' 'cora_ml/'  'telegram/telegram'

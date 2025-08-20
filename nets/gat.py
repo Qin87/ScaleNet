@@ -434,7 +434,6 @@ class StandGAT1BN_Qin(nn.Module):
         return x
 
 
-
 class StandGAT2BN(nn.Module):
     def __init__(self, nfeat, nhid, nclass, dropout,nlayer=2, head=8):
         super().__init__()
