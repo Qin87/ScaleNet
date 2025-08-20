@@ -201,7 +201,7 @@ ogbn-arxiv/:
 
 fb100/penn94:
   epoch: 10000
-  num_split: 5
+#  num_split: 5
 
 arxiv-year/:
   num_split: 5
