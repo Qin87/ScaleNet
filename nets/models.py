@@ -1,12 +1,10 @@
 import torch
-import torch.nn.functional as F
 from mamba_ssm import Mamba
 from torch import nn
-from torch_geometric.nn import GCNConv, SGConv, GATConv, APPNP, JumpingKnowledge
+from torch_geometric.nn import GCNConv, SGConv, APPNP, JumpingKnowledge
 
-from nets.DiG_NoConv import DiG_SimpleXBN_nhid_Pan
-from src.pgnn_conv import pGNNConv
-from src.gpr_conv import GPR_prop
+from nets.pgnn_conv import pGNNConv
+from nets.gpr_conv import GPR_prop
 
 
 class pGNNNet1(torch.nn.Module):
@@ -299,7 +297,7 @@ class GPRGNNNet1(torch.nn.Module):
         return F.log_softmax(x, dim=1)
 
 
-from torch.nn import BatchNorm1d, Embedding, Linear, ModuleList, ReLU, Sequential
+from torch.nn import BatchNorm1d, Embedding, ModuleList, ReLU
 from torch_geometric.nn import GINEConv, global_add_pool
 import inspect
 from typing import Any, Dict, Optional

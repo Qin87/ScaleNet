@@ -1,29 +1,12 @@
 import itertools
-import sys
-import time
-
-import torch
-import numpy as np
-import pickle as pk
-import networkx as nx
-from matplotlib import pyplot as plt
-from scipy.sparse import coo_matrix, csr_matrix
-from torch_geometric.data import Data
+from scipy.sparse import  csr_matrix
 from torch import Tensor
 from torch_sparse import SparseTensor, coalesce
-# from stellargraph.data import EdgeSplitter    # can't install Ben
-from sklearn.model_selection import train_test_split
-from torch_geometric.utils import negative_sampling, dropout_adj
-from torch_geometric.data import Data
-from torch_geometric.utils import is_undirected, to_networkx
-from networkx.algorithms.components import is_weakly_connected
-from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+import torch
+import torch.distributions as dist
 import scipy
-import os
-from joblib import Parallel, delayed
-from torch_geometric.utils import add_remaining_self_loops, add_self_loops, remove_self_loops
+from torch_geometric.utils import  add_self_loops, remove_self_loops
 from torch_scatter import scatter_add
-
 from nets.geometric_baselines import get_norm_adj
 
 
@@ -70,7 +53,6 @@ def get_second_directed_adj(args,  edge_index, num_nodes, dtype):
         edge_weight = deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
 
     return edge_index, edge_weight
-
 
 
 def Qin_get_second_directed_adj0(edge_index, num_nodes, dtype):
@@ -128,6 +110,7 @@ def Qin_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
                                      device=edge_index.device)
 
     return edge_index,  edge_weight
+
 
 def WCJ_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
     norm = args.inci_norm
@@ -274,7 +257,6 @@ def WCJ_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
     return edge_index,  edge_weight
 
 
-
 def get_appr_directed_adj2(args, edge_index, num_nodes, dtype, edge_weight=None):
     selfloop, alpha = args.First_self_loop, args.alpha
     device = edge_index.device
@@ -383,8 +365,7 @@ def get_appr_directed_adj2(args, edge_index, num_nodes, dtype, edge_weight=None)
 
     return edge_index, edge_weight
 
-import torch
-import torch.distributions as dist
+
 def trimodal_distribution(size, device, dtype):
     # Define the means and standard deviations for our three peaks
     means = torch.tensor([0.001, 100.0, 1000.0], device=device, dtype=dtype)
@@ -406,6 +387,7 @@ def trimodal_distribution(size, device, dtype):
     samples = torch.clamp(samples, min=0.0001, max=10000)
 
     return samples
+
 
 def trimodal_distribution4(size, device, dtype):
     # Define the means and standard deviations for our three peaks
@@ -429,6 +411,7 @@ def trimodal_distribution4(size, device, dtype):
 
     return samples
 
+
 def trimodal_distribution2(size, device, dtype):
     # Define the means and standard deviations for our three peaks
     means = torch.tensor([0.001,  1000.0], device=device, dtype=dtype)
@@ -450,7 +433,6 @@ def trimodal_distribution2(size, device, dtype):
     samples = torch.clamp(samples, min=0.0001, max=10000)
 
     return samples
-
 
 
 def intersect_sparse_tensors_noDense(A_in, A_out):
@@ -550,6 +532,7 @@ def sparse_mm_chunked(A, B, chunk_size):
 
     return result
 
+
 def sparse_mm_safe(A, B):
     try:
         return torch.sparse.mm(A, B)
@@ -559,6 +542,7 @@ def sparse_mm_safe(A, B):
             return sparse_mm_chunked(A, B, chunk_size=1000).to(A.device)
         else:
             raise e
+
 
 def generate_possible_B_products(A, m):
     # List of matrices to be used in combinations (A and A transpose)
@@ -596,8 +580,6 @@ def sparese_remove_self_loops(sparse_matrix):
         sparse_matrix.size()
     )
 
-
-# Removing self-loops from A_in and A_out
 
 def sparse_boolean_multi_hopExhaust(args, A, k, mode='union'):
     selfloop = args.rm_gen_sloop
@@ -641,6 +623,7 @@ def sparse_boolean_multi_hopExhaust(args, A, k, mode='union'):
             all_hops.append(A_result)
 
     return tuple(all_hops)
+
 
 def sparse_boolean_multi_hop_DirGNN(has_1_order, rm_gen_self_loop, A, k):
     order_tuple_list = []
@@ -687,6 +670,7 @@ def sparse_boolean_multi_hop_DirGNN(has_1_order, rm_gen_self_loop, A, k):
 
     return tuple(tensor for sub_list in order_tuple_list for tensor in sub_list)
 
+
 def sparse_remove_self_loops(matrix):
     # Function to remove self-loops by setting diagonal elements to zero.
     # Extract the indices and values of the sparse matrix
@@ -703,6 +687,7 @@ def sparse_remove_self_loops(matrix):
     new_matrix = new_matrix.coalesce()
 
     return new_matrix
+
 
 def sparse_boolean_multi_hop(args, A, k, mode='union'):
     selfloop = args.rm_gen_sloop
@@ -803,6 +788,7 @@ def sparse_boolean_multi_hop(args, A, k, mode='union'):
 
 
     return tuple(all_hops)
+
 
 def OneDirect_sparse_boolean_multi_hop(A, k):
     # Ensure A is in canonical form
@@ -944,6 +930,7 @@ def Qin_get_all_directed_adj(args,  edge_index, num_nodes, k, IsExhaustive, mode
 
     return tuple(all_hop_edge_index), tuple(all_hops_weight)
 
+
 def Qin_get_second_adj(edge_index, num_nodes, dtype, k):     #
     device = edge_index.device
     fill_value = 1
@@ -964,28 +951,6 @@ def Qin_get_second_adj(edge_index, num_nodes, dtype, k):     #
         all_hops_weight.append(edge_weightL)
 
     return tuple(all_hop_edge_index), tuple(all_hops_weight)
-
-def get_second_directed_adj_union(edge_index, num_nodes, dtype, k):
-    '''
-    Qin change to get union
-    '''
-    device = edge_index.device
-    fill_value = 1
-    # edge_index, _ = add_self_loops(edge_index.long(), fill_value=fill_value, num_nodes=num_nodes)     # TODO add back after no-selfloop test
-    edge_index, _ = remove_self_loops(edge_index)
-
-    A = torch.sparse_coo_tensor(edge_index, torch.ones(edge_index.size(1), dtype=torch.bool).to(device), size=(num_nodes, num_nodes))
-    L_tuple = sparse_boolean_multi_hop(A, k-1, mode='union')
-
-    all_edge_index = []
-    all_hops_weight = []
-    for L in L_tuple:  # Skip L1 if not needed
-        edge_indexL = L._indices()
-        edge_weightL = normalize_row_edges(edge_indexL, num_nodes)
-        all_edge_index.append(edge_indexL)
-        all_hops_weight.append(edge_weightL)
-
-    return tuple(all_edge_index), tuple(all_hops_weight)
 
 @torch.jit._overload
 def maybe_num_nodes(edge_index, num_nodes=None):
