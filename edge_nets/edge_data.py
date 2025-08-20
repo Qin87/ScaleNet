@@ -27,58 +27,6 @@ from torch_scatter import scatter_add
 from nets.geometric_baselines import get_norm_adj
 
 
-
-def sub_adj(edge_index, prob, seed):
-    sub_train, sub_test = train_test_split(edge_index.T, test_size=prob, random_state=seed)
-    sub_train, sub_val = train_test_split(sub_train, test_size=0.2, random_state=seed)
-    return sub_train.T, sub_val.T, sub_test.T
-
-
-
-
-def edges_negative(edge_index):
-    from torch_geometric.utils import to_undirected
-
-    size = edge_index.max().item() + 1
-    adj = np.zeros((size, size), dtype=np.int8)
-    adj[edge_index[0], edge_index[1]] = 1
-    x, y = np.where((adj - adj.T) < 0)
-
-    reverse = torch.from_numpy(np.c_[x[:, np.newaxis], y[:, np.newaxis]])
-    undirected_index = to_undirected(edge_index)
-    negative = negative_sampling(undirected_index, num_neg_samples=edge_index[0].shape[0], force_undirected=False)
-
-    _from_, _to_ = negative[0].unsqueeze(0), negative[1].unsqueeze(0)
-    neg_index = torch.cat((_from_, _to_), axis=0)
-    # neg_index = torch.cat((reverse.T, neg_index), axis = 1)
-    # print(edge_index.shape, reverse.shape, neg_index.shape)
-    return reverse.T, neg_index
-
-
-def split_negative(edge_index, prob, seed, neg_sampling=True):
-    reverse, neg_index = edges_negative(edge_index)
-    if neg_sampling:
-        neg_index = torch.cat((reverse, neg_index), axis=1)
-    else:
-        neg_index = reverse
-
-    sub_train, sub_test = train_test_split(neg_index.T, test_size=prob, random_state=seed)
-    sub_train, sub_val = train_test_split(sub_train, test_size=0.2, random_state=seed)
-    return sub_train.T, sub_val.T, sub_test.T
-
-
-def label_pairs_gen(pos, neg):
-    pairs = torch.cat((pos, neg), axis=-1)
-    label = np.r_[np.ones(len(pos[0])), np.zeros(len(neg[0]))]
-    return pairs, label
-
-
-
-
-
-
-
-
 def get_second_directed_adj(args,  edge_index, num_nodes, dtype):
     selfloop = args.First_self_loop
     if selfloop == 1:
@@ -505,8 +453,6 @@ def trimodal_distribution2(size, device, dtype):
 
 
 
-
-
 def intersect_sparse_tensors_noDense(A_in, A_out):
     device = A_in.device
 
@@ -671,7 +617,7 @@ def sparse_boolean_multi_hopExhaust(args, A, k, mode='union'):
         A_result = A_result.coalesce()
         A_result._values().clamp_(0, 1)  # Ensuring binary values
     else:   # intersection
-        A_result = intersect_sparse_tensors(A_in, A_out)
+        A_result = intersect_sparse_tensors_noDense(A_in, A_out)
 
     if selfloop == -1:
         A_result = sparese_remove_self_loops(A_result)
@@ -686,7 +632,7 @@ def sparse_boolean_multi_hopExhaust(args, A, k, mode='union'):
                 A_result = A_result.coalesce()
                 A_result._values().clamp_(0, 1)  # Ensuring binary values
             else:
-                A_result = intersect_sparse_tensors(A_in, A_out)
+                A_result = intersect_sparse_tensors_noDense(A_in, A_out)
 
             # num_nonzero_result = A_result._nnz()
             # print('num of edges:', num_nonzero_result)
@@ -906,23 +852,6 @@ def OneDirect_sparse_boolean_multi_hop(A, k):
     return tuple(all_hops)
 
 
-def dense_boolean_multi_hop_union(A, k):
-    n = A.size(0)
-    A_current = A.coalesce()
-
-    # Initialize all_hops list with A (1-hop neighbors)
-    all_hops = [A_current]
-
-    # Compute k-hop neighbors using matrix multiplication
-    for hop in range(1, k):
-        A_next = torch.mm(A_current.to_dense(), A.to_dense())
-        A_next = A_next.to_sparse()
-        all_hops.append(A_next)
-        A_current = A_next
-
-    return tuple(all_hops)
-
-
 def normalize_row_edges(edge_index, num_nodes, edge_weight=None):
     device = edge_index.device
     if edge_weight is None:
@@ -944,15 +873,6 @@ def sparse_difference(U, I, epsilon=1e-8):
         diff.size()
     )
 
-
-def sparse_intersection(U, I):
-    # Perform element-wise multiplication
-    intersection = U * I
-
-    # Coalesce to combine any duplicate indices
-    intersection = intersection.coalesce()
-
-    return intersection
 
 def Qin_get_second_directed_adj(args, edge_index, num_nodes, k, IsExhaustive, mode, norm='dir'):     #
     self_loop = args.First_self_loop
@@ -995,65 +915,6 @@ def Qin_get_second_directed_adj(args, edge_index, num_nodes, k, IsExhaustive, mo
 
     return tuple(all_hop_edge_index), tuple(all_hops_weight)
 
-def dir_normalize_edge_weights_origin(edge_index, num_nodes, edge_weights=None):
-# from DirGNN
-    # Compute out-degrees and in-degrees
-    edge_index = edge_index.long()
-    edge_weights = edge_weights.float()
-
-    device = edge_index.device
-    row, col = edge_index
-    out_deg = torch.zeros(num_nodes, dtype=torch.float).to(device)
-    in_deg = torch.zeros(num_nodes, dtype=torch.float).to(device)
-
-    out_deg.scatter_add_(0, row, edge_weights)
-    in_deg.scatter_add_(0, col, edge_weights)
-
-    # Compute the inverse square root of the degrees
-    out_deg_inv_sqrt = torch.pow(out_deg, -0.5)
-    out_deg_inv_sqrt[out_deg_inv_sqrt == float('inf')] = 0
-
-    in_deg_inv_sqrt = torch.pow(in_deg, -0.5)
-    in_deg_inv_sqrt[in_deg_inv_sqrt == float('inf')] = 0
-
-    # Normalize the edge weights
-    normalized_edge_weights = edge_weights * out_deg_inv_sqrt[row] * in_deg_inv_sqrt[col]
-
-    return edge_index, normalized_edge_weights
-
-
-# def dir_normalize_edge_weights(edge_index, num_nodes, edge_weights=None):
-def dir_normalize_edge_weights(row, col, value,  num_nodes, edge_weights=None):
-# from DirGNN
-    # Compute out-degrees and in-degrees
-    # device = edge_index.device()
-    # edge_index = edge_index.long()
-    # if edge_weights is None:
-    #     edge_weights = torch.ones((num_nodes, num_nodes), dtype=torch.float).to(device)
-    # else:
-    #     edge_weights = edge_weights.float()
-    edge_weights = value.to(torch.float32)
-
-    device = row.device
-    # # row, col = edge_index[:,0], edge_index[:,1]
-    # row, col = edge_index.row, edge_index.col
-    out_deg = torch.zeros(num_nodes, dtype=torch.float).to(device)
-    in_deg = torch.zeros(num_nodes, dtype=torch.float).to(device)
-
-    out_deg.scatter_add_(0, row, edge_weights)
-    in_deg.scatter_add_(0, col, edge_weights)
-
-    # Compute the inverse square root of the degrees
-    out_deg_inv_sqrt = torch.pow(out_deg, -0.5)
-    out_deg_inv_sqrt[out_deg_inv_sqrt == float('inf')] = 0
-
-    in_deg_inv_sqrt = torch.pow(in_deg, -0.5)
-    in_deg_inv_sqrt[in_deg_inv_sqrt == float('inf')] = 0
-
-    # Normalize the edge weights
-    normalized_edge_weights = edge_weights * out_deg_inv_sqrt[row] * in_deg_inv_sqrt[col]
-
-    return normalized_edge_weights
 
 def Qin_get_all_directed_adj(args,  edge_index, num_nodes, k, IsExhaustive, mode, norm='dir'):
     has_1_order = args.has_1_order
@@ -1214,76 +1075,3 @@ def to_undirectedBen(edge_index, edge_weight=None, num_nodes=None):
 
 
 
-
-
-def remove_dupEdge(edge_index, edge_weight=None, num_nodes=None):
-    num_nodes = maybe_num_nodes(edge_index, num_nodes)
-
-    edge_index, edge_weight = coalesce(edge_index, edge_weight, num_nodes, num_nodes)
-
-    return edge_index, edge_weight
-
-
-def link_prediction_evaluation(out_val, out_test, y_val, y_test):
-    r"""Evaluates link prediction results.
-
-    Args:
-        out_val: (torch.FloatTensor) Log probabilities of validation edge output, with 2 or 3 columns.
-        out_test: (torch.FloatTensor) Log probabilities of test edge output, with 2 or 3 columns.
-        y_val: (torch.LongTensor) Validation edge labels (with 2 or 3 possible values).
-        y_test: (torch.LongTensor) Test edge labels (with 2 or 3 possible values).
-
-    :rtype:
-        result_array: (np.array) Array of evaluation results, with shape (2, 5).
-    """
-    out = torch.exp(out_val).detach().to('cpu').numpy()
-    y_val = y_val.detach().to('cpu').numpy()
-    # possibly three-class evaluation
-    pred_label = np.argmax(out, axis=1)
-    val_acc_full = accuracy_score(pred_label, y_val)
-    # two-class evaluation
-    out = out[y_val < 2, :2]
-    y_val = y_val[y_val < 2]
-
-    prob = out[:, 0] / (out[:, 0] + out[:, 1])
-    prob = np.nan_to_num(prob, nan=0.5, posinf=0)
-    val_auc = roc_auc_score(y_val, prob)
-    pred_label = np.argmax(out, axis=1)
-    val_acc = accuracy_score(pred_label, y_val)
-    val_f1_macro = f1_score(pred_label, y_val, average='macro')
-    val_f1_micro = f1_score(pred_label, y_val, average='micro')
-
-    out = torch.exp(out_test).detach().to('cpu').numpy()
-    y_test = y_test.detach().to('cpu').numpy()
-    # possibly three-class evaluation
-    pred_label = np.argmax(out, axis=1)
-    test_acc_full = accuracy_score(pred_label, y_test)
-    # two-class evaluation
-    out = out[y_test < 2, :2]
-    y_test = y_test[y_test < 2]
-
-    prob = out[:, 0] / (out[:, 0] + out[:, 1])
-    prob = np.nan_to_num(prob, nan=0.5, posinf=0)
-    test_auc = roc_auc_score(y_test, prob)
-    pred_label = np.argmax(out, axis=1)
-    test_acc = accuracy_score(pred_label, y_test)
-    test_f1_macro = f1_score(pred_label, y_test, average='macro')
-    test_f1_micro = f1_score(pred_label, y_test, average='micro')
-    return [[val_acc_full, val_acc, val_auc, val_f1_micro, val_f1_macro],
-            [test_acc_full, test_acc, test_auc, test_f1_micro, test_f1_macro]]
-
-def organize4edgePred(new_x, edges, sampling_src_idx,neighbor_dist_list):
-    '''
-
-    Args:
-        new_x:
-        edges:
-        sampling_src_idx:
-        neighbor_dist_list:
-
-    Returns:
-
-    '''
-
-
-    return data
