@@ -12,8 +12,6 @@ def parse_args():
     parser.add_argument("--First_self_loop", type=int, choices=[1, -1,  0], default=0, help="1 is add, -1 is remove, Whether to add self-loops to the graph")
     parser.add_argument("--rm_gen_sloop", type=int, choices=[1, 0], default=0, help="Whether to remove generated self-loops to the graph")
 
-    parser.add_argument("--has_scheduler", type=int, default=1, help="Whether Optimizer has a scheduler")
-    parser.add_argument('--patience', type=int, default=10, help='patience to reduce lr,80')
 
     # for DirGNN
     parser.add_argument("--conv_type", type=str, help="DirGNN Model", default="dir-gcn")
@@ -31,13 +29,13 @@ def parse_args():
     parser.add_argument('--num_split', type=int, default=1, help='num of run in spite of many splits')
 
 
-    parser.add_argument('--net', type=str, default='linkx', help='mlp, Dir-GNN, ScaleNet, '
+    parser.add_argument('--net', type=str, default='linkx_git', help='mlp, Dir-GNN, ScaleNet, '
                      'Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc, ParaGCN, SimGAT, SloopNet, tSNE,RandomNet, HFNet '
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym' 
                         'link, link_concat, linkx, linkx_git')
     parser.add_argument('--seed', type=int, default=1, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='fb100/penn94', help='telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
+    parser.add_argument('--Dataset', type=str, default='WikipediaNetwork/squirrel', help='telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WikipediaNetwork/crocodile, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/,  malnet/tiny, '
         'fb100/penn94, ')
@@ -49,6 +47,8 @@ def parse_args():
 
     parser.add_argument('--hid_dim', type=int, default=32, help='feature dimension')
     parser.add_argument('--epoch', type=int, default=10000, help='epoch1500,')
+    parser.add_argument("--has_scheduler", type=int, default=1, help="Whether Optimizer has a scheduler")
+    parser.add_argument('--patience', type=int, default=10, help='patience to reduce lr,80')
     parser.add_argument('--NotImproved', type=int, default=80, help='consecutively Not Improved, break, 500, 450, 410, 210, 60')
 
     parser.add_argument('--lr', type=float, default=0.005, help='learning rate')
@@ -100,7 +100,7 @@ def parse_args():
     parser.add_argument('--paraD', action='store_true', help='ib is weighted sum')
     parser.add_argument('--gcn_norm', '-gcnnorm', type=int, default=1, help='GCNConv forward, normalize edge_index during training')
     parser.add_argument('--add_selfloop',  type=int, default=0, help='add selfloop in before model')
-    parser.add_argument("--all1", type=int, help="feature all 1 ", default=1)
+    parser.add_argument("--all1", type=int, help="feature all 1 ", default=0)
     parser.add_argument('--to_undirected', '-tud', type=int, default=0, help='if convert graph to undirected')
     parser.add_argument('--to_reverse_edge', '-tre', type=int, default=0, help='if reverse direction of edges')
 
