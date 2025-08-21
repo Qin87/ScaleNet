@@ -107,7 +107,7 @@ def parse_args():
     parser.add_argument('--feat_proximity', action='store_true', help='filter out non similar nodes in scaled graph')
     parser.add_argument('--ibx1', action='store_true', help='share the same ibx block in DiGSymCatib')
 
-    parser.add_argument('--data_path', type=str, default='../dataset/data/', help='data set folder, for default format see dataset/cora/cora.edges and cora.node_labels')
+    parser.add_argument('--data_path', type=str, default='../dataset/', help='data set folder, for default format see dataset/cora/cora.edges and cora.node_labels')
 
     parser.add_argument('--MakeImbalance', '-imbal', action='store_true', help='if convert graph to undirecteds')
     parser.add_argument('--imb_ratio', type=float, default=20, help='imbalance ratio')
