@@ -1,6 +1,7 @@
 ################################
 # This Branch is for Multi-scale Paper
 ################################
+import socket, uuid
 import sys
 import os
 import numpy as np
@@ -207,6 +208,8 @@ if args.to_reverse_edge:
 
 with open(log_directory + log_file_name_with_timestamp, 'w') as log_file:
     print(args, file=log_file)
+    print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=log_file)
+    print('Running Branch multi_scale_paper', file=log_file)
 
 biedges = None
 edge_in = None
