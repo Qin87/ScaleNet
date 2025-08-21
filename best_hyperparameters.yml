@@ -206,3 +206,6 @@ fb100/penn94:
 arxiv-year/:
   num_split: 5
   epoch: 10000
+
+snap-patents/:
+  num_split: 5  # original split
