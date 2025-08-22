@@ -6,7 +6,7 @@ import torch
 from torch_geometric.nn import LINKX
 from torch_scatter import scatter_add
 
-from nets.link_model import LINK, LINK_Concat, LINKX_Github
+from nets.link_model import LINK, LINK_Concat, LINKX_Github, LINK_Add
 from nets.gat import StandGAT1BN_Qin
 from nets.gcn import ParaGCNXBN, StandGCNXBN
 from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model, Sloop_JKNet, ScaleNet, RandomNet, High_Frequent
@@ -49,8 +49,10 @@ def init_model(model):
 def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
     if args.net.lower() == 'link':
         model = LINK(args.num_node, n_cls)
-    elif args.net.lower() == 'linkcat':
+    elif args.net.lower() == 'linkxcat':
         model = LINK_Concat(num_features, args.hid_dim, n_cls, args.layer, args.num_node, dropout=args.dropout).to(device)
+    elif args.net.lower() == 'linkxadd':
+        model = LINK_Add(num_features, args.hid_dim, n_cls, args.layer, args.num_node, dropout=args.dropout).to(device)
     elif args.net.lower() == 'linkx':
         model = LINKX(num_nodes=args.num_node, in_channels= num_features, hidden_channels=args.hid_dim, out_channels=n_cls, num_layers=args.layer,
                        dropout=args.dropout).to(device)

@@ -1,12 +1,12 @@
 #!/bin/bash
 
-net_values="link linkx link_concat linkx_git "
+net_values="linkxadd  "
 layer_values="2 "
 imbal="100  "
 Binary="0 1 "
 
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'  'WikipediaNetwork/chameleon' 'WikipediaNetwork/squirrel'
-Direct_dataset=(  'WikipediaNetwork/squirrel' )
+Direct_dataset=('directed-roman-empire/' )
 generate_timestamp() {
   date +"%d%H%Ms%S"
 }
@@ -25,7 +25,7 @@ for Didataset in "${Direct_dataset[@]}"; do
             log_output="${Didataset//\//_}_${timestamp}_${net}_layer${layer}.log"
 
             # Run the Python script with parameters and log output
-            python3 main.py    --net="$net"   --layer="$layer"   --all1="$binall1"   --to_reverse_edge=1 \
+            python3 main.py    --net="$net"   --layer="$layer"   --to_reverse_edge="$binall1"    \
             --Dataset="$Didataset" > "$log_output"
              2>&1
             wait $pid
