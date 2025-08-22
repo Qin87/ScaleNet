@@ -52,13 +52,15 @@ def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
     elif args.net.lower() == 'linkxcat':
         model = LINK_Concat(num_features, args.hid_dim, n_cls, args.layer, args.num_node, dropout=args.dropout).to(device)
     elif args.net.lower() == 'linkxadd':
-        model = LINK_Add(num_features, args.hid_dim, n_cls, args.layer, args.num_node, dropout=args.dropout).to(device)
+        model = LINK_Add(num_features, args.hid_dim, n_cls, args.layer, args.num_node,
+            inner_activation=args.inner_activation, inner_dropout=args.inner_dropout, dropout=args.dropout, init_layers_A=args.link_init_layers_A, init_layers_X=args.link_init_layers_X).to(device)
     elif args.net.lower() == 'linkx':
         model = LINKX(num_nodes=args.num_node, in_channels= num_features, hidden_channels=args.hid_dim, out_channels=n_cls, num_layers=args.layer,
+            num_edge_layers=args.link_init_layers_A, num_node_layers=args.link_init_layers_X,
                        dropout=args.dropout).to(device)
     elif args.net.lower() == 'linkxgit':
         model = LINKX_Github(num_features, args.hid_dim, n_cls, args.layer, args.num_node,
-              inner_activation=args.inner_activation, inner_dropout=args.inner_dropout, dropout=args.dropout, init_layers_A=args.link_init_layers_A, init_layers_X=args.link_init_layers_X)
+              inner_activation=args.inner_activation, inner_dropout=args.inner_dropout, dropout=args.dropout, init_layers_A=args.link_init_layers_A, init_layers_X=args.link_init_layers_X).to(device)
 
 
     elif args.net.lower() == 'pgnn':

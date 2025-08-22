@@ -26,6 +26,8 @@ class LINKX_Github(nn.Module):
         self.inner_activation = inner_activation
         self.inner_dropout = inner_dropout
 
+        self.reset_parameters()  # -
+
     def reset_parameters(self):
         self.mlpA.reset_parameters()
         self.mlpX.reset_parameters()
@@ -112,21 +114,26 @@ class LINK_Concat(nn.Module):
 
 class LINK_Add(nn.Module):
     """ add A and X """
-
-    def __init__(self, in_channels, hidden_channels, out_channels, num_layers, num_nodes, dropout=.5, cache=True):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_layers, num_nodes, dropout=.5, cache=False, inner_activation=False, inner_dropout=False, init_layers_A=1, init_layers_X=1):
         super().__init__()
+        self.mlpA = MLP(num_nodes, hidden_channels, hidden_channels, init_layers_A, dropout=0)
+        self.mlpX = MLP(in_channels, hidden_channels, hidden_channels, init_layers_X, dropout=0)
+
         self.mlp = MLP(in_channels + num_nodes, hidden_channels, out_channels, num_layers, dropout=dropout)
         self.in_channels = in_channels
         self.cache = cache
         self.x = None
+        self.mlp_final = MLP(hidden_channels, hidden_channels, out_channels, num_layers, dropout=dropout)
+
 
     def reset_parameters(self):
         self.mlp.reset_parameters()
 
     def forward(self, x, edge_index):
+        N = x.shape[0]
         row, col = edge_index
         A = SparseTensor(row=row, col=col,
-                         sparse_sizes=(self.num_nodes, self.num_nodes)
+                         sparse_sizes=(N, N)
                          ).to_torch_sparse_coo_tensor()
 
         xA = self.mlpA(A, input_tensor=True)
