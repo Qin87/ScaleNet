@@ -48,7 +48,7 @@ def init_model(model):
             module.reset_parameters()  # Res
 
 def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
-    if args.net.lower() == 'scale_big':
+    if args.net.lower() == 'scale':
         model = GNN2(args).to(device)
     elif args.net.lower() == 'link':
         model = LINK(args).to(device)
