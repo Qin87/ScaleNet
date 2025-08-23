@@ -245,13 +245,10 @@ bacc_list = []
 device = set_device(args)
 
 data_x = data_x.to(device)
+data_y = data_y.to(device)
 if args.all1:
     data_x = torch.ones_like(data_x)
 #
-try:
-    data_y = data_y.squeeze(1).to(device)
-except:
-    data_y = data_y.to(device)
 edges = edges.to(device)
 
 data_train_maskOrigin = data_train_maskOrigin.to(device)
@@ -400,7 +397,7 @@ try:
                 # print('no_in, homo_in, no_out, homo_out:', no_in, homo_ratio_A, no_out, homo_ratio_At, file=log_file)
                 print(model, file=log_file)
                 print(model)
-                if args.net.startswith('ym'):
+                if args.net[1:].startswith('ym'):
                     print('Sym edge size(biedge, edge_in, edge_out):', biedges.size(),  in_weight.size(),  out_weight.size(), file=log_file)
                     print('Sym edge size(biedge, edge_in, edge_out):', biedges.size(),  in_weight.size(),  out_weight.size())
                 elif args.net[1:].startswith('i'):
