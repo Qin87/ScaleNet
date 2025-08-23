@@ -19,6 +19,10 @@ from nets.gcn import gcn_norm
 from torch_geometric.utils import add_self_loops
 
 from nets.jumping_weight import JumpingKnowledge
+from nets.scalecon import FaberConv, ScaleConv
+
+
+
 
 
 def get_conv(conv_type, input_dim, output_dim, alpha):      # from Rossi(LoG)
@@ -1895,47 +1899,7 @@ class DirGATConv(torch.nn.Module):
             x, edge_index_t
         )
 
-class GNN2(torch.nn.Module):
-    def __init__(self, args):
-        super().__init__()
-        self.conv_type = args.conv_type
-        self.alpha = nn.Parameter(torch.ones(1) * args.alpha, requires_grad=args.learn_alpha)
-        self.lrelu_slope = args.lrelu_slope
 
-        output_dim = args.hid_dim if args.jk else args.num_classes
-        if args.num_layers == 1:
-            self.convs = ModuleList([get_conv(args.num_features, output_dim, args)])
-        else:
-            self.convs = ModuleList([get_conv(args.num_features, args.hid_dim, args)])
-            for _ in range(args.num_layers - 2):
-                self.convs.append(get_conv(args.hid_dim, args.hid_dim, args))
-            self.convs.append(get_conv(args.hid_dim, output_dim, args))
-
-        if args.jk is not None:
-            input_dim = args.hid_dim * args.num_layers if args.jk == "cat" else args.hid_dim
-            self.lin = Linear(input_dim, args.num_classes)
-            self.jump = JumpingKnowledge(mode=args.jk, channels=args.hid_dim, num_layers=args.num_layers)
-
-        self.num_layers = args.num_layers
-        self.dropout = args.dropout
-        self.jk = args.jk
-        self.normalize = args.normalize
-    def forward(self, x, edge_index):
-        xs = []
-        for i, conv in enumerate(self.convs):
-            x = conv(x, edge_index)
-            if i != len(self.convs) - 1 or self.jk:
-                x = F.leaky_relu(x,negative_slope= self.lrelu_slope)
-                x = F.dropout(x, p=self.dropout, training=self.training)
-                if self.normalize:
-                    x = F.normalize(x, p=2, dim=1)
-            xs += [x]
-
-        if self.jk is not None:
-            x = self.jump(xs)
-            x = self.lin(x)
-
-        return torch.nn.functional.log_softmax(x, dim=1)
 
 class GNN(torch.nn.Module):     # from Rossi(LoG paper)
     def __init__(

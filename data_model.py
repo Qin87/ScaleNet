@@ -9,7 +9,7 @@ from torch_scatter import scatter_add
 from nets.link_model import LINK, LINK_Concat, LINKX, LINK_Add
 from nets.gat import StandGAT1BN_Qin
 from nets.gcn import ParaGCNXBN, StandGCNXBN
-from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model, Sloop_JKNet, ScaleNet, RandomNet, High_Frequent, GNN2
+from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model, Sloop_JKNet, ScaleNet, RandomNet, High_Frequent
 from nets.models import JKNet, create_MLP, create_SGC, create_pgnn, GPRGNNNet1, GraphModel
 
 from nets.Signum_quaternion import QuaNet_node_prediction_one_laplacian_Qin
@@ -28,6 +28,7 @@ from nets.GIN_Ben import create_GIN
 from nets.Sym_Reg import create_SymReg_add, create_SymReg_para_add
 from nets.sagcn import SAGCNXBN
 from nets.gcn import GraphSAGEXBatNorm
+from nets.scalecon import GNN2
 from nets.sparse_magnet import ChebNet_Ben, ChebNet_BenQin, ChebNet_Ben_05
 import torch.nn.init as init
 

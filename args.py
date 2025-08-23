@@ -14,9 +14,9 @@ def parse_args():
 
 
     # for DirGNN
-    parser.add_argument("--conv_type", type=str, help="DirGNN Model", default="dir-gcn")
+    parser.add_argument("--conv_type", type=str, help="DirGNN Model, scale, ", default="dir-gcn")
     parser.add_argument("--normalize", type=int, help="whether use batch normalization in ScaleNet, model:0/1", default=0)
-    parser.add_argument("--jk", type=str, choices=["max", "cat", 'weighted',  0], default='weighted')
+    parser.add_argument("--jk", type=str, choices=["max", "cat", 'weighted',  0], default='cat')
     parser.add_argument("--jk_inner", type=str, choices=["max", "cat", 'lstm', 0, 'weighted'], default='weighted')
     parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', 0], default=0)
     parser.add_argument("--fs", type=str, choices=["sum", "cat", 'weight_sum', 'linear'], default="dir", help='fusion method')
@@ -94,8 +94,15 @@ def parse_args():
     parser.add_argument('--inner_activation', action='store_true', help='Whether linkV3 uses inner activation')
     parser.add_argument('--inner_dropout', action='store_true', help='Whether linkV3 uses inner dropout')
 
-    # for
+    # for scale_big
     parser.add_argument("--lrelu_slope", type=float, help="negative slope of Leaky Relu", default=-1.0)
+    parser.add_argument("--conv_type2", type=str, help="scale, faber ", default="scale")
+    parser.add_argument("--weight_penalty", type=str, choices=["exp", "lin", "None"], default="None")
+    parser.add_argument("--k_plus", type=int, help="Polynomial order", default=2)
+    parser.add_argument("--exponent", type=float, help="exponent in norm", default=-0.25)
+    parser.add_argument("--zero_order", type=int, help="If include zero order", default=0)
+    parser.add_argument("--cat_A_X", type=int, help="If include concatenate A and X", default=0)
+    parser.add_argument("--structure", type=float, default=1, help="1 pure structure, 0 pure feature, 0.5 structure is feature too")
 
     # not use for ScaleNet
     parser.add_argument("--has_1_order", type=int, help="Whether Ai* has 1-order edges:0/1", default=0)
