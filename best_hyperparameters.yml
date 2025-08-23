@@ -213,3 +213,7 @@ snap-patents/:
 pokec/:
     epoch: 10000
 
+malnet/tiny:
+      epoch: 10000
+
+
