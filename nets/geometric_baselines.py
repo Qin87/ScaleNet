@@ -1842,12 +1842,12 @@ def directed_norm_weight(adj, edge_weight=None, rm_gen_sLoop=False):
 
     return adj1
 
-def get_model(num_features,  n_cls, args):
+def get_model(args):
     return GNN(
-        num_features=num_features,
+        num_features=args.num_features,
         hidden_dim=args.hid_dim,
         num_layers=args.layer,
-        num_classes=n_cls,
+        num_classes=args.n_cls,
         dropout=args.dropout,
         conv_type=args.conv_type,
         jumping_knowledge=args.jk,
@@ -1855,6 +1855,7 @@ def get_model(num_features,  n_cls, args):
         alpha=args.alphaDir,
         learn_alpha=args.learn_alpha,
     )
+
 
 class DirSageConv(torch.nn.Module):
     def __init__(self, input_dim, output_dim, alpha):
@@ -1893,6 +1894,48 @@ class DirGATConv(torch.nn.Module):
         return (1 - self.alpha) * self.conv_src_to_dst(x, edge_index) + self.alpha * self.conv_dst_to_src(
             x, edge_index_t
         )
+
+class GNN2(torch.nn.Module):
+    def __init__(self, args):
+        super().__init__()
+        self.conv_type = args.conv_type
+        self.alpha = nn.Parameter(torch.ones(1) * args.alpha, requires_grad=args.learn_alpha)
+        self.lrelu_slope = args.lrelu_slope
+
+        output_dim = args.hidden_dim if args.jk else args.num_classes
+        if args.num_layers == 1:
+            self.convs = ModuleList([get_conv(args.num_features, output_dim, args)])
+        else:
+            self.convs = ModuleList([get_conv(args.num_features, args.hidden_dim, args)])
+            for _ in range(args.num_layers - 2):
+                self.convs.append(get_conv(args.hidden_dim, args.hidden_dim, args))
+            self.convs.append(get_conv(args.hidden_dim, output_dim, args))
+
+        if args.jk is not None:
+            input_dim = args.hidden_dim * args.num_layers if args.jk == "cat" else args.hidden_dim
+            self.lin = Linear(input_dim, args.num_classes)
+            self.jump = JumpingKnowledge(mode=args.jk, channels=args.hidden_dim, num_layers=args.num_layers)
+
+        self.num_layers = args.num_layers
+        self.dropout = args.dropout
+        self.jk = args.jk
+        self.normalize = args.normalize
+    def forward(self, x, edge_index):
+        xs = []
+        for i, conv in enumerate(self.convs):
+            x = conv(x, edge_index)
+            if i != len(self.convs) - 1 or self.jk:
+                x = F.leaky_relu(x,negative_slope= self.lrelu_slope)
+                x = F.dropout(x, p=self.dropout, training=self.training)
+                if self.normalize:
+                    x = F.normalize(x, p=2, dim=1)
+            xs += [x]
+
+        if self.jk is not None:
+            x = self.jump(xs)
+            x = self.lin(x)
+
+        return torch.nn.functional.log_softmax(x, dim=1)
 
 class GNN(torch.nn.Module):     # from Rossi(LoG paper)
     def __init__(

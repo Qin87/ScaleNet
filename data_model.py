@@ -3,13 +3,13 @@ from datetime import datetime
 
 import numpy as np
 import torch
-from torch_geometric.nn import LINKX
+# from torch_geometric.nn import LINKX
 from torch_scatter import scatter_add
 
-from nets.link_model import LINK, LINK_Concat, LINKX_Github, LINK_Add
+from nets.link_model import LINK, LINK_Concat, LINKX, LINK_Add
 from nets.gat import StandGAT1BN_Qin
 from nets.gcn import ParaGCNXBN, StandGCNXBN
-from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model, Sloop_JKNet, ScaleNet, RandomNet, High_Frequent
+from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model, Sloop_JKNet, ScaleNet, RandomNet, High_Frequent, GNN2
 from nets.models import JKNet, create_MLP, create_SGC, create_pgnn, GPRGNNNet1, GraphModel
 
 from nets.Signum_quaternion import QuaNet_node_prediction_one_laplacian_Qin
@@ -47,20 +47,20 @@ def init_model(model):
             module.reset_parameters()  # Res
 
 def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
-    if args.net.lower() == 'link':
-        model = LINK(args.num_node, n_cls)
+    if args.net.lower() == 'scale_big':
+        model = GNN2(args).to(device)
+    elif args.net.lower() == 'link':
+        model = LINK(args).to(device)
     elif args.net.lower() == 'linkxcat':
-        model = LINK_Concat(num_features, args.hid_dim, n_cls, args.layer, args.num_node, dropout=args.dropout).to(device)
+        model = LINK_Concat(args).to(device)
     elif args.net.lower() == 'linkxadd':
-        model = LINK_Add(num_features, args.hid_dim, n_cls, args.layer, args.num_node,
-            inner_activation=args.inner_activation, inner_dropout=args.inner_dropout, dropout=args.dropout, init_layers_A=args.link_init_layers_A, init_layers_X=args.link_init_layers_X).to(device)
+        model = LINK_Add(args).to(device)
     elif args.net.lower() == 'linkx':  # linkx is opposite aggregation of linkxgit
-        model = LINKX(num_nodes=args.num_node, in_channels= num_features, hidden_channels=args.hid_dim, out_channels=n_cls, num_layers=args.layer,
-            num_edge_layers=args.link_init_layers_A, num_node_layers=args.link_init_layers_X,
-                       dropout=args.dropout).to(device)
-    elif args.net.lower() == 'linkxgit':
-        model = LINKX_Github(num_features, args.hid_dim, n_cls, args.layer, args.num_node,
-              inner_activation=args.inner_activation, inner_dropout=args.inner_dropout, dropout=args.dropout, init_layers_A=args.link_init_layers_A, init_layers_X=args.link_init_layers_X).to(device)
+    #     model = LINKX(num_nodes=args.num_node, in_channels= num_features, hidden_channels=args.hid_dim, out_channels=n_cls, num_layers=args.layer,
+    #         num_edge_layers=args.link_init_layers_A, num_node_layers=args.link_init_layers_X,
+    #                    dropout=args.dropout).to(device)
+    # elif args.net.lower() == 'linkxgit':
+        model = LINKX(args).to(device)
 
 
     elif args.net.lower() == 'pgnn':
@@ -80,7 +80,7 @@ def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
     elif args.net.lower() == 'sgc':
         model = create_SGC(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, nlayer=args.layer,K=args.K)
     elif args.net == 'Dir-GNN':
-        model = get_model(num_features,  n_cls, args)
+        model = get_model(args)
     elif args.net.lower() == 'jk':
         model = JKNet(in_channels=num_features,
                         out_channels=n_cls,

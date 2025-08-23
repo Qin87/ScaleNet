@@ -9,22 +9,21 @@ import scipy.sparse
 from tqdm import tqdm
 
 
-class LINKX_Github(nn.Module):
+class LINKX(nn.Module):
     """ our LINKX method with skip connections
         a = MLP_1(A), x = MLP_2(X), MLP_3(sigma(W_1[a, x] + a + x))
     """
-
-    def __init__(self, in_channels, hidden_channels, out_channels, num_layers, num_nodes, dropout=.5, cache=False, inner_activation=False, inner_dropout=False, init_layers_A=1, init_layers_X=1):
+    def __init__(self, args):
         super().__init__()
-        self.mlpA = MLP(num_nodes, hidden_channels, hidden_channels, init_layers_A, dropout=0)
-        self.mlpX = MLP(in_channels, hidden_channels, hidden_channels, init_layers_X, dropout=0)
-        self.W = nn.Linear(2 * hidden_channels, hidden_channels)
-        self.mlp_final = MLP(hidden_channels, hidden_channels, out_channels, num_layers, dropout=dropout)
-        self.in_channels = in_channels
-        self.num_nodes = num_nodes
+        self.mlpA = MLP(args.num_nodes, args.hid_dim, args.hid_dim, args.link_init_layers_A, dropout=args.dropout)
+        self.mlpX = MLP(args.num_features , args.hid_dim, args.hid_dim, args.link_init_layers_X, dropout=args.dropout)
+        self.W = nn.Linear(2 * args.hid_dim, args.hid_dim)
+        self.mlp_final = MLP(args.hid_dim, args.hid_dim, args.num_classes, args.layer, dropout=args.dropout)
+        self.in_channels = args.num_features
+        self.num_nodes = args.num_nodes
         self.A = None
-        self.inner_activation = inner_activation
-        self.inner_dropout = inner_dropout
+        self.inner_activation = args.inner_activation
+        self.inner_dropout = args.inner_dropout
 
         self.reset_parameters()  # -
 
@@ -57,10 +56,12 @@ class LINKX_Github(nn.Module):
 class LINK(nn.Module):
     """ logistic regression on adjacency matrix """
 
-    def __init__(self, num_nodes, out_channels):
-        super().__init__()
-        self.W = nn.Linear(num_nodes, out_channels)
-        self.num_nodes = num_nodes
+    def __init__(self, args):
+        super(LINK, self).__init__()
+        self.W = nn.Linear(args.num_nodes, args.num_classes)
+        self.num_nodes = args.num_nodes
+
+        self.reset_parameters()
 
     def reset_parameters(self):
         self.W.reset_parameters()
@@ -79,12 +80,14 @@ class LINK(nn.Module):
 class LINK_Concat(nn.Module):
     """ concate A and X as joint embeddings i.e. MLP([A;X])"""
 
-    def __init__(self, in_channels, hidden_channels, out_channels, num_layers, num_nodes, dropout=.5, cache=True):
+    def __init__(self, args, cache=True):
         super().__init__()
-        self.mlp = MLP(in_channels + num_nodes, hidden_channels, out_channels, num_layers, dropout=dropout)
-        self.in_channels = in_channels
+        self.mlp = MLP(args.num_features + args.num_nodes, args.hid_dim, args.num_classes, args.layer, dropout=args.dropout)
+        self.in_channels = args.num_features
         self.cache = cache
         self.x = None
+
+        self.reset_parameters()
 
     def reset_parameters(self):
         self.mlp.reset_parameters()
@@ -114,16 +117,19 @@ class LINK_Concat(nn.Module):
 
 class LINK_Add(nn.Module):
     """ add A and X """
-    def __init__(self, in_channels, hidden_channels, out_channels, num_layers, num_nodes, dropout=.5, cache=False, inner_activation=False, inner_dropout=False, init_layers_A=1, init_layers_X=1):
-        super().__init__()
-        self.mlpA = MLP(num_nodes, hidden_channels, hidden_channels, init_layers_A, dropout=0)
-        self.mlpX = MLP(in_channels, hidden_channels, hidden_channels, init_layers_X, dropout=0)
 
-        self.mlp = MLP(in_channels + num_nodes, hidden_channels, out_channels, num_layers, dropout=dropout)
-        self.in_channels = in_channels
+    def __init__(self, args, cache=True):
+        super().__init__()
+        self.mlpA = MLP(args.num_nodes, args.hid_dim, args.hid_dim, args.link_init_layers_A, dropout=0)
+        self.mlpX = MLP(args.num_features , args.hid_dim, args.hid_dim, args.link_init_layers_X, dropout=0)
+
+        self.mlp = MLP(args.num_features  + args.num_nodes, args.hid_dim, args.num_classes, args.layer, dropout=args.dropout)
+        self.in_channels = args.num_features
         self.cache = cache
         self.x = None
-        self.mlp_final = MLP(hidden_channels, hidden_channels, out_channels, num_layers, dropout=dropout)
+        self.mlp_final = MLP(args.hid_dim, args.hid_dim, args.num_classes, args.layer, dropout=args.dropout)
+
+        self.reset_parameters()
 
 
     def reset_parameters(self):
@@ -161,36 +167,35 @@ class H2GCNConv(nn.Module):
 class H2GCN(nn.Module):
     """ our implementation """
 
-    def __init__(self, in_channels, hidden_channels, out_channels, edge_index, num_nodes,
-                 num_layers=2, dropout=0.5, save_mem=False, num_mlp_layers=1,
+    def __init__(self, args, save_mem=False, num_mlp_layers=1,
                  use_bn=True, conv_dropout=True):
         super().__init__()
 
-        self.feature_embed = MLP(in_channels, hidden_channels,
-                                 hidden_channels, num_layers=num_mlp_layers, dropout=dropout)
+        self.feature_embed = MLP(args.num_features, args.hid_dim,
+                                 args.hid_dim, num_layers=num_mlp_layers, dropout=args.dropout)
 
         self.convs = nn.ModuleList()
         self.convs.append(H2GCNConv())
 
         self.bns = nn.ModuleList()
-        self.bns.append(nn.BatchNorm1d(hidden_channels * 2 * len(self.convs)))
+        self.bns.append(nn.BatchNorm1d(args.hid_dim * 2 * len(self.convs)))
 
-        for l in range(num_layers - 1):
+        for l in range(args.layer - 1):
             self.convs.append(H2GCNConv())
-            if l != num_layers - 2:
-                self.bns.append(nn.BatchNorm1d(hidden_channels * 2 * len(self.convs)))
+            if l != args.layer - 2:
+                self.bns.append(nn.BatchNorm1d(args.hid_dim * 2 * len(self.convs)))
 
-        self.dropout = dropout
+        self.dropout = args.dropout
         self.activation = F.relu
         self.use_bn = use_bn
         self.conv_dropout = conv_dropout  # dropout neighborhood aggregation steps
 
         self.jump = JumpingKnowledge('cat')
-        last_dim = hidden_channels * (2 ** (num_layers + 1) - 1)
-        self.final_project = nn.Linear(last_dim, out_channels)
+        last_dim = args.hid_dim * (2 ** (args.layer + 1) - 1)
+        self.final_project = nn.Linear(last_dim, args.num_classes)
 
-        self.num_nodes = num_nodes
-        self.init_adj(edge_index)
+        self.num_nodes = args.num_nodes
+        self.init_adj(args.edge_index)
 
     def reset_parameters(self):
         self.feature_embed.reset_parameters()
