@@ -29,7 +29,7 @@ def parse_args():
     parser.add_argument('--num_split', type=int, default=1, help='num of run in spite of many splits')
 
 
-    parser.add_argument('--net', type=str, default='linkxadd', help='mlp, Dir-GNN, ScaleNet, '
+    parser.add_argument('--net', type=str, default='scale_big', help='mlp, Dir-GNN, ScaleNet, '
                      'Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc, ParaGCN, SimGAT, SloopNet, tSNE,RandomNet, HFNet '
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym' 
@@ -94,6 +94,8 @@ def parse_args():
     parser.add_argument('--inner_activation', action='store_true', help='Whether linkV3 uses inner activation')
     parser.add_argument('--inner_dropout', action='store_true', help='Whether linkV3 uses inner dropout')
 
+    # for
+    parser.add_argument("--lrelu_slope", type=float, help="negative slope of Leaky Relu", default=-1.0)
 
     # not use for ScaleNet
     parser.add_argument("--has_1_order", type=int, help="Whether Ai* has 1-order edges:0/1", default=0)

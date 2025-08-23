@@ -1902,19 +1902,19 @@ class GNN2(torch.nn.Module):
         self.alpha = nn.Parameter(torch.ones(1) * args.alpha, requires_grad=args.learn_alpha)
         self.lrelu_slope = args.lrelu_slope
 
-        output_dim = args.hidden_dim if args.jk else args.num_classes
+        output_dim = args.hid_dim if args.jk else args.num_classes
         if args.num_layers == 1:
             self.convs = ModuleList([get_conv(args.num_features, output_dim, args)])
         else:
-            self.convs = ModuleList([get_conv(args.num_features, args.hidden_dim, args)])
+            self.convs = ModuleList([get_conv(args.num_features, args.hid_dim, args)])
             for _ in range(args.num_layers - 2):
-                self.convs.append(get_conv(args.hidden_dim, args.hidden_dim, args))
-            self.convs.append(get_conv(args.hidden_dim, output_dim, args))
+                self.convs.append(get_conv(args.hid_dim, args.hid_dim, args))
+            self.convs.append(get_conv(args.hid_dim, output_dim, args))
 
         if args.jk is not None:
-            input_dim = args.hidden_dim * args.num_layers if args.jk == "cat" else args.hidden_dim
+            input_dim = args.hid_dim * args.num_layers if args.jk == "cat" else args.hid_dim
             self.lin = Linear(input_dim, args.num_classes)
-            self.jump = JumpingKnowledge(mode=args.jk, channels=args.hidden_dim, num_layers=args.num_layers)
+            self.jump = JumpingKnowledge(mode=args.jk, channels=args.hid_dim, num_layers=args.num_layers)
 
         self.num_layers = args.num_layers
         self.dropout = args.dropout
