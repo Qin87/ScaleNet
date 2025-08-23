@@ -416,7 +416,6 @@ try:
                             print(edge_weight.size()[0], end=' ', file=log_file)
                             print(edge_weight.size()[0], end=' ')
 
-            # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.l2)
             if hasattr(model, 'coefs'):     # parameter without weight_decay will typically change faster
                 optimizer = torch.optim.Adam(
                     [dict(params=model.reg_params, lr=args.lr, weight_decay=5e-4), dict(params=model.non_reg_params, lr=args.lr, weight_decay=0),
