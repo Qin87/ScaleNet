@@ -14,6 +14,8 @@ from typing import Callable, Optional
 import gdown
 from torch_geometric.data import Data, InMemoryDataset
 
+from data.pokec_dataset import PokecDataset
+
 try:
     import dgl
     from dgl.data import CiteseerGraphDataset, CoraGraphDataset, PubmedGraphDataset, CoauthorCSDataset, AmazonCoBuyComputerDataset, AmazonCoBuyPhotoDataset, CoauthorPhysicsDataset, FraudDataset, \
@@ -149,7 +151,13 @@ from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
 def load_directedData(args):
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     load_func, subset = args.Dataset.split('/')[0], args.Dataset.split('/')[1]
-    if load_func in ['fb100']:
+    if load_func in ['pokec']:
+        dataset = PokecDataset(root=args.data_path+"pokec")
+        # Convert the first element to homogeneous and assign to _data
+        dataset._data = dataset[0].to_homogeneous(
+            node_attrs=['x', 'y', 'train_mask', 'val_mask', 'test_mask']
+        )
+    elif load_func in ['fb100']:
         dataset = LINKXDataset(root=args.data_path, name=subset, transform=transforms.NormalizeFeatures())
         dataset._data.y = dataset._data.y.unsqueeze(-1)
         num_nodes = dataset._data.y.shape[0]

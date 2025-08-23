@@ -209,3 +209,7 @@ arxiv-year/:
 
 snap-patents/:
   num_split: 5  # original split
+
+pokec/:
+    epoch: 10000
+
