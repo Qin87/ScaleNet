@@ -84,7 +84,8 @@ def get_norm_adj(adj, norm, exponent = -0.25 ):
         return col_norm(adj)
     elif norm == "dir":
         return directed_norm(adj, exponent)
-
+    elif norm is None or norm==0:
+        return adj
     elif norm == "opposite":
         return directed_opposite_norm(adj)
     else:

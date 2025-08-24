@@ -48,7 +48,7 @@ def init_model(model):
             module.reset_parameters()  # Res
 
 def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
-    if args.net.lower() == 'scale':
+    if args.net.lower() == 'LargeScaleNet':
         model = GNN2(args).to(device)
     elif args.net.lower() == 'link':
         model = LINK(args).to(device)
@@ -231,7 +231,7 @@ def get_name(args, IsDirectedGraph):
         net_to_print = 'NoBNorm_' + net_to_print
 
     if args.net == 'GCN':
-        if args.First_self_loop == 1 or args.add_selfloop:
+        if args.add_selfloop:
             net_to_print = net_to_print + '_AddSloop'
         else:
             net_to_print = net_to_print + '_NoSloop'
@@ -247,10 +247,8 @@ def get_name(args, IsDirectedGraph):
         if args.paraD:
             net_to_print = net_to_print + 'paraD' + str(args.coeflr)
 
-        if args.First_self_loop == 1:
+        if args.add_selfloop == 1:
             net_to_print = net_to_print + '_AddSloop'
-        elif args.First_self_loop == -1:
-            net_to_print = net_to_print + '_RmSloop'
         else:
             net_to_print = net_to_print + '_NoSloop'
 
@@ -259,7 +257,7 @@ def get_name(args, IsDirectedGraph):
         net_to_print = net_to_print + '_Imbal' + str(args.imb_ratio)
     else:
         net_to_print = net_to_print + '_Bal'
-    if args.net == 'ScaleNet' or args.net == 'scale':
+    if args.net == 'ScaleNet' or args.net == 'LargeScaleNet':
         if args.differ_AA or args.differ_AAt:
             if args.differ_AA:
                 diff = 'AA'+str(args.alphaDir)
@@ -268,7 +266,7 @@ def get_name(args, IsDirectedGraph):
             net_to_print = net_to_print + args.conv_type + '_diff'+diff + '_jk'+str(args.jk)+'_norm'+args.inci_norm
         else:
             net_to_print = net_to_print  +'_' + args.conv_type +'_part'+str(args.alphaDir)+'_'+ str(args.betaDir)+'_'+str(
-                args.gamaDir)+'_sloop'+str(args.First_self_loop)+str(args.rm_gen_sloop)+'_jk'+str(args.jk)+'_norm'+str(args.inci_norm)
+                args.gamaDir)+'_jk'+str(args.jk)+'_norm'+str(args.inci_norm)
 
     return net_to_print, dataset_to_print
 

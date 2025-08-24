@@ -193,30 +193,6 @@ def load_directedData(args):
         dataset._data.val_mask = torch.stack(val_masks, dim=1)
         dataset._data.test_mask = torch.stack(test_masks, dim=1)
 
-
-    elif load_func in ['malnet']:
-        dataset = MalNetTiny(root=args.data_path, split='train')  # graph classification tasks
-
-        # Access the first graph in the dataset
-        # data = dataset[0]
-        #
-        # # Print some information about the dataset
-        # print(f'Dataset: {dataset}:')
-        # print('====================')
-        # print(f'Number of graphs: {len(dataset)}')
-        # print(f'Number of features: {dataset.num_features}')
-        # print(f'Number of classes: {dataset.num_classes}')
-        #
-        # # Print information about the first graph
-        # print('\nFirst graph:')
-        # print('====================')
-        # print(f'Number of nodes: {data.num_nodes}')
-        # print(f'Number of edges: {data.num_edges}')
-        # print(f'Average node degree: {data.num_edges / data.num_nodes:.2f}')
-        # print(f'Contains isolated nodes: {data.contains_isolated_nodes()}')
-        # print(f'Contains self-loops: {data.contains_self_loops()}')
-        # print(f'Is undirected: {data.is_undirected()}')
-        # return dataset
     elif load_func in ['arxiv-year']:
         path = args.data_path
         # arxiv-year uses the same graph and features as ogbn-arxiv, but with different labels

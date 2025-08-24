@@ -7,17 +7,14 @@ def parse_args():
     parser.add_argument("--use_best_hyperparams", type=int, default=1, help="whether use parameters in best_hyperparameters.yml")
     parser.add_argument('--GPUdevice', type=int, default=0, help='device')
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
-    parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=1)
+    parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=0)
     parser.add_argument("--nonlinear", type=int, help="whether use activation(relu) in ScaleNet model:0/1", default=1)
-    parser.add_argument("--rm_gen_sloop", type=int, choices=[1, 0], default=0, help="Whether to remove generated self-loops to the graph")
-
 
     # for DirGNN
     parser.add_argument("--conv_type", type=str, help="DirGNN Model, scale, ", default="dir-gcn")
     parser.add_argument("--normalize", type=int, help="whether use batch normalization in ScaleNet, model:0/1", default=0)
     parser.add_argument("--jk", type=str, choices=["max", "cat", 'weighted',  0], default='cat')
-    parser.add_argument("--jk_inner", type=str, choices=["max", "cat", 'lstm', 0, 'weighted'], default='weighted')
-    parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', 0], default=0)
+    parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', 0], default="dir")
     parser.add_argument("--fs", type=str, choices=["sum", "cat", 'weight_sum', 'linear'], default="dir", help='fusion method')
     parser.add_argument("--alphaDir", type=float, help="Direction convex combination params", default=1)
     parser.add_argument("--betaDir", type=float, help="Direction convex combination params", default=1)
@@ -28,12 +25,12 @@ def parse_args():
     parser.add_argument('--num_split', type=int, default=10, help='num of run in spite of many splits')
 
 
-    parser.add_argument('--net', type=str, default='scale', help='mlp, Dir-GNN, ScaleNet, '
+    parser.add_argument('--net', type=str, default='LargeScaleNet', help='mlp, Dir-GNN, ScaleNet, '
                      'Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc, ParaGCN, SimGAT, SloopNet, tSNE,RandomNet, HFNet '
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym' 
                     'link, linkxcat, linkxadd, linkx, linkxgit'
-                    'ScaleNet, scale')
+                    'ScaleNet, LargeScaleNet')
     parser.add_argument('--seed', type=int, default=1, help='random seed')
     parser.add_argument('--Dataset', type=str, default='telegram/', help='telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
@@ -99,7 +96,7 @@ def parse_args():
     parser.add_argument("--conv_type2", type=str, help="scale, faber ", default="scale")
     parser.add_argument("--weight_penalty", type=str, choices=["exp", "lin", "None"], default="None")
     parser.add_argument("--k_plus", type=int, help="Polynomial order", default=2)
-    parser.add_argument("--exponent", type=float, help="exponent in norm, -0.25, -0.5", default=-0.25)
+    parser.add_argument("--exponent", type=float, help="exponent in norm, -0.25, -0.5", default=-0.5)
     parser.add_argument("--zero_order", type=int, help="If include zero order", default=0)
     parser.add_argument("--cat_A_X", type=int, help="If include concatenate A and X", default=0)
     parser.add_argument("--structure", type=float, default=0, help="1 pure structure, 0 pure feature, 0.5 structure is feature too")

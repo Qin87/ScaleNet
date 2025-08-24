@@ -7,16 +7,11 @@ import torch.distributions as dist
 import scipy
 from torch_geometric.utils import  add_self_loops, remove_self_loops
 from torch_scatter import scatter_add
-from nets.geometric_baselines import get_norm_adj
+
+from utils.utils import get_norm_adj
 
 
 def get_second_directed_adj(args,  edge_index, num_nodes, dtype):
-    selfloop = args.First_self_loop
-    if selfloop == 1:
-        edge_index, _ = add_self_loops(edge_index.long(), fill_value=1, num_nodes=num_nodes)  # with selfloop, QiG get better
-
-    elif selfloop == -1:
-        edge_index, _ = remove_self_loops(edge_index)
     edge_weight = torch.ones((edge_index.size(1),), dtype=dtype,
                              device=edge_index.device)
     row, col = edge_index
@@ -85,13 +80,8 @@ def Qin_get_second_directed_adj0(edge_index, num_nodes, dtype):
 
 
 def Qin_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
-    selfloop = args.First_self_loop
     norm = args.inci_norm
     device = edge_index.device
-    if selfloop == 1:
-        edge_index, _ = add_self_loops(edge_index.long(), fill_value=1, num_nodes=num_nodes)       # with selfloop, QiG get better
-    elif selfloop == -1:
-        edge_index, _ = remove_self_loops(edge_index)
     edge_index = torch.unique(edge_index, dim=1).to(device)
     edge_index = torch.cat([edge_index, edge_index.flip(0)], dim=1)
     edge_index = torch.unique(edge_index, dim=1).to(device)
@@ -116,17 +106,12 @@ def WCJ_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
     norm = args.inci_norm
     # norm = 'sym'
     # norm = 0
-    self_loop = args.First_self_loop
     W_degree = args.W_degree
     # random value to edge weights
     device = edge_index.device
     if edge_weight is None:
         edge_weight = torch.ones((edge_index.size(1), ), dtype=dtype,
                                      device=edge_index.device)
-    if self_loop == 1:
-        edge_index, edge_weight = add_self_loops(edge_index.long(), edge_weight, fill_value=1, num_nodes=num_nodes)  # with selfloop, QiG get better
-    elif self_loop == -1:
-        edge_index, _ = remove_self_loops(edge_index)
     row, col = edge_index
     deg0 = scatter_add(edge_weight, row, dim=0, dim_size=num_nodes).to(device)  # row degree
     deg1 = scatter_add(edge_weight, col, dim=0, dim_size=num_nodes).to(device)  # col degree
@@ -258,7 +243,7 @@ def WCJ_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
 
 
 def get_appr_directed_adj2(args, edge_index, num_nodes, dtype, edge_weight=None):
-    selfloop, alpha = args.First_self_loop, args.alpha
+    selfloop, alpha = args.add_selfloop, args.alpha
     device = edge_index.device
 
     if edge_weight is None:
@@ -266,8 +251,6 @@ def get_appr_directed_adj2(args, edge_index, num_nodes, dtype, edge_weight=None)
                                      device=edge_index.device)
     if selfloop == 1:
         edge_index, edge_weight = add_self_loops(edge_index.long(), edge_weight, fill_value=1, num_nodes=num_nodes)  # with selfloop, QiG get better
-    elif selfloop == -1:
-        edge_index, _ = remove_self_loops(edge_index)
     edge_index = edge_index.to(device)
     edge_weight = edge_weight.to(device)
     row, col = edge_index
@@ -861,7 +844,7 @@ def sparse_difference(U, I, epsilon=1e-8):
 
 
 def Qin_get_second_directed_adj(args, edge_index, num_nodes, k, IsExhaustive, mode, norm='dir'):     #
-    self_loop = args.First_self_loop
+    self_loop = args.add_selfloop
     device = edge_index.device
     if self_loop == 1:
         edge_index, _ = add_self_loops(edge_index.long(), fill_value=1, num_nodes=num_nodes)  # with selfloop, QiG get better
@@ -904,7 +887,7 @@ def Qin_get_second_directed_adj(args, edge_index, num_nodes, k, IsExhaustive, mo
 
 def Qin_get_all_directed_adj(args,  edge_index, num_nodes, k, IsExhaustive, mode, norm='dir'):
     has_1_order = args.has_1_order
-    selfloop = args.First_self_loop
+    selfloop = args.add_selfloop
     rm_gen_sloop = args.rm_gen_sloop
 
     device = edge_index.device

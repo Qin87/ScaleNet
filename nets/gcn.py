@@ -129,7 +129,7 @@ class StandGCNXBN(nn.Module):
         nhid = args.hid_dim
         dropout = args.dropout
         nlayer = args.layer
-        is_add_self_loops = args.First_self_loop
+        is_add_self_loops = args.add_self_loop
         norm = args.gcn_norm
         self.is_add_self_loops = is_add_self_loops  # Qin True is the original
         if nlayer == 1:
@@ -147,10 +147,6 @@ class StandGCNXBN(nn.Module):
         self.batch_norm1 = nn.BatchNorm1d(nhid)
         self.batch_norm2 = nn.BatchNorm1d(nclass)
         self.batch_norm3 = nn.BatchNorm1d(nhid)
-
-
-        # self.reg_params = list(self.conv1.parameters()) + list(self.convx.parameters())  # no effect to layer=1,
-        # self.non_reg_params = self.conv2.parameters()
 
         self.layer = nlayer
 
