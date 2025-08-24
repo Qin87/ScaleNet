@@ -195,7 +195,7 @@ def load_directedData(args):
 
 
     elif load_func in ['malnet']:
-        dataset = MalNetTiny(root=args.data_path, split='train')
+        dataset = MalNetTiny(root=args.data_path, split='train')  # graph classification tasks
 
         # Access the first graph in the dataset
         # data = dataset[0]
