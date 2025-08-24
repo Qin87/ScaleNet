@@ -31,7 +31,7 @@ cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
   has_scheduler: 1
   conv_type: "dir-gcn"
   nonlinear: 1
-  net: ScaleNet   #  net: QiGi3
+#  net: ScaleNet   #  net: QiGi3
   hid_dim: 128   # better than 64
   layer: 3   # 2(80), 3(75), 4(79.8), 5(79.6)
   lr: 0.01    # 0.1(79), 0.01(80.7)
@@ -40,7 +40,6 @@ cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
   BN_model: 0   # 0(29), 1(79)  # 1(79), 0(82.7)
   add_selfloop : 1  # sure
   jk: "max"     # max(80.7), cat(79.8), 0(76.9)
-  
   dropout: 0.5   # 0.0(80.51), 0.5(80.76)
   alphaDir: 2   # 0.5,1.-1 before having 2
   betaDir: -1  # 1
@@ -53,9 +52,8 @@ citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.
   epoch: 10000
   patience: 400
   has_scheduler: 1
-  net: ScaleNet
+#  net: ScaleNet
   conv_type: "dir-gcn"
-#  
   nonlinear: 0    # 0(68.3), 1(67.6)
   hid_dim: 128
   layer: 3     # 1(65.3),2(64.8), 3(62.6), 4(64.0), 5(64.4)
@@ -77,7 +75,7 @@ WikiCS/:
   NotImproved: 410
   epoch: 1500
   patience: 80
-  net: ScaleNet
+#  net: ScaleNet
   conv_type: "dir-gcn"
   nonlinear: 1
   layer: 2
@@ -86,7 +84,6 @@ WikiCS/:
   BN_model: 0  # 0(23), 1(73.5)
   add_selfloop : 1  # add(79.1±0.8),0(77.3±0.8), remove(77.4)
   jk: 'max'   # max(75.9),cat(75.99), 0(73.5)
-     # not cat
   dropout: 0.5  # 0.5(75.9), 0.0(73.9)
   alphaDir: 0.5
   betaDir: 2
@@ -94,7 +91,7 @@ WikiCS/:
 
 #
 dgl/pubmed:
-  net: ScaleNet
+#  net: ScaleNet
   conv_type: "dir-gcn"   # sage
   nonlinear: 1
   layer: 4
@@ -125,7 +122,7 @@ dgl/pubmed:
 # (1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5)
 WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5)
   l2: 0  # 5e-4 is a bit worse
-#  NotImproved: 810
+  NotImproved: 810
   epoch: 10000
 #  patience: 400
   has_scheduler: 1
@@ -135,13 +132,12 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   dropout: 0.0  # 0.5(acc65), 0.0(acc75)
   nonlinear: 0   #
 #  net: ScaleNet
-#  layer: 5      # 80.1
+  layer: 5      # 80.1
   lr: 0.005
   normalize: 1
   BN_model: 0  #  without layerNorm, very bad(but Dir-GNN prefer no LN)
   add_selfloop: 0
   jk: 'max'
-  
   alphaDir: 1
   betaDir: 1
   gamaDir: 1
@@ -151,22 +147,21 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
 WikipediaNetwork/squirrel:
   hid_dim: 128
   l2: 0
-#  NotImproved: 810
-#  epoch: 10000
-#  patience: 400
+  NotImproved: 810
+  epoch: 10000
+  patience: 400
   has_scheduler: 1
   conv_type: "dir-gcn"
   inci_norm: "dir"  # 0(70.5),
   nonlinear: 1
   dropout: 0.0  # 0.5(acc72.7), 0.0(acc75)
 #  net: ScaleNet
-#  layer: 6
+  layer: 6
   lr: 0.01
   normalize: 1
   BN_model: 1 # 0(48.9), 1(72)
   add_selfloop: 0     # 0 or 1 is worse
   jk: 'max'
-  
   alphaDir: 1   # best is 1,1,-1
   betaDir: 1    #-1
   gamaDir: 1    # -1
