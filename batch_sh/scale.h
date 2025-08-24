@@ -1,9 +1,8 @@
 #!/bin/bash
 
-net_values=" ScaleNet  "
+net_values=" scale  "
 layer_values=" 3 "
-imbal="2  "
-Dir="0 0.5 1 2 -1"
+Dir="0 0.5 1  -1"
 
 # 'citeseer_npz/' 'cora_ml/'  'telegram/' 'dgl/pubmed' 'WikiCS/'
 #  'WikipediaNetwork/squirrel'  'WikipediaNetwork/chameleon'
@@ -21,7 +20,6 @@ for Didataset in "${Direct_dataset[@]}"; do
         for alphadir in $Dir; do
         for betadir in $Dir; do
         for gamadir in $Dir; do
-# //        for imba_value  in $imbal; do
         for net in $net_values; do
             log_output="${Didataset//\//_}_${timestamp}_A${a}_alpha${dir}__${net}_layer${layer}.log"
 

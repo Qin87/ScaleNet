@@ -29,11 +29,12 @@ def parse_args():
     parser.add_argument('--num_split', type=int, default=1, help='num of run in spite of many splits')
 
 
-    parser.add_argument('--net', type=str, default='link', help='mlp, Dir-GNN, ScaleNet, '
+    parser.add_argument('--net', type=str, default='scale', help='mlp, Dir-GNN, ScaleNet, '
                      'Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc, ParaGCN, SimGAT, SloopNet, tSNE,RandomNet, HFNet '
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym' 
-                        'link, linkxcat, linkxadd, linkx, linkxgit')
+                    'link, linkxcat, linkxadd, linkx, linkxgit'
+                    'ScaleNet, scale')
     parser.add_argument('--seed', type=int, default=1, help='random seed')
     parser.add_argument('--Dataset', type=str, default='pokec/', help='telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'

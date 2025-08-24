@@ -259,7 +259,7 @@ def get_name(args, IsDirectedGraph):
         net_to_print = net_to_print + '_Imbal' + str(args.imb_ratio)
     else:
         net_to_print = net_to_print + '_Bal'
-    if args.net == 'ScaleNet':
+    if args.net == 'ScaleNet' or args.net == 'scale':
         if args.differ_AA or args.differ_AAt:
             if args.differ_AA:
                 diff = 'AA'+str(args.alphaDir)

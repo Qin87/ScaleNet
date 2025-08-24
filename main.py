@@ -6,7 +6,6 @@ import sys
 import os
 import numpy as np
 from torch_geometric.utils import add_self_loops
-
 print("Python Path:", sys.path)
 print("Current Working Directory:", os.getcwd())
 import os
@@ -14,8 +13,6 @@ import signal
 import statistics
 import sys
 import time
-
-
 import torch
 import torch.nn.functional as F
 
@@ -394,7 +391,6 @@ try:
         for split in range(num_run):
             model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device)
             if split==0:
-                # print('no_in, homo_in, no_out, homo_out:', no_in, homo_ratio_A, no_out, homo_ratio_At, file=log_file)
                 print(model, file=log_file)
                 print(model)
                 if args.net[1:].startswith('ym'):
