@@ -116,7 +116,6 @@ class DirGCNConv_2(torch.nn.Module):
         else:
             raise NotImplementedError
 
-        self.First_self_loop = args.First_self_loop
         self.rm_gen_sloop = args.rm_gen_sloop
         self.differ_AA = args.differ_AA
         self.differ_AAt = args.differ_AAt
@@ -158,12 +157,7 @@ class DirGCNConv_2(torch.nn.Module):
 
 
     def forward(self, x, edge_index):
-        # x0= x
         device = edge_index.device
-        if self.First_self_loop == 1:
-            edge_index, _ = add_self_loops(edge_index, fill_value=1)
-        elif self.First_self_loop == -1:
-            edge_index, _ = remove_self_loops(edge_index)
         row, col = edge_index
         num_nodes = x.shape[0]
 

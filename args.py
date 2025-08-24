@@ -9,7 +9,6 @@ def parse_args():
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
     parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=1)
     parser.add_argument("--nonlinear", type=int, help="whether use activation(relu) in ScaleNet model:0/1", default=1)
-    parser.add_argument("--First_self_loop", type=int, choices=[1, -1,  0], default=0, help="1 is add, -1 is remove, Whether to add self-loops to the graph")
     parser.add_argument("--rm_gen_sloop", type=int, choices=[1, 0], default=0, help="Whether to remove generated self-loops to the graph")
 
 
@@ -26,7 +25,7 @@ def parse_args():
     parser.add_argument("--learn_alpha", action="store_true")
     parser.add_argument("--differ_AA", type=int, default=0, help="Whether test AA-A-At")
     parser.add_argument("--differ_AAt", type=int, default=0,  help="Whether test AAt-A-At")
-    parser.add_argument('--num_split', type=int, default=1, help='num of run in spite of many splits')
+    parser.add_argument('--num_split', type=int, default=10, help='num of run in spite of many splits')
 
 
     parser.add_argument('--net', type=str, default='scale', help='mlp, Dir-GNN, ScaleNet, '
@@ -36,7 +35,7 @@ def parse_args():
                     'link, linkxcat, linkxadd, linkx, linkxgit'
                     'ScaleNet, scale')
     parser.add_argument('--seed', type=int, default=1, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='pokec/', help='telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
+    parser.add_argument('--Dataset', type=str, default='telegram/', help='telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/, '
         'fb100/penn94, pokec/ ')
@@ -100,17 +99,17 @@ def parse_args():
     parser.add_argument("--conv_type2", type=str, help="scale, faber ", default="scale")
     parser.add_argument("--weight_penalty", type=str, choices=["exp", "lin", "None"], default="None")
     parser.add_argument("--k_plus", type=int, help="Polynomial order", default=2)
-    parser.add_argument("--exponent", type=float, help="exponent in norm", default=-0.25)
+    parser.add_argument("--exponent", type=float, help="exponent in norm, -0.25, -0.5", default=-0.25)
     parser.add_argument("--zero_order", type=int, help="If include zero order", default=0)
     parser.add_argument("--cat_A_X", type=int, help="If include concatenate A and X", default=0)
-    parser.add_argument("--structure", type=float, default=1, help="1 pure structure, 0 pure feature, 0.5 structure is feature too")
+    parser.add_argument("--structure", type=float, default=0, help="1 pure structure, 0 pure feature, 0.5 structure is feature too")
 
     # not use for ScaleNet
     parser.add_argument("--has_1_order", type=int, help="Whether Ai* has 1-order edges:0/1", default=0)
     parser.add_argument('--paraD', action='store_true', help='ib is weighted sum')
     parser.add_argument('--gcn_norm', '-gcnnorm', type=int, default=1, help='GCNConv forward, normalize edge_index during training')
-    parser.add_argument('--add_selfloop',  type=int, default=0, help='add selfloop in before model')
-    parser.add_argument("--all1", type=int, help="feature all 1 ", default=1)
+    parser.add_argument('--add_selfloop',  type=int, default=1, help='add selfloop in before model')
+    parser.add_argument("--all1", type=int, help="feature all 1 ", default=0)
     parser.add_argument('--to_undirected', '-tud', type=int, default=0, help='if convert graph to undirected')
     parser.add_argument('--to_reverse_edge', '-tre', type=int, default=0, help='if reverse direction of edges')
 

@@ -198,11 +198,12 @@ print(args)
 
 if args.add_selfloop:
     edges, _ = add_self_loops(edges)
+if args.to_reverse_edge:
+    edges = edges[torch.tensor([1, 0])]
 
 seed_everything(args.seed)
 
-if args.to_reverse_edge:
-    edges = edges[torch.tensor([1, 0])]
+
 
 with open(log_directory + log_file_name_with_timestamp, 'w') as log_file:
     print(args, file=log_file)

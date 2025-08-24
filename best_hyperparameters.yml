@@ -4,17 +4,17 @@ telegram/:
   l2: 0   # 97.0(0), 95.6(5e-4)
   inci_norm: 0  # {94.2±4.4(dir) 95.6±3.0(0)}  {93.2(dir), 97.0(0)}
   has_scheduler: 1
-#  NotImproved: 410
+  NotImproved: 410
   epoch: 1500
   patience: 80
-#  net: ScaleNet         # 1iGi3
+  net: ScaleNet         # 1iGi3
   conv_type: "dir-gcn"
   nonlinear: 1
-#  layer: 4
+  layer: 4
   lr: 0.01
   normalize: 1
   BN_model: 1    # sure
-  First_self_loop: 1
+  add_selfloop: 1
   jk: 'max'
   dropout: 0.0
   jk_inner: 0

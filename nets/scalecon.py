@@ -29,8 +29,8 @@ def get_conv2(input_dim, output_dim, args):
 class GNN2(torch.nn.Module):
     def __init__(self, args):
         super().__init__()
-        self.conv_type = args.conv_type
-        self.alpha = nn.Parameter(torch.ones(1) * args.alpha, requires_grad=args.learn_alpha)
+        self.conv_type = args.conv_type2
+        self.alpha = nn.Parameter(torch.ones(1) * args.alphaDir, requires_grad=args.learn_alpha)
         self.lrelu_slope = args.lrelu_slope
 
         output_dim = args.hid_dim if args.jk else args.num_classes
