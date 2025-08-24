@@ -70,6 +70,26 @@ class ScaleConv(torch.nn.Module):
         super().__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
+
+
+        self.lins_src_to_dst = torch.nn.ModuleList([
+            Linear(input_dim, output_dim) for _ in range(2 * args.k_plus)
+        ])
+        self.lins_dst_to_src = torch.nn.ModuleList([
+            Linear(input_dim, output_dim) for _ in range(2 * args.k_plus)
+        ])
+        # self.lin_src_to_dst = Linear(input_dim, output_dim)
+        # self.lin_dst_to_src = Linear(input_dim, output_dim)
+        # self.conv2_1 = Linear(output_dim * 2, output_dim)
+
+        self.alpha = args.alphaDir
+        self.beta = args.betaDir
+        self.gamma = args.gamaDir
+        self.adj_norm, self.adj_t_norm = None, None
+        self.inci_norm = args.inci_norm
+        self.BN_model = args.BN_model
+        self.batch_norm2 = nn.BatchNorm1d(output_dim)
+
         self.k_plus = args.k_plus
         self.exponent = args.exponent
         self.weight_penalty = args.weight_penalty
@@ -84,24 +104,6 @@ class ScaleConv(torch.nn.Module):
         if self.zero_order:
             self.lin_zero = Linear(input_dim, output_dim)
 
-        # self.lins_src_to_dst = torch.nn.ModuleList([
-        #     Linear(input_dim, output_dim) for _ in range(2 * args.k_plus)
-        # ])
-        # self.lins_dst_to_src = torch.nn.ModuleList([
-        #     Linear(input_dim, output_dim) for _ in range(2 * args.k_plus)
-        # ])
-        self.lin_src_to_dst = Linear(input_dim, output_dim)
-        self.lin_dst_to_src = Linear(input_dim, output_dim)
-        self.conv2_1 = Linear(output_dim * 2, output_dim)
-
-        self.alpha = args.alphaDir
-        self.beta = args.betaDir
-        self.gamma = args.gamaDir
-        self.adj_norm, self.adj_t_norm = None, None
-        self.inci_norm = args.inci_norm
-        self.BN_model = args.BN_model
-        self.batch_norm2 = nn.BatchNorm1d(output_dim)
-
     def forward(self, x, edge_index):
         if self.adj_norm is None:
             row, col = edge_index
@@ -113,78 +115,81 @@ class ScaleConv(torch.nn.Module):
             adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
             self.adj_t_norm = get_norm_adj(adj_t, norm=self.inci_norm, exponent=self.exponent)
 
-        if self.structure != 1 or self.cat_A_X:
-            y = self.adj_norm @ x
-            y_t = self.adj_t_norm @ x
-            # sum_src_to_dst = self.lins_src_to_dst[0](y)
-            # sum_dst_to_src = self.lins_dst_to_src[0](y_t)
-            sum_src_to_dst = self.lin_src_to_dst(y)
-            sum_dst_to_src = self.lin_dst_to_src(y_t)
+        # if self.structure != 1 or self.cat_A_X:
+        y = self.adj_norm @ x
+        y_t = self.adj_t_norm @ x
+        sum_src_to_dst = self.lins_src_to_dst[0](y)
+        sum_dst_to_src = self.lins_dst_to_src[0](y_t)
+        # sum_src_to_dst = self.lin_src_to_dst(y)
+        # sum_dst_to_src = self.lin_dst_to_src(y_t)
+        totalA = 0
+        if self.alpha != -1:
+            totalA = self.alpha * sum_src_to_dst + (1 - self.alpha) * sum_dst_to_src
+            if self.BN_model:
+                totalA = self.batch_norm2(totalA)
 
-            # totalB = 0
-            # totalC = 0
-            # if self.k_plus > 1:
-            #     def get_weight(i):
-            #         if self.weight_penalty == 'exp':
-            #             return 1 / (2 ** i)
-            #         elif self.weight_penalty == 'lin':
-            #             return 1 / i
-            #         elif self.weight_penalty == 'None' or self.weight_penalty is None:
-            #             return 1
-            #         else:
-            #             raise ValueError(f"Weight penalty type {self.weight_penalty} not supported")
-            #
-            #     yy = y
-            #     ytyt = y_t
-            #     yty = y
-            #     yyt = y_t
-            #     for i in range(1, self.k_plus):
-            #         yy = self.adj_norm @ yy
-            #         yty = self.adj_t_norm @ yty
-            #
-            #         yyt = self.adj_norm @ yyt
-            #         ytyt = self.adj_t_norm @ ytyt
-            #
-            #         w = get_weight(i)
-            #
-            #         if self.beta != -1:
-            #             b_term = (
-            #                     self.beta * self.lins_src_to_dst[2 * i - 1](yyt)
-            #                     + (1 - self.beta) * self.lins_src_to_dst[2 * i - 1](yty)
-            #             )
-            #             totalB += b_term * w
-            #
-            #         if self.gamma != -1:
-            #             c_term = (
-            #                     self.gamma * self.lins_src_to_dst[2 * i](yy)
-            #                     + (1 - self.gamma) * self.lins_dst_to_src[2 * i](ytyt)
-            #             )
-            #             totalC += c_term * w
-            if self.alpha == -1:
-                totalA = 0
-            else:
-                totalA = 1.5*(self.alpha * sum_src_to_dst + (1 - self.alpha) * sum_dst_to_src)
+        totalB = 0
+        totalC = 0
+        if self.k_plus > 1:
+            def get_weight(i):
+                if self.weight_penalty == 'exp':
+                    return 1 / (2 ** i)
+                elif self.weight_penalty == 'lin':
+                    return 1 / i
+                elif self.weight_penalty == 'None' or self.weight_penalty is None:
+                    return 1
+                else:
+                    raise ValueError(f"Weight penalty type {self.weight_penalty} not supported")
 
-        #     gnn_total = totalA + totalB + totalC
-        #     if self.structure != 0:
-        #         struct_value = self.adj_norm @ self.mlp_struct.weight.T
-        #         total = self.structure * struct_value + (1 - self.structure) * gnn_total
-        #     else:
-        #         total = gnn_total
-        #
-        #     if self.cat_A_X:
-        #         struct_value = self.adj_norm @ self.mlp_struct.weight.T
-        #         concat_feat = torch.cat([struct_value, gnn_total], dim=1)
-        #         concat_output = self.mlp_cat(concat_feat)
-        #         total += concat_output
-        # else:
-        #     total = self.adj_norm @ self.mlp_struct.weight.T
+            yy = y
+            ytyt = y_t
+            yty = y
+            yyt = y_t
+            for i in range(1, self.k_plus):
+                yy = self.adj_norm @ yy
+                yty = self.adj_t_norm @ yty
 
-        # if self.zero_order:
-        #     total = total + self.lin_zero(x)
-        if self.BN_model:
-            totalA = self.batch_norm2(totalA)
-        return totalA
+                yyt = self.adj_norm @ yyt
+                ytyt = self.adj_t_norm @ ytyt
+
+                w = get_weight(i)
+
+                if self.beta != -1:
+                    b_term = (
+                            self.beta * self.lins_src_to_dst[2 * i - 1](yyt)
+                            + (1 - self.beta) * self.lins_src_to_dst[2 * i - 1](yty)
+                    )
+                    totalB += b_term * w
+                    # if self.BN_model:
+                    #     totalB = self.batch_norm2(totalB)
+
+                if self.gamma != -1:
+                    c_term = (
+                            self.gamma * self.lins_src_to_dst[2 * i](yy)
+                            + (1 - self.gamma) * self.lins_dst_to_src[2 * i](ytyt)
+                    )
+                    totalC += c_term * w
+                    # if self.BN_model:
+                    #     totalC = self.batch_norm2(totalC)
+
+        mpnn_total = totalA + totalB + totalC
+
+        if self.structure != 0:
+            struct_value = self.adj_norm @ self.mlp_struct.weight.T
+            total = self.structure * struct_value + (1 - self.structure) * mpnn_total
+        else:
+            total = mpnn_total
+
+        if self.cat_A_X:
+            struct_value = self.adj_norm @ self.mlp_struct.weight.T
+            concat_feat = torch.cat([struct_value, mpnn_total], dim=1)
+            concat_output = self.mlp_cat(concat_feat)
+            total += concat_output
+
+        if self.zero_order:
+            total = total + self.lin_zero(x)
+
+        return total
 
 
 class FaberConv(torch.nn.Module):
