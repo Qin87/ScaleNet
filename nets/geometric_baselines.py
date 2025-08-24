@@ -356,7 +356,6 @@ class HighFreConv(torch.nn.Module):
             raise NotImplementedError
 
 
-        self.First_self_loop = args.First_self_loop
         self.rm_gen_sloop = args.rm_gen_sloop
         self.differ_AA = args.differ_AA
         self.differ_AAt = args.differ_AAt
@@ -537,8 +536,6 @@ class RanConv(torch.nn.Module):
             raise NotImplementedError
 
 
-        self.First_self_loop = args.First_self_loop
-        self.rm_gen_sloop = args.rm_gen_sloop
         self.differ_AA = args.differ_AA
         self.differ_AAt = args.differ_AAt
         if self.differ_AA or self.differ_AAt:
@@ -575,18 +572,8 @@ class RanConv(torch.nn.Module):
 
     def forward(self, x, edge_index):
         device = edge_index.device
-        if self.First_self_loop == 1:
-
-            edge_index, _ = add_self_loops(edge_index, fill_value=1)
-        elif self.First_self_loop == 'remove':
-            edge_index, _ = remove_self_loops(edge_index)
         row, col = edge_index
         num_nodes = x.shape[0]
-
-        if self.rm_gen_sloop == 'remove':
-            rm_gen_sLoop = True
-        else:
-            rm_gen_sLoop = False
 
         if self.conv_type == 'dir-gcn':
             if self.adj_norm is None:
@@ -719,8 +706,6 @@ class DirConv_tSNE(torch.nn.Module):
             raise NotImplementedError
 
 
-        self.First_self_loop = args.First_self_loop
-        self.rm_gen_sloop = args.rm_gen_sloop
         self.differ_AA = args.differ_AA
         self.differ_AAt = args.differ_AAt
         if self.differ_AA or self.differ_AAt:
@@ -761,18 +746,8 @@ class DirConv_tSNE(torch.nn.Module):
 
     def forward(self, x, edge_index, y, epoch):
         device = edge_index.device
-        if self.First_self_loop == 1:
-
-            edge_index, _ = add_self_loops(edge_index, fill_value=1)
-        elif self.First_self_loop == 'remove':
-            edge_index, _ = remove_self_loops(edge_index)
         row, col = edge_index
         num_nodes = x.shape[0]
-
-        if self.rm_gen_sloop == 'remove':
-            rm_gen_sLoop = True
-        else:
-            rm_gen_sLoop = False
 
         if self.conv_type == 'dir-gcn':
             if self.adj_norm is None:
@@ -1284,8 +1259,6 @@ class DirGCNConv_sloop(torch.nn.Module):
         else:
             raise NotImplementedError
 
-        self.First_self_loop = args.First_self_loop
-        self.rm_gen_sloop = args.rm_gen_sloop
         self.differ_AA = args.differ_AA
         self.differ_AAt = args.differ_AAt
         if self.differ_AA or self.differ_AAt:
