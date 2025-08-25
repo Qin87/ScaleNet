@@ -271,7 +271,8 @@ def load_directedData(args):
     elif load_func == 'citeseer':
         dataset = citation_datasets(root='./citeseer_npz.npz')
     elif load_func in ['film']:
-        dataset = Actor(root='../data/film', transform=T.NormalizeFeatures())
+        args.data_path += load_func
+        dataset = Actor(root=args.data_path, transform=T.NormalizeFeatures())
 
     elif load_func == 'dgl':    # Ben
         subset = subset.lower()

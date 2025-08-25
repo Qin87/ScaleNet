@@ -3,6 +3,7 @@ from datetime import datetime
 
 import numpy as np
 import torch
+from networkx.readwrite import json_graph
 # from torch_geometric.nn import LINKX
 from torch_scatter import scatter_add
 
@@ -285,6 +286,9 @@ def log_file(net_to_print, dataset_to_print, args):
     log_directory = os.path.expanduser(log_directory)
 
     return log_directory, log_file_name_with_timestamp
+import json
+from networkx.readwrite import json_graph
+import numpy as np
 
 def get_dataset(name, path, split_type='public'):
     import torch_geometric.transforms as T
@@ -306,9 +310,9 @@ def get_dataset(name, path, split_type='public'):
 
         return Coauthor(root=path, name='physics', transform=T.NormalizeFeatures())
     elif name == 'ppi':     # TODO
-        dataset_dir = './data/ppi_data'
-        G = json_graph.node_link_graph(json.load(open(dataset_dir + "/ppi-G.json")))
-        labels = json.load(open(dataset_dir + "/ppi-class_map.json"))
+        path = './data/ppi_data'
+        G = json_graph.node_link_graph(json.load(open(path + "/toy-ppi-G.json")))
+        labels = json.load(open(path + "/toy-ppi-class_map.json"))
         labels = {int(i): l for i, l in labels.iteritems()}
 
         train_ids = [n for n in G.nodes() if not G.node[n]['val'] and not G.node[n]['test']]
