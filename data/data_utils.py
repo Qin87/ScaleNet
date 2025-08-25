@@ -259,6 +259,7 @@ def load_directedData(args):
         else:
             dataset = load_func(root=args.data_path, name=subset, geom_gcn_preprocess=False)
     elif load_func == 'WikiCS':
+        args.data_path += load_func
         load_func = WikiCS
         dataset = load_func(root=args.data_path, is_undirected=False)
     elif load_func == 'WikiCS_U':

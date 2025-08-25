@@ -7,7 +7,7 @@ def parse_args():
     parser.add_argument("--use_best_hyperparams", type=int, default=1, help="whether use parameters in best_hyperparameters.yml")
     parser.add_argument('--GPUdevice', type=int, default=0, help='device')
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
-    parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=0)
+    parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=1)
     parser.add_argument("--nonlinear", type=int, help="whether use activation(relu) in ScaleNet model:0/1", default=1)
 
     # for DirGNN
@@ -32,7 +32,7 @@ def parse_args():
                     'link, linkxcat, linkxadd, linkx, linkxgit'
                     'ScaleNet, LargeScaleNet')
     parser.add_argument('--seed', type=int, default=1, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='cora_ml/', help='telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
+    parser.add_argument('--Dataset', type=str, default='WikiCS/', help='telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/, '
         'fb100/penn94, pokec/ ')

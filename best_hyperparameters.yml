@@ -59,7 +59,7 @@ citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.
   layer: 3     # 1(65.3),2(64.8), 3(62.6), 4(64.0), 5(64.4)
   lr: 0.01
   normalize: 1    # 1(68.3), 0 much worse60.7,
-  BN_model: 0   # 0(68.3), 1(66.9)  # for high performance 0 is better.
+#  BN_model: 0   # 0(68.3), 1(66.9)  # for high performance 0 is better.
   add_selfloop : 1     # 1(64.75), -1(58.2), 0(57.5)
   jk: 'max'   # 'max'(68.3). 'cat'(), 0(67.8)
   dropout: 0.5   # 0(61.44), 0.5(64.75)
@@ -71,6 +71,7 @@ citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.
 
 # 79.1±0.8-----
 WikiCS/:
+  hid_dim: 128
   inci_norm: 'dir'  # key
   NotImproved: 410
   epoch: 1500
@@ -126,7 +127,7 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   l2: 0  # 5e-4 is a bit worse
   NotImproved: 810
   epoch: 10000
-#  patience: 400
+  patience: 400
   has_scheduler: 1
   hid_dim: 128
   conv_type: "dir-gcn"

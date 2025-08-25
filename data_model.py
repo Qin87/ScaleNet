@@ -212,15 +212,14 @@ def get_name(args, IsDirectedGraph):
     if not IsDirectedGraph:
         dataset_to_print = dataset_to_print + 'Undire'
     else:
-        dataset_to_print = dataset_to_print + 'Direct'
         if args.to_reverse_edge:
-            dataset_to_print = dataset_to_print + 'ReVerse'
+            dataset_to_print = dataset_to_print + 'At'
         else:
-            dataset_to_print = dataset_to_print + 'Origin'
+            dataset_to_print = dataset_to_print + 'A'
     if args.net.startswith('Ri'):
         net_to_print = args.net + str(args.W_degree) + '_'
     elif args.net.startswith('Mag'):
-        net_to_print = args.net + str(args.q)
+        net_to_print = args.net + 'q'+str(args.q)
     else:
         net_to_print = args.net
     if args.net[1:3] == 'iA' or args.net == 'GAT':
@@ -272,8 +271,14 @@ def get_name(args, IsDirectedGraph):
 
 
 def log_file(net_to_print, dataset_to_print, args):
-    log_file_name = dataset_to_print+'_'+net_to_print+'_lay'+str(args.layer)+'_lr'+str(args.lr)+'_NoImp'+str(args.NotImproved)+'q'+str(args.q)
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    training_callbacks = '_lay'+str(args.layer)+'_lr'+str(args.lr)
+    if args.has_scheduler:
+        training_callbacks += '_Sch'+'_P'+str(args.patience)
+    else:
+        training_callbacks += '_NoSch'
+    training_callbacks += '_NoImp'+str(args.NotImproved)
+    log_file_name = dataset_to_print+'_'+net_to_print+ training_callbacks
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_file_name_with_timestamp = f"{log_file_name}_{timestamp}.log"
 
     log_directory = "~/Documents/Benlogs/"  # Change this to your desired directory
