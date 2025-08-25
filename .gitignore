@@ -1,10 +1,8 @@
 *.npy
 *.log
 *.pyc
-/dataset/
-/datasets/
+/dataset/    # datasets to download and generate after running.
 /logs/
-/dataset/data/tmp/
 #*.npz
 *.t7
 *.txt

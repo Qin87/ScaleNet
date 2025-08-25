@@ -210,7 +210,11 @@ snap-patents/:
   num_split: 5  # original split
 
 pokec/:
-    epoch: 10000
+  epoch: 10000
+
+film/:
+  epoch: 10000
+
 
 
 

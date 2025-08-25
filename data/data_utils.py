@@ -263,6 +263,7 @@ def load_directedData(args):
         load_func = WikiCS
         dataset = load_func(root=args.data_path, is_undirected=False)
     elif load_func == 'WikiCS_U':
+        args.data_path += load_func
         load_func = WikiCS
         dataset = load_func(root=args.data_path)        # get undirected
     elif load_func == 'cora_ml':
