@@ -2,7 +2,6 @@
 
 net_values="linkxadd  "
 layer_values="2 "
-imbal="100  "
 Binary="0 1 "
 
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'  'WikipediaNetwork/chameleon' 'WikipediaNetwork/squirrel'

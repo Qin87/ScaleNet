@@ -88,6 +88,8 @@ WikiCS/:
   alphaDir: 0.5
   betaDir: 2
   gamaDir: -1   # 0(76.5)
+  num_split: 20
+  seed: 7
 
 #
 dgl/pubmed:
@@ -106,7 +108,7 @@ dgl/pubmed:
   gamaDir: 1
   inci_norm: "sym"
   hid_dim: 64
-  to_undirected: 1
+#  to_undirected: 1
 
 #  net: ScaleNet
 #  lr: 0.01
@@ -209,7 +211,5 @@ snap-patents/:
 pokec/:
     epoch: 10000
 
-malnet/tiny:
-      epoch: 10000
 
 
