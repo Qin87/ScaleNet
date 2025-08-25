@@ -5,8 +5,8 @@ layer_values=" 3 "
 Dir="0 0.5 1  -1"
 
 # 'citeseer_npz/' 'cora_ml/'  'telegram/' 'dgl/pubmed' 'WikiCS/'
-#  'WikipediaNetwork/squirrel'  'WikipediaNetwork/chameleon'
-Direct_dataset=('directed-roman-empire/'  'fb100/penn94' )
+#  'WikipediaNetwork/squirrel'  'WikipediaNetwork/chameleon'  'directed-roman-empire/'
+Direct_dataset=('fb100/penn94' )
 generate_timestamp() {
   date +"%d%H%Ms%S"
 }

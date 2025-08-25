@@ -184,9 +184,9 @@ directed-roman-empire/:
   dropout: 0.2
   NotImproved: 200
   conv_type: "dir-sage"   # gcn+mlp is worse
-  alphaDir: 0.5
-  betaDir: -1     # 0 is 88, 1 is 20
-  gamaDir: -1     # all much worse
+#  alphaDir: 0.5
+#  betaDir: -1     # 0 is 88, 1 is 20
+#  gamaDir: -1     # all much worse
 
 
 ogbn-arxiv/:
