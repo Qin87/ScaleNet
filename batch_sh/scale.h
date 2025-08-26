@@ -1,13 +1,18 @@
 #!/bin/bash
 
-net_values="LargeScaleNet  ScaleNet  "
+net_values="LargeScaleNet  "
 layer_values=" 3 "
 Dir="0 0.5 1  -1"
 Patiences=(10 100  )
 
-# 'citeseer_npz/' 'cora_ml/'  'telegram/' 'dgl/pubmed' 'WikiCS/'
+while pgrep -x python3 > /dev/null; do
+  echo "Waiting for all python3 processes to finish..."
+  sleep 10
+done
+
+# 'citeseer_npz/' 'cora_ml/'  'telegram/' 'dgl/pubmed' 'WikiCS/'  'arxiv-year/' 'fb100/penn94'
 #  'WikipediaNetwork/squirrel'  'WikipediaNetwork/chameleon'  'directed-roman-empire/'
-Direct_dataset=('arxiv-year/' 'fb100/penn94' )
+Direct_dataset=('directed-roman-empire/'  )
 generate_timestamp() {
   date +"%d%H%Ms%S"
 }

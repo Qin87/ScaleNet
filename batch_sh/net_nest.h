@@ -11,6 +11,11 @@ generate_timestamp() {
 }
 timestamp=$(generate_timestamp)
 
+while pgrep -x python3 > /dev/null; do
+  echo "Waiting for all python3 processes to finish..."
+  sleep 10
+done
+
 # Iterate over each dataset   --net="$net"    --layer="$layer"
 for Didataset in "${Direct_dataset[@]}"; do
     for layer in $layer_values; do

@@ -246,7 +246,6 @@ data_x = data_x.to(device)
 data_y = data_y.to(device)
 if args.all1:
     data_x = torch.ones_like(data_x)
-#
 edges = edges.to(device)
 
 data_train_maskOrigin = data_train_maskOrigin.to(device)
