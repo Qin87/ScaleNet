@@ -190,6 +190,7 @@ directed-roman-empire/:
 
 
 ogbn-arxiv/:
+  num_split: 1
   nonlinear: 1
   conv_type: dir-sage
   layer: 4    # 69.68(4layer)
