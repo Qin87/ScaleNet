@@ -25,7 +25,7 @@ def parse_args():
     parser.add_argument('--num_split', type=int, default=10, help='num of run in spite of many splits')
 
 
-    parser.add_argument('--net', type=str, default='mlp', help='Mag, Sig, QuaNet, '
+    parser.add_argument('--net', type=str, default='LargeScaleNet', help='Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc, ParaGCN, SimGAT, SloopNet, tSNE,RandomNet, HFNet '
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym' 
                     'mlp, link, linkxcat, linkxadd, linkx, linkxgit, Dir-GNN, '
