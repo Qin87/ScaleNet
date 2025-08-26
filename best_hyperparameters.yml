@@ -190,12 +190,13 @@ directed-roman-empire/:
 
 
 ogbn-arxiv/:
+  num_split: 1
   nonlinear: 1
   conv_type: dir-sage
   layer: 4    # 69.68(4layer)
-  alphaDir: 0.5
-  betaDir: -1     # OOM
-  gamaDir: -1     # OOM
+#  alphaDir: 0.5
+#  betaDir: -1     # OOM
+#  gamaDir: -1     # OOM
 
 
 fb100/penn94:
