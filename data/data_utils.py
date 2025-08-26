@@ -157,6 +157,37 @@ def load_directedData(args):
         dataset._data = dataset[0].to_homogeneous(
             node_attrs=['x', 'y', 'train_mask', 'val_mask', 'test_mask']
         )
+    elif load_func in ['genius']:
+        dataset = LINKXDataset(root=args.data_path, name=load_func, transform=transforms.NormalizeFeatures())
+        name = load_func
+        num_nodes = dataset._data.y.shape[0]
+
+        github_url = f"https://github.com/CUAI/Non-Homophily-Large-Scale/raw/master/data/splits/"
+        split_file_name = f"{name}-splits.npy"
+        local_dir = os.path.join(args.data_path, name, "raw")
+
+        download_url(os.path.join(github_url, split_file_name), local_dir, log=False)
+        splits = np.load(os.path.join(local_dir, split_file_name), allow_pickle=True)
+        # split_idx = splits[split_number % len(splits)]
+        #
+        # train_mask = get_mask(split_idx["train"], num_nodes)
+        # val_mask = get_mask(split_idx["valid"], num_nodes)
+        # test_mask = get_mask(split_idx["test"], num_nodes)
+
+        train_masks = []
+        val_masks = []
+        test_masks = []
+
+        for split_idx in splits:
+            train_masks.append(get_mask(split_idx["train"], num_nodes))
+            val_masks.append(get_mask(split_idx["valid"], num_nodes))
+            test_masks.append(get_mask(split_idx["test"], num_nodes))
+
+        # Stack into tensors of shape (num_nodes, num_splits)
+        dataset._data.train_mask = torch.stack(train_masks, dim=1)
+        dataset._data.val_mask = torch.stack(val_masks, dim=1)
+        dataset._data.test_mask = torch.stack(test_masks, dim=1)
+
     elif load_func in ['fb100']:
         dataset = LINKXDataset(root=args.data_path, name=subset, transform=transforms.NormalizeFeatures())
         dataset._data.y = dataset._data.y.unsqueeze(-1)

@@ -219,6 +219,10 @@ pokec/:
 film/:
   epoch: 10000
 
+genius/:
+  epoch: 10000
+  num_split: 5  # original split
+
 
 
 
