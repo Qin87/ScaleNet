@@ -71,16 +71,8 @@ class ScaleConv(torch.nn.Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
 
-
-        self.lins_src_to_dst = torch.nn.ModuleList([
-            Linear(input_dim, output_dim) for _ in range(2 * args.k_plus)
-        ])
-        self.lins_dst_to_src = torch.nn.ModuleList([
-            Linear(input_dim, output_dim) for _ in range(2 * args.k_plus)
-        ])
-        # self.lin_src_to_dst = Linear(input_dim, output_dim)
-        # self.lin_dst_to_src = Linear(input_dim, output_dim)
-        # self.conv2_1 = Linear(output_dim * 2, output_dim)
+        self.lins_src_to_dst = torch.nn.ModuleList([Linear(input_dim, output_dim) for _ in range(2 * args.k_plus)])
+        self.lins_dst_to_src = torch.nn.ModuleList([Linear(input_dim, output_dim) for _ in range(2 * args.k_plus)])
 
         self.alpha = args.alphaDir
         self.beta = args.betaDir
@@ -115,13 +107,10 @@ class ScaleConv(torch.nn.Module):
             adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
             self.adj_t_norm = get_norm_adj(adj_t, norm=self.inci_norm, exponent=self.exponent)
 
-        # if self.structure != 1 or self.cat_A_X:
         y = self.adj_norm @ x
         y_t = self.adj_t_norm @ x
         sum_src_to_dst = self.lins_src_to_dst[0](y)
         sum_dst_to_src = self.lins_dst_to_src[0](y_t)
-        # sum_src_to_dst = self.lin_src_to_dst(y)
-        # sum_dst_to_src = self.lin_dst_to_src(y_t)
         totalA = 0
         if self.alpha != -1:
             totalA = self.alpha * sum_src_to_dst + (1 - self.alpha) * sum_dst_to_src

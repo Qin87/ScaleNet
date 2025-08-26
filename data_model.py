@@ -257,7 +257,7 @@ def get_name(args, IsDirectedGraph):
         net_to_print = net_to_print + '_Imbal' + str(args.imb_ratio)
     else:
         net_to_print = net_to_print + '_Bal'
-    if args.net == 'ScaleNet' or args.net == 'LargeScaleNet':
+    if args.net == 'ScaleNet':
         if args.differ_AA or args.differ_AAt:
             if args.differ_AA:
                 diff = 'AA'+str(args.alphaDir)
@@ -267,6 +267,10 @@ def get_name(args, IsDirectedGraph):
         else:
             net_to_print = net_to_print  +'_' + args.conv_type +'_part'+str(args.alphaDir)+'_'+ str(args.betaDir)+'_'+str(
                 args.gamaDir)+'_jk'+str(args.jk)+'_norm'+str(args.inci_norm)
+    if args.net == 'LargeScaleNet':
+        net_to_print += ('_' + args.conv_type2 + '_part' + str(args.alphaDir) + '_' + str(args.betaDir) + '_' + str(
+            args.gamaDir) + '_jk' + str(args.jk) + '_norm' + str(args.inci_norm)
+            + '_zero'+str(args.zero_order) + '_struct'+str(args.structure)) + '_cat'+str(args.cat_A_X)
 
     return net_to_print, dataset_to_print
 

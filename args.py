@@ -4,7 +4,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--monitor", type=str, help="optimiser monitor: val_acc(acc), val_loss(loss)", default="acc")
 
-    parser.add_argument("--use_best_hyperparams", type=int, default=0, help="whether use parameters in best_hyperparameters.yml")
+    parser.add_argument("--use_best_hyperparams", type=int, default=1, help="whether use parameters in best_hyperparameters.yml")
     parser.add_argument('--GPUdevice', type=int, default=0, help='device')
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
     parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=0)
@@ -31,7 +31,7 @@ def parse_args():
                     'mlp, link, linkxcat, linkxadd, linkx, linkxgit, Dir-GNN, '
                     'ScaleNet, LargeScaleNet')
     parser.add_argument('--seed', type=int, default=1, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='fb100/penn94', help=
+    parser.add_argument('--Dataset', type=str, default='directed-roman-empire/', help=
     'telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/, '
