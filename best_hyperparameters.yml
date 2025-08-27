@@ -172,18 +172,18 @@ WikipediaNetwork/squirrel:
 
 # 91.23 ± 0.32(0.5,-1,-1), 92.0±0.4(0.5,-1,-1),
 directed-roman-empire/:
-#  num_split: 10  # original dataset
+  num_split: 10  # original dataset
   nonlinear: 1    # must have this, or acc is 85
   has_scheduler: 0
   lr: 0.01
   add_selfloop: 0   # no selfloops originally
-#  BN_model: 0  # no batch norm is better
+  BN_model: 0  # no batch norm is better
   normalize: 0  #
   hid_dim: 256
-  layer: 5
+#  layer: 5
   jk: "cat"
   dropout: 0.2
-#  NotImproved: 200
+  NotImproved: 80
 #  NoBN Best:
 #  92.85       0.5_0.0_-1.0
 #  92.66     0.5_-1.0_1.0
@@ -195,8 +195,8 @@ directed-roman-empire/:
 #
 #  91.92   1.0_-1.0_0.0
 #  91.60   1.0_-1.0_0.5
-#  alphaDir: 0.5   #
-#  betaDir: -1     # 0 is 88, 1 is 20
+  alphaDir: 0.5   #
+#  betaDir: 0     # 0 is 88, 1 is 20
 #  gamaDir: -1     # all much worse
   conv_type: "dir-sage"   # gcn+mlp is worse  # for ScaleNet
   zero_order: 1  # for LargeScaleNet
@@ -227,11 +227,12 @@ arxiv-year/:
   num_split: 5
   epoch: 10000
 
-  layer: 5
-  lr: 1
+  hid_dim: 128
+  layer: 6
+#  lr: 1
   BN_model: 1
   add_selfloop: 1
-#  zero_order: 1
+  zero_order: 1
   alphaDir: 0.5
   betaDir: 1.0
   gamaDir: 0.5
