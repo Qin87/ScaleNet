@@ -5,10 +5,6 @@ layer_values="1 2 3 "
 Dir="0 0.5 1  -1"
 Patiences=(10 40  )
 
-while pgrep -x python3 > /dev/null; do
-  echo "Waiting for all python3 processes to finish..."
-  sleep 1800
-done
 
 # 'citeseer_npz/' 'cora_ml/'  'telegram/' 'dgl/pubmed' 'WikiCS/'
 #  'WikipediaNetwork/squirrel'  'WikipediaNetwork/chameleon'  'directed-roman-empire/'
