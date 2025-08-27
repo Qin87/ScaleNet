@@ -227,8 +227,9 @@ arxiv-year/:
   num_split: 5
   epoch: 10000
 
-  layer: 5
-  lr: 1
+  hid_dim: 128
+  layer: 6
+#  lr: 1
   BN_model: 1
   add_selfloop: 1
 #  zero_order: 1
