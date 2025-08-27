@@ -31,7 +31,7 @@ def parse_args():
                     'mlp, link, linkxcat, linkxadd, linkx, linkxgit, Dir-GNN, '
                     'ScaleNet, LargeScaleNet')
     parser.add_argument('--seed', type=int, default=1, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='pokec/', help=
+    parser.add_argument('--Dataset', type=str, default='telegram/', help=
     'telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/, '

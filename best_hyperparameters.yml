@@ -184,7 +184,18 @@ directed-roman-empire/:
   jk: "cat"
   dropout: 0.2
 #  NotImproved: 200
-#  alphaDir: 0.5
+#  NoBN Best:
+#  92.85       0.5_0.0_-1.0
+#  92.66     0.5_-1.0_1.0
+#  92.53    0.5_-1.0_-1.0
+#  92.48    0.5_1.0_-1.0
+#  92.45     0.5_-1.0_0.5
+#  92.25      0.5_0.5_1.0
+#  92.15   0.5_0.5_-1.0
+#
+#  91.92   1.0_-1.0_0.0
+#  91.60   1.0_-1.0_0.5
+#  alphaDir: 0.5   #
 #  betaDir: -1     # 0 is 88, 1 is 20
 #  gamaDir: -1     # all much worse
   conv_type: "dir-sage"   # gcn+mlp is worse  # for ScaleNet
