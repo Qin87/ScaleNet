@@ -1,14 +1,13 @@
 #!/bin/bash
 
 net_values="LargeScaleNet"
-layer_values="1 2 3 "
+layer_values="3 "
 Dir="0 0.5 1  -1"
 Patiences=(10 40  )
 
-
 # 'citeseer_npz/' 'cora_ml/'  'telegram/' 'dgl/pubmed' 'WikiCS/'
 #  'WikipediaNetwork/squirrel'  'WikipediaNetwork/chameleon'  'directed-roman-empire/'
-Direct_dataset=('ogbn-arxiv/' )
+Direct_dataset=('arxiv-year/' )
 generate_timestamp() {
   date +"%d%H%Ms%S"
 }
