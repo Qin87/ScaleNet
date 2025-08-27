@@ -119,7 +119,7 @@ def train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_wei
         val_loss = F.cross_entropy(out[data_val_mask], data_y[data_val_mask])
     optimizer.step()
     if args.has_scheduler:
-        scheduler.step(val_loss, epoch)
+        scheduler.step(val_loss.item(), epoch)   # Scheduler expects float, not tensor
 
     return val_loss, new_edge_index, new_x, new_y, new_y_train
 # from sklearn.metrics import confusion_matrix
