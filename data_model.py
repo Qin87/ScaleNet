@@ -208,6 +208,7 @@ def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
 
 def get_name(args, IsDirectedGraph):
     dataset_to_print = args.Dataset.replace('/', '_')
+
     if args.all1:
         dataset_to_print += 'all1'
     if not IsDirectedGraph:
@@ -228,29 +229,22 @@ def get_name(args, IsDirectedGraph):
     if args.BN_model:
         net_to_print = 'BNorm_' + net_to_print
     else:
-        net_to_print = 'NoBNorm_' + net_to_print
+        net_to_print = 'NoBN_' + net_to_print
+
+    if args.add_selfloop:
+        net_to_print += '_AddSloop'
+    else:
+        net_to_print += '_NoSloop'
 
     if args.net == 'GCN':
-        if args.add_selfloop:
-            net_to_print = net_to_print + '_AddSloop'
-        else:
-            net_to_print = net_to_print + '_NoSloop'
         if args.gcn_norm == 1:
             net_to_print = net_to_print + '_norm'
         else:
             net_to_print = net_to_print + '_Nonorm'
-    else:
-        if args.add_selfloop:
-            net_to_print = net_to_print + '_AddSloop'
 
     if args.net[1] == 'i' and not args.net.startswith('link'):
         if args.paraD:
             net_to_print = net_to_print + 'paraD' + str(args.coeflr)
-
-        if args.add_selfloop == 1:
-            net_to_print = net_to_print + '_AddSloop'
-        else:
-            net_to_print = net_to_print + '_NoSloop'
 
     net_to_print = net_to_print + '_hid' + str(args.hid_dim)
     if args.MakeImbalance:
