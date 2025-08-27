@@ -199,7 +199,7 @@ directed-roman-empire/:
 #  betaDir: -1     # 0 is 88, 1 is 20
 #  gamaDir: -1     # all much worse
   conv_type: "dir-sage"   # gcn+mlp is worse  # for ScaleNet
-  zero_order: True  # for LargeScaleNet
+  zero_order: 1  # for LargeScaleNet
 
 
 ogbn-arxiv/:
@@ -207,9 +207,15 @@ ogbn-arxiv/:
   nonlinear: 1
   conv_type: dir-sage
   layer: 4    # 69.68(4layer)
+
+#  lr: 1
+  add_selfloop: 1
+  BN_model: 1
 #  alphaDir: 0.5
-#  betaDir: -1     # OOM
+#  betaDir: 0.5    # OOM
 #  gamaDir: -1     # OOM
+#  zero_order: 1
+
 
 
 fb100/penn94:
