@@ -176,14 +176,14 @@ directed-roman-empire/:
   nonlinear: 1    # must have this, or acc is 85
   has_scheduler: 0
   lr: 0.01
-  add_selfloop: 0   # no selfloops originally
+#  add_selfloop: 0   # no selfloops originally
   BN_model: 0  # no batch norm is better
   normalize: 0  #
   hid_dim: 256
 #  layer: 5
   jk: "cat"
   dropout: 0.2
-  NotImproved: 80
+#  NotImproved: 80
 #  NoBN Best:
 #  92.85       0.5_0.0_-1.0
 #  92.66     0.5_-1.0_1.0
@@ -200,6 +200,7 @@ directed-roman-empire/:
 #  gamaDir: -1     # all much worse
   conv_type: "dir-sage"   # gcn+mlp is worse  # for ScaleNet
   zero_order: 1  # for LargeScaleNet
+  exponent: -0.25
 
 
 ogbn-arxiv/:

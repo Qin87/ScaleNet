@@ -1,9 +1,9 @@
 #!/bin/bash
 
 net_values="LargeScaleNet"
-layer_values="5 6 7 "
-Dir="0 0.5 1  -1"
-Patiences=(10 80 200  )
+layer_values="5 6 7 8"
+Dir="0 1 -1"
+Patiences=(80 200  )
 
 while pgrep -x python3 > /dev/null; do
   echo "Waiting for all python3 processes to finish..."
@@ -26,13 +26,13 @@ for Didataset in "${Direct_dataset[@]}"; do
         exec > "$logfile" 2>&1  # Redirect stdout and stderr to log file
    #        for alphadir in $Dir; do
         for betadir in $Dir; do
-        for gamadir in $Dir; do
+      #  for gamadir in $Dir; do
         for net in $net_values; do
             log_output="${Didataset//\//_}_${timestamp}_A${a}_alpha${dir}__${net}_layer${layer}.log"
 
             # Run the Python script with parameters and log output
-python3 main.py   --alphaDir=0.5  --betaDir="$betadir"    --gamaDir="$gamadir"  --num_split=1  --add_selfloop=0  \
---patience="$patience" --use_best_hyperparams=1 \
+python3 main.py   --alphaDir=0.5  --betaDir="$betadir"    --gamaDir=-1  --num_split=1  --add_selfloop=1  \
+--NotImproved="$patience"  --use_best_hyperparams=1 \
  --net="$net"  --layer="$layer"   --Dataset="$Didataset" >  \
 "$log_output"
              2>&1
