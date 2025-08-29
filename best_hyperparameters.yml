@@ -182,27 +182,15 @@ directed-roman-empire/:
   BN_model: 0  # no batch norm is better
   normalize: 0  #
   hid_dim: 256
-#  layer: 6
+  layer: 6  # 5:93.4  7:93.1  8:93.0
   jk: "cat"   # >max
   dropout: 0.2
-
-#  NoBN Best:
-#  92.85       0.5_0.0_-1.0
-#  92.66     0.5_-1.0_1.0
-#  92.53    0.5_-1.0_-1.0
-#  92.48    0.5_1.0_-1.0
-#  92.45     0.5_-1.0_0.5
-#  92.25      0.5_0.5_1.0
-#  92.15   0.5_0.5_-1.0
-#
-#  91.92   1.0_-1.0_0.0
-#  91.60   1.0_-1.0_0.5
   alphaDir: 0.5   #
   betaDir: -1     # 0 is 88, 1 is 20
   gamaDir: -1     # all much worse
   conv_type: "dir-sage"   # gcn+mlp is worse  # for ScaleNet
   zero_order: 1  # for LargeScaleNet
-#  exponent: -0.25  # 92.9 for -0.5
+  exponent: -0.25  # 92.9 for -0.5
 
 ogbn-arxiv/:
   num_split: 1
@@ -228,13 +216,15 @@ fb100/penn94:
 arxiv-year/:
   num_split: 5
   epoch: 10000
+#  has_scheduler:
+#  NotImproved:
 
   hid_dim: 128
   layer: 6
 #  lr: 1
   BN_model: 1
   add_selfloop: 1
-  zero_order: 1
+  zero_order: 0
   alphaDir: 0.5
   betaDir: 1.0
   gamaDir: 0.5
