@@ -218,16 +218,16 @@ arxiv-year/:
   epoch: 10000
   BN_model: 1
   add_selfloop: 1
-#  has_scheduler:
-#  NotImproved:
+  has_scheduler: 0
+#  NotImproved: 400
 
   hid_dim: 128
   layer: 6
 #  lr: 1
 
   zero_order: 0
-  alphaDir: 0.5
-  betaDir: 1.0
+#  alphaDir: 0.5
+#  betaDir: 1.0
 #  gamaDir: 0.5
 
 snap-patents/:
