@@ -172,16 +172,17 @@ WikipediaNetwork/squirrel:
 
 # 93.5±0.3(0.5,-1,-1 Acer), 93.4±0.3(0.5,-1,-1 Dell),
 directed-roman-empire/:
+  net: LargeScaleNet
   num_split: 10  # original dataset
   nonlinear: 1    # must have this, or acc is 85
   has_scheduler: 0
-  NotImproved: 80
+  NotImproved: 80  # 200:93.4, 400:93.4
   lr: 0.01
-  add_selfloop: 0   # no selfloops originally
+  add_selfloop: 0   # Add 93.3
   BN_model: 0  # no batch norm is better
   normalize: 0  #
   hid_dim: 256
-  layer: 6
+#  layer: 6
   jk: "cat"   # >max
   dropout: 0.2
 
@@ -201,7 +202,7 @@ directed-roman-empire/:
   gamaDir: -1     # all much worse
   conv_type: "dir-sage"   # gcn+mlp is worse  # for ScaleNet
   zero_order: 1  # for LargeScaleNet
-  exponent: -0.25
+  exponent: -0.25  # 92.9 for -0.5
 
 
 ogbn-arxiv/:
