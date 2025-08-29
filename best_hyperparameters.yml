@@ -229,7 +229,7 @@ arxiv-year/:
 #  alphaDir: 0.5
 #  betaDir: 1.0
 #  gamaDir: 0.5
-  exponent: -0.25  #
+#  exponent: -0.25  #
 
 snap-patents/:
   num_split: 5  # original split
