@@ -260,11 +260,11 @@ def get_name(args, IsDirectedGraph):
             net_to_print = net_to_print + args.conv_type + '_diff'+diff + '_jk'+str(args.jk)+'_norm'+args.inci_norm
         else:
             net_to_print = net_to_print  +'_' + args.conv_type +'_part'+str(args.alphaDir)+'_'+ str(args.betaDir)+'_'+str(
-                args.gamaDir)+'_jk'+str(args.jk)+'_norm'+str(args.inci_norm)
+                args.gamaDir)+'_jk'+str(args.jk)+'_norm'+str(args.inci_norm)+'_exp'+str(args.exponent)
     if args.net == 'LargeScaleNet':
         net_to_print += ('_' + args.conv_type2 + '_part' + str(args.alphaDir) + '_' + str(args.betaDir) + '_' + str(
             args.gamaDir) + '_jk' + str(args.jk) + '_norm' + str(args.inci_norm)
-            + '_zero'+str(args.zero_order) + '_struct'+str(args.structure)) + '_cat'+str(args.cat_A_X)
+            + '_zero'+str(args.zero_order) + '_struct'+str(args.structure)) + '_cat'+str(args.cat_A_X)+'_exp'+str(args.exponent)
 
     return net_to_print, dataset_to_print
 
