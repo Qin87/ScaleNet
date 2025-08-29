@@ -244,8 +244,8 @@ snap-patents/:
   patience: 80
   NotImproved: 400  #
   alphaDir: 0.5   #
-  betaDir: -1     #
-  gamaDir: 0.5
+#  betaDir: -1     #
+#  gamaDir: 0.5
   exponent: -0.25  #
   zero_order: 0
   weight_penalty: "None"
