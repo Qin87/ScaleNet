@@ -175,8 +175,9 @@ directed-roman-empire/:
   net: LargeScaleNet
   num_split: 10  # original dataset
   nonlinear: 1    # must have this, or acc is 85
-  has_scheduler: 0
-  NotImproved: 80  # 200:93.4, 400:93.4
+  has_scheduler: 1
+  patience: 80
+  NotImproved: 400  # 200:93.4, 400:93.4
   lr: 0.01
   add_selfloop: 0   # Add 93.3
   BN_model: 0  # no batch norm is better
@@ -233,6 +234,22 @@ arxiv-year/:
 
 snap-patents/:
   num_split: 5  # original split
+  BN_model: 1 # ?
+  lr: 0.01
+  layer: 5
+  hid_dim: 32
+  jk: 'max'
+
+  has_scheduler: 0
+  patience: 80
+  NotImproved: 400  #
+  alphaDir: 0.5   #
+  betaDir: -1     #
+  gamaDir: 0.5
+  exponent: -0.25  #
+  zero_order: 0
+  weight_penalty: "None"
+  add_selfloop: 0
 
 pokec/:
   num_split: 1  # original split  # TODO
