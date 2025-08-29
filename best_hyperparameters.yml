@@ -202,8 +202,7 @@ directed-roman-empire/:
   gamaDir: -1     # all much worse
   conv_type: "dir-sage"   # gcn+mlp is worse  # for ScaleNet
   zero_order: 1  # for LargeScaleNet
-  exponent: -0.25  # 92.9 for -0.5
-
+#  exponent: -0.25  # 92.9 for -0.5
 
 ogbn-arxiv/:
   num_split: 1
