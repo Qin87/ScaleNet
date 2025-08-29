@@ -239,6 +239,7 @@ snap-patents/:
   layer: 5
   hid_dim: 32
   jk: 'max'
+  normalize: 1
 
   has_scheduler: 0
   patience: 80

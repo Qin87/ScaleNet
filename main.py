@@ -30,6 +30,16 @@ from sklearn.metrics import balanced_accuracy_score, f1_score
 import warnings
 warnings.filterwarnings("ignore")
 
+import torch
+
+def print_memory(tag=""):
+    if torch.cuda.is_available():
+        allocated = torch.cuda.memory_allocated() / 1024**2
+        reserved = torch.cuda.memory_reserved() / 1024**2
+        print(f"[{tag}] Allocated: {allocated:.2f} MB | Reserved: {reserved:.2f} MB")
+    else:
+        print(f"[{tag}] CUDA not available, skipping memory check")
+
 
 def signal_handler(sig, frame):
     global end_time
@@ -203,8 +213,6 @@ if args.to_reverse_edge:
 
 seed_everything(args.seed)
 
-
-
 with open(log_directory + log_file_name_with_timestamp, 'w') as log_file:
     print(args, file=log_file)
     print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=log_file)
@@ -361,15 +369,6 @@ elif args.net.startswith(('Mag', 'Sig', 'Qua')):
         Quaedge_index, norm_real, norm_imag_i, norm_imag_j, norm_imag_k = process_quaternion_laplacian(edge_index=edges, x_real=X_real, edge_weight=edge_weight,
                                                                                                     normalization='sym', return_lambda_max=False)
 
-elif args.net.lower() in ['mamba']:
-    import torch_geometric.transforms as T
-    from torch_geometric.data import Data
-    temp_data = Data(x=data_x, edge_index=edges)
-    transform = T.AddRandomWalkPE(walk_length=20, attr_name='pe')
-    temp_data = transform(temp_data)
-    data_pe = temp_data.pe
-
-
 else:
     pass
 try:
@@ -388,8 +387,11 @@ args.num_features, args.num_classes, args.edge_index, args.num_nodes = data_x.sh
 try:
     with open(log_directory + log_file_name_with_timestamp, 'a') as log_file:
         print('Using Device: ', device, file=log_file)
+        print_memory("Start")
         for split in range(num_run):
+            print_memory("Before model load")
             model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device)
+            print_memory("After model load")
             if split==0:
                 print(model, file=log_file)
                 print(model)
@@ -524,6 +526,7 @@ try:
             CountNotImproved = 0
             end_epoch = 0
             set_new_opt = True
+            print_memory("Before training")
             for epoch in range(args.epoch):
                 val_loss, new_edge_index, new_x, new_y, new_y_train = train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight, X_real, X_img, Sigedge_index, norm_real,norm_imag,
                                                                                 X_img_i, X_img_j, X_img_k,norm_imag_i, norm_imag_j, norm_imag_k, Quaedge_index)
