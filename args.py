@@ -46,7 +46,7 @@ def parse_args():
     parser.add_argument('--epoch', type=int, default=10000, help='epoch1500,')
     parser.add_argument("--has_scheduler", type=int, default=0, help="Whether Optimizer has a scheduler")
     parser.add_argument('--patience', type=int, default=10, help='patience to reduce lr,80')
-    parser.add_argument('--NotImproved', type=int, default=400, help='consecutively Not Improved, break, 500, 450, 410, 210, 60')
+    parser.add_argument('--NotImproved', type=int, default=2, help='consecutively Not Improved, break, 500, 450, 410, 210, 60')
 
     parser.add_argument('--lr', type=float, default=0.005, help='learning rate')
     parser.add_argument('--lrweight', type=float, default=0.4, help='learning rate for edge_weight')

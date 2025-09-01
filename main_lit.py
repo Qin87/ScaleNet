@@ -90,11 +90,11 @@ def main():
 
             early_stopping_callback = EarlyStopping(monitor=monitor_metric, mode=mode, patience=args.NotImproved)
             model_summary_callback = ModelSummary(max_depth=-1)
-            # model_checkpoint_callback = ModelCheckpoint(
-            #     monitor=monitor_metric,
-            #     mode=mode,
-            #     dirpath=f"{args.checkpoint_directory}/{str(uuid.uuid4())}/",
-            # )
+            model_checkpoint_callback = ModelCheckpoint(
+                monitor=monitor_metric,
+                mode=mode,
+                dirpath=f"{args.checkpoint_directory}/{str(uuid.uuid4())}/",
+            )
 
             trainer = pl.Trainer(
                 log_every_n_steps=1,
@@ -104,6 +104,7 @@ def main():
                 callbacks=[
                     early_stopping_callback,  # comment out will be much slower!
                     # model_summary_callback,
+                    model_checkpoint_callback,  # delete will not working
                 ],
                 profiler="simple" if args.profiler else None,
                 accelerator="gpu" if torch.cuda.is_available() else "cpu",
