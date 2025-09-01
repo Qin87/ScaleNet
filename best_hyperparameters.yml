@@ -254,7 +254,7 @@ snap-patents/:
 
 pokec/:
   num_split: 10  # original split
-  net: link
+  net: linkx  # all bad
   epoch: 10000
 
 film/:
