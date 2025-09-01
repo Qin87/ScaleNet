@@ -233,6 +233,10 @@ arxiv-year/:
 #  exponent: -0.25  #
 
 snap-patents/:
+  net: LargeScaleNet
+  alphaDir: 0.5   #
+  betaDir: 0.5
+  gamaDir: 0.5
   num_split: 5  # original split
 #  BN_model: 0   # ?
   lr: 0.01
@@ -244,9 +248,7 @@ snap-patents/:
   has_scheduler: 0
 #  patience: 400
 #  NotImproved: 400  #
-  alphaDir: 0.5   #
-  betaDir: 0.5
-  gamaDir: 0.5
+
   zero_order: 0
   add_selfloop: 0
   weight_decay: 0.1
