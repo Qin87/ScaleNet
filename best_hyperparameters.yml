@@ -233,7 +233,7 @@ arxiv-year/:
 #  exponent: -0.25  #
 
 snap-patents/:
-  net: LargeScaleNet
+#  net: LargeScaleNet
   alphaDir: 0.5   #
   betaDir: 0.5
   gamaDir: 0.5
