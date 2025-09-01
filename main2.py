@@ -1,0 +1,150 @@
+import gc
+import os
+import socket
+import time
+import uuid
+import torch
+import torch.nn.functional as F
+import pytorch_lightning as pl
+from pytorch_lightning.callbacks import EarlyStopping, ModelSummary, ModelCheckpoint
+from torch.utils.data import DataLoader, TensorDataset
+from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
+
+from args import parse_args
+from data.data_utils import  set_device, seed_everything
+from data_model import CreatModel, get_name, load_dataset, log_file, name_file
+from nets.DiG_NoConv import union_edges
+from nets.lit_model import FullBatchGraphDataset, Lit, LightingFullBatchModelWrapper
+from nets.src2 import laplacian
+from nets.src2.quaternion_laplacian import process_quaternion_laplacian
+from utils.utils import CrossEntropy, use_best_hyperparams
+from sklearn.metrics import balanced_accuracy_score, f1_score
+from collections import Counter
+import statistics
+from torch import nn, optim
+import sys, os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0' # supress: oneDNN custom operations are on
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # 3 supress warning:Unable to register cuFFT factory...
+import warnings   # ScaleNet2
+warnings.filterwarnings("ignore")
+import logging
+logging.getLogger("pytorch_lightning").setLevel(logging.WARNING)   #
+import time
+
+
+def main():
+    seed_everything(args.seed)
+    device = set_device(args)
+
+    data_x, data_y, edges, edges_weight, num_features, data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph, edge_attr, data_batch = load_dataset(args)
+    n_cls = data_y.max().item() + 1
+    args.num_features, args.num_classes, args.edge_index, args.num_nodes = data_x.shape[1], n_cls, edges, data_x.shape[0]
+
+    load_time = time.time()
+    log_directory, log_file_name_with_timestamp = name_file(args, IsDirectedGraph)
+    if not os.path.exists(log_directory):
+        os.makedirs(log_directory)
+
+    evaluator = None
+    if len(args.Dataset.split('/')) == 2:
+        name = args.Dataset.split('/')[0]
+        if  name in ["ogbn-arxiv", "arxiv-year"] :
+            evaluator = Evaluator(name="ogbn-arxiv")
+
+    with open(log_directory + log_file_name_with_timestamp, 'w') as logfile:
+        print(args, file=logfile)
+        print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=logfile)
+        # sys.stdout = logfile
+
+        graph_data = (data_x, edges, data_y)
+        dataset = FullBatchGraphDataset(graph_data)
+        loader = DataLoader(dataset, batch_size=1, collate_fn=lambda batch: batch[0])
+
+        val_accs, test_accs = [], []
+        for split in range(args.num_split):
+            if args.num_split == 1:
+                data_train_mask, data_val_mask, data_test_mask = (data_train_maskOrigin.clone(), data_val_maskOrigin.clone(), data_test_maskOrigin.clone())
+            else:
+                try:
+                    data_train_mask, data_val_mask, data_test_mask = (data_train_maskOrigin[:, split].clone(),
+                                                                      data_val_maskOrigin[:, split].clone(),
+                                                                      data_test_maskOrigin[:, split].clone())
+                except IndexError:
+                    print("testIndex ,", data_test_mask.shape, data_train_mask.shape, data_val_mask.shape)
+                    data_train_mask, data_val_mask = (
+                        data_train_maskOrigin[:, split].clone(), data_val_maskOrigin[:, split].clone())
+                    try:
+                        data_test_mask = data_test_maskOrigin[:, 1].clone()
+                    except:
+                        data_test_mask = data_test_maskOrigin.clone()
+
+            print("\nstart split: ", split)
+            model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device)
+            lit_model = LightingFullBatchModelWrapper(
+                model=model,
+                args=args,
+                evaluator=evaluator,
+                train_mask=data_train_mask,
+                val_mask=data_val_mask,
+                test_mask=data_test_mask,
+            )
+
+            monitor_metric = args.monitor  # "val_loss"   "val_acc"   "train_loss"
+            if "loss" in monitor_metric:
+                mode = "min"
+            else:
+                mode = "max"
+
+            early_stopping_callback = EarlyStopping(monitor=monitor_metric, mode=mode, patience=args.NotImproved)
+            model_summary_callback = ModelSummary(max_depth=-1)
+            model_checkpoint_callback = ModelCheckpoint(
+                monitor=monitor_metric,
+                mode=mode,
+                dirpath=f"{args.checkpoint_directory}/{str(uuid.uuid4())}/",
+            )
+
+            trainer = pl.Trainer(
+                log_every_n_steps=1,
+                enable_progress_bar=False,
+                enable_model_summary=False,  # suppresses the model table  # ScaleNet2
+                max_epochs=args.epoch,
+                callbacks=[
+                    early_stopping_callback,  # comment out will be much slower!
+                    # model_summary_callback,
+                    model_checkpoint_callback,
+                ],
+                profiler="simple" if args.profiler else None,
+                accelerator="gpu" if torch.cuda.is_available() else "cpu",
+                devices=[args.GPU] if torch.cuda.is_available() else None,
+            )
+            print(lit_model)
+
+
+            # Trainer
+            # trainer.fit(lit_model, loader, loader)
+            # trainer.fit(lit_model, train_dataloaders=loader, val_dataloaders=loader)
+            # trainer.test(lit_model, dataloaders=loader)
+            trainer.fit(lit_model, train_dataloaders=loader)
+
+            # # Compute validation and test accuracy
+            val_acc = model_checkpoint_callback.best_model_score.item()
+            test_acc = trainer.test(ckpt_path="best", dataloaders=loader)[0]["test_acc"]
+            test_accs.append(test_acc)
+            val_accs.append(val_acc)
+            print(f"Test Acc: {test_acc * 100:.2f}", file=sys.__stdout__)
+
+            del model
+            del lit_model
+            del trainer
+            del early_stopping_callback
+            del model_summary_callback
+            del model_checkpoint_callback
+            torch.cuda.empty_cache()
+            gc.collect()
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    args = use_best_hyperparams(args, args.Dataset) if args.use_best_hyperparams else args
+    print(args)
+    main()

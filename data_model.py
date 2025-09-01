@@ -268,6 +268,12 @@ def get_name(args, IsDirectedGraph):
 
     return net_to_print, dataset_to_print
 
+def name_file(args, IsDirectedGraph):
+    net_to_print, dataset_to_print = get_name(args, IsDirectedGraph)
+    log_directory, log_file_name_with_timestamp = log_file(net_to_print, dataset_to_print, args)
+
+    return log_directory, log_file_name_with_timestamp
+
 
 def log_file(net_to_print, dataset_to_print, args):
     training_callbacks = '_lay'+str(args.layer)+'_lr'+str(args.lr)
@@ -284,6 +290,8 @@ def log_file(net_to_print, dataset_to_print, args):
     log_directory = os.path.expanduser(log_directory)
 
     return log_directory, log_file_name_with_timestamp
+
+
 import json
 from networkx.readwrite import json_graph
 import numpy as np

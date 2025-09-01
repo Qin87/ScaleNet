@@ -2,10 +2,10 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--monitor", type=str, help="optimiser monitor: val_acc(acc), val_loss(loss)", default="acc")
+    parser.add_argument("--monitor", type=str, help="optimiser monitor: val_acc(acc), val_loss(loss)", default="val_acc")
 
     parser.add_argument("--use_best_hyperparams", type=int, default=1, help="whether use parameters in best_hyperparameters.yml")
-    parser.add_argument('--GPUdevice', type=int, default=0, help='device')
+    parser.add_argument('--GPU', type=int, default=0, help='GPU device number')
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
     parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=0)
     parser.add_argument("--nonlinear", type=int, help="whether use activation(relu) in ScaleNet model:0/1", default=1)
@@ -44,7 +44,7 @@ def parse_args():
 
     parser.add_argument('--hid_dim', type=int, default=256, help='feature dimension')
     parser.add_argument('--epoch', type=int, default=10000, help='epoch1500,')
-    parser.add_argument("--has_scheduler", type=int, default=1, help="Whether Optimizer has a scheduler")
+    parser.add_argument("--has_scheduler", type=int, default=0, help="Whether Optimizer has a scheduler")
     parser.add_argument('--patience', type=int, default=10, help='patience to reduce lr,80')
     parser.add_argument('--NotImproved', type=int, default=400, help='consecutively Not Improved, break, 500, 450, 410, 210, 60')
 
@@ -92,6 +92,9 @@ def parse_args():
     parser.add_argument('--inner_dropout', action='store_true', help='Whether linkV3 uses inner dropout')
 
     # for scale_big
+    parser.add_argument("--profiler", action="store_true")
+    parser.add_argument("--checkpoint_directory", type=str, help="Directory to save checkpoints", default="checkpoint")
+    parser.add_argument("--weight_decay", type=float, help="Weight decay", default=1e-3)
     parser.add_argument("--lrelu_slope", type=float, help="negative slope of Leaky Relu", default=-1.0)
     parser.add_argument("--conv_type2", type=str, help="scale, faber ", default="scale")
     parser.add_argument("--weight_penalty", type=str, choices=["exp", "lin", "None"], default="None")

@@ -1,7 +1,8 @@
 #!/bin/bash
 
 net_values="LargeScaleNet"
-layer_values="5 6 7 8"
+layer_values="5 6"
+bDir="1 0 -1"
 Dir="0.5 1 0 -1"
 Patiences=(80 200 400 )
 
@@ -17,7 +18,6 @@ generate_timestamp() {
   date +"%d%H%Ms%S"
 }
 timestamp=$(generate_timestamp)
-
 # Iterate over each dataset
 for Didataset in "${Direct_dataset[@]}"; do
       for patience in "${Patiences[@]}"; do
@@ -25,7 +25,7 @@ for Didataset in "${Direct_dataset[@]}"; do
         logfile="outforlayer${layer}.log"
         exec > "$logfile" 2>&1  # Redirect stdout and stderr to log file
    #        for alphadir in $Dir; do
-       for betadir in $Dir; do
+       for betadir in $bDir; do
         for gamadir in $Dir; do
         for net in $net_values; do
             log_output="${Didataset//\//_}_${timestamp}_A${a}_alpha${dir}__${net}_layer${layer}.log"

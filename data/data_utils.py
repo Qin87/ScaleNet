@@ -461,7 +461,7 @@ class DirectedHeterophilousGraphDataset(InMemoryDataset):
         return f"{self.__class__.__name__}(name={self.name})"
 
 def set_device(args):
-    cuda_device = args.GPUdevice
+    cuda_device = args.GPU
     if torch.cuda.is_available():
         print("cuda Device Index:", cuda_device)
         device = torch.device("cuda:%d" % cuda_device)

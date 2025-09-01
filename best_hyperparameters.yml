@@ -128,7 +128,7 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   NotImproved: 810
   epoch: 10000
   patience: 400
-  has_scheduler: 1
+#  has_scheduler: 1
   hid_dim: 128
   conv_type: "dir-gcn"
   inci_norm: "dir"
