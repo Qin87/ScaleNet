@@ -237,7 +237,7 @@ snap-patents/:
   BN_model: 1   # ?
   lr: 0.01
 #  layer: 5  #
-  hid_dim: 32  #
+#  hid_dim: 32  #
   jk: 'max'
   normalize: 1
 
