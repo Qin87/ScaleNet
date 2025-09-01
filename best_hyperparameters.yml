@@ -236,8 +236,8 @@ snap-patents/:
   num_split: 5  # original split
   BN_model: 1   # ?
   lr: 0.01
-  layer: 1  # 5
-  hid_dim: 1  # 32
+#  layer: 5  #
+  hid_dim: 32  #
   jk: 'max'
   normalize: 1
 
