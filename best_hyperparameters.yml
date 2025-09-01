@@ -234,7 +234,7 @@ arxiv-year/:
 
 snap-patents/:
   num_split: 5  # original split
-  BN_model: 1   # ?
+#  BN_model: 0   # ?
   lr: 0.01
 #  layer: 5  #
 #  hid_dim: 32  #
@@ -242,15 +242,19 @@ snap-patents/:
   normalize: 1
 
   has_scheduler: 0
-  patience: 80
+#  patience: 400
   NotImproved: 400  #
   alphaDir: 0.5   #
-#  betaDir: -1     #
-#  gamaDir: 0.5
-  exponent: -0.25  #
+  betaDir: 0.5
+  gamaDir: 0.5
   zero_order: 0
-  weight_penalty: "None"
   add_selfloop: 0
+  num_layers: 3
+  weight_decay: 0.1
+  k_plus: 2
+  exponent: -0.25
+  weight_penalty: exp
+  lrelu_slope: 0
 
 pokec/:
   num_split: 10  # original split
