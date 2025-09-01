@@ -186,12 +186,20 @@ class PokecDataset(InMemoryDataset):
         root: str,
         transform: Optional[Callable] = None,
         pre_transform: Optional[Callable] = None,
+        force_reload: bool = False,
     ):
         super().__init__(root, transform, pre_transform)
-        try:
+        self.force_reload = force_reload
+
+        # If processed file exists and no force_reload → just load it
+        if osp.exists(self.processed_paths[0]) and not self.force_reload:
+            try:
+                self.data = torch.load(self.processed_paths[0])
+            except:
+                self.data = torch.load(self.processed_paths[0], weights_only=False)   # -
+        else:
+            self.process()  # run processing manually
             self.data = torch.load(self.processed_paths[0])
-        except:
-            self.data = torch.load(self.processed_paths[0], weights_only=False)   # -
 
     @property
     def raw_dir(self) -> str:
@@ -206,6 +214,9 @@ class PokecDataset(InMemoryDataset):
         return ["data.pt"]
 
     def download(self):
+        if osp.exists(self.processed_paths[0]) and not self.force_reload:
+            print("Processed file already exists. Skipping downloading.")
+            return
         if not all([osp.exists(f) for f in self.raw_paths]):
             for url in self.urls:
                 path = download_url(url, self.raw_dir)
@@ -213,6 +224,11 @@ class PokecDataset(InMemoryDataset):
                 # extract_zip(path, self.raw_dir)  # _Me
 
     def process(self):
+        if osp.exists(self.processed_paths[0]) and not self.force_reload:
+            print("Processed file already exists. Skipping processing.")
+            return
+        print("Processing dataset...")
+
         dfn = pd.read_csv(self.raw_paths[0], sep = "\t", names = self.node_fields, nrows = None)
         dfe = pd.read_csv(self.raw_paths[1], sep = "\t", names = ["source", "target"], nrows = None)
         dfn = dfn.sort_index()
