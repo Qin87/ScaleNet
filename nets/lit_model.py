@@ -43,7 +43,7 @@ class LightingFullBatchModelWrapper(pl.LightningModule):
 
     def on_train_epoch_end(self):  # for debug
         # Print every 10 epochs (epoch numbers are 0-indexed)
-        if (self.current_epoch + 1) % 10 == 0  and self.current_epoch<100:
+        if (self.current_epoch + 1) % 10 == 0  and self.current_epoch<50:
             # Access last logged val_acc from self.trainer.logger_connector.metrics
             train_acc = self.trainer.logged_metrics.get("train_acc", None)
             train_loss = self.trainer.logged_metrics.get("train_loss", None)
