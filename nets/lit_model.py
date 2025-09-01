@@ -45,9 +45,12 @@ class LightingFullBatchModelWrapper(pl.LightningModule):
         # Print every 10 epochs (epoch numbers are 0-indexed)
         if (self.current_epoch + 1) % 10 == 0:
             # Access last logged val_acc from self.trainer.logger_connector.metrics
+            train_acc = self.trainer.logged_metrics.get("train_acc", None)
+            train_loss = self.trainer.logged_metrics.get("train_loss", None)
             val_acc = self.trainer.logged_metrics.get("val_acc", None)
+            val_loss = self.trainer.logged_metrics.get("val_loss", None)
             if val_acc is not None:
-                print(f"Epoch {self.current_epoch + 1}: val_acc = {val_acc:.4f}")
+                print(f"Epoch {self.current_epoch + 1}: train_acc = {train_acc:.4f}, train_loss = {train_loss:.4f}, val_acc = {val_acc:.4f}, val_loss = {val_loss:.4f}. ")
             else:
                 print(f"Epoch {self.current_epoch + 1}: val_acc not logged yet.")
 

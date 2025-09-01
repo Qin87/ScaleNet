@@ -253,7 +253,8 @@ snap-patents/:
   add_selfloop: 0
 
 pokec/:
-  num_split: 1  # original split  # TODO
+  num_split: 10  # original split
+  net: link
   epoch: 10000
 
 film/:

@@ -193,13 +193,29 @@ class PokecDataset(InMemoryDataset):
 
         # If processed file exists and no force_reload → just load it
         if osp.exists(self.processed_paths[0]) and not self.force_reload:
+            print("Processed file already exists. Loading data...")
             try:
                 self.data = torch.load(self.processed_paths[0])
             except:
                 self.data = torch.load(self.processed_paths[0], weights_only=False)   # -
+
+            self._cleanup_raw_folder()
         else:
             self.process()  # run processing manually
             self.data = torch.load(self.processed_paths[0])
+
+            self._cleanup_raw_folder()
+
+    def _cleanup_raw_folder(self):
+        """Remove the raw folder and its contents to save disk space."""
+        import shutil
+        if osp.exists(self.raw_dir):
+            print(f"Cleaning up raw folder: {self.raw_dir}")
+            try:
+                shutil.rmtree(self.raw_dir)
+                print("Raw folder deleted successfully.")
+            except Exception as e:
+                print(f"Warning: Could not delete raw folder: {e}")
 
     @property
     def raw_dir(self) -> str:
@@ -328,4 +344,6 @@ class PokecDataset(InMemoryDataset):
         if self.pre_transform is not None:
             data = self.pre_transform(data)
 
+
         torch.save(data, self.processed_paths[0])
+        print("Dataset processing completed successfully.")
