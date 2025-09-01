@@ -14,3 +14,4 @@
 *.iml
 /data/film
 .idea/*   # JetBrains IDE settings
+lightning_logs/*
