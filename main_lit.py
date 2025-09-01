@@ -104,7 +104,6 @@ def main():
                 callbacks=[
                     early_stopping_callback,  # comment out will be much slower!
                     # model_summary_callback,
-                    # model_checkpoint_callback,
                 ],
                 profiler="simple" if args.profiler else None,
                 accelerator="gpu" if torch.cuda.is_available() else "cpu",
