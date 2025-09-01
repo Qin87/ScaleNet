@@ -249,7 +249,6 @@ snap-patents/:
   gamaDir: 0.5
   zero_order: 0
   add_selfloop: 0
-  num_layers: 3
   weight_decay: 0.1
   k_plus: 2
   exponent: -0.25
