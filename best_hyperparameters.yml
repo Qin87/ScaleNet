@@ -125,10 +125,10 @@ dgl/pubmed:
 # (1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5)
 WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5)
   l2: 0  # 5e-4 is a bit worse
-  NotImproved: 810
-  epoch: 10000
-  patience: 400
-#  has_scheduler: 1
+#  NotImproved: 810
+#  epoch: 10000
+#  patience: 400
+  has_scheduler: 1
   hid_dim: 128
   conv_type: "dir-gcn"
   inci_norm: "dir"
@@ -234,10 +234,10 @@ arxiv-year/:
 
 snap-patents/:
   num_split: 5  # original split
-  BN_model: 1 # ?
+  BN_model: 1   # ?
   lr: 0.01
-  layer: 5
-  hid_dim: 32
+  layer: 1  # 5
+  hid_dim: 1  # 32
   jk: 'max'
   normalize: 1
 

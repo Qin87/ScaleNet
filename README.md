@@ -106,7 +106,8 @@ To run the Wilcoxon test on each dataset, execute the corresponding script. For 
   ```
   python3 ./wilcoxon/wilcoxon_cham.py  &
   ```
-
+- **(6) For Pytorch Lightning **
+Run main_lit.py instead of main.py
 
 
 ## License

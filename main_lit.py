@@ -1,10 +1,9 @@
 import gc
-import os
 import socket
-import time
 import uuid
+
+import numpy as np
 import torch
-import torch.nn.functional as F
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import EarlyStopping, ModelSummary, ModelCheckpoint
 from torch.utils.data import DataLoader, TensorDataset
@@ -13,15 +12,8 @@ from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
 from args import parse_args
 from data.data_utils import  set_device, seed_everything
 from data_model import CreatModel, get_name, load_dataset, log_file, name_file
-from nets.DiG_NoConv import union_edges
-from nets.lit_model import FullBatchGraphDataset, Lit, LightingFullBatchModelWrapper
-from nets.src2 import laplacian
-from nets.src2.quaternion_laplacian import process_quaternion_laplacian
+from nets.lit_model import FullBatchGraphDataset, LightingFullBatchModelWrapper
 from utils.utils import CrossEntropy, use_best_hyperparams
-from sklearn.metrics import balanced_accuracy_score, f1_score
-from collections import Counter
-import statistics
-from torch import nn, optim
 import sys, os
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0' # supress: oneDNN custom operations are on
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # 3 supress warning:Unable to register cuFFT factory...
@@ -51,6 +43,7 @@ def main():
         if  name in ["ogbn-arxiv", "arxiv-year"] :
             evaluator = Evaluator(name="ogbn-arxiv")
 
+    start_time = time.time()
     with open(log_directory + log_file_name_with_timestamp, 'w') as logfile:
         print(args, file=logfile)
         print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=logfile)
@@ -119,11 +112,6 @@ def main():
             )
             print(lit_model)
 
-
-            # Trainer
-            # trainer.fit(lit_model, loader, loader)
-            # trainer.fit(lit_model, train_dataloaders=loader, val_dataloaders=loader)
-            # trainer.test(lit_model, dataloaders=loader)
             trainer.fit(lit_model, train_dataloaders=loader)
 
             # # Compute validation and test accuracy
@@ -141,6 +129,11 @@ def main():
             del model_checkpoint_callback
             torch.cuda.empty_cache()
             gc.collect()
+
+            print('Used time: ', time.time() - start_time)
+
+        print(f"Test Acc: {np.mean(test_accs) * 100:.2f}±{np.std(test_accs) * 100:.2f}")
+        print(f"Test Acc: {np.mean(test_accs) * 100:.2f}±{np.std(test_accs) * 100:.2f}", file=sys.__stdout__)
 
 
 if __name__ == "__main__":

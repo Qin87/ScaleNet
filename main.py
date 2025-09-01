@@ -13,7 +13,6 @@ import signal
 import statistics
 import sys
 import time
-import torch
 import torch.nn.functional as F
 
 from args import parse_args
