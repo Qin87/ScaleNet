@@ -47,7 +47,7 @@ def main():
     with open(log_directory + log_file_name_with_timestamp, 'w') as logfile:
         print(args, file=logfile)
         print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=logfile)
-        # sys.stdout = logfile
+        sys.stdout = logfile
 
         graph_data = (data_x, edges, data_y)
         dataset = FullBatchGraphDataset(graph_data)
@@ -110,7 +110,8 @@ def main():
                 accelerator="gpu" if torch.cuda.is_available() else "cpu",
                 devices=[args.GPU] if torch.cuda.is_available() else None,
             )
-            print(lit_model)
+            if split==0:
+                print(lit_model)
 
             trainer.fit(lit_model, train_dataloaders=loader)
 
