@@ -46,6 +46,7 @@ def main():
     start_time = time.time()
     with open(log_directory + log_file_name_with_timestamp, 'w') as logfile:
         print(args, file=logfile)
+        print(f"Script: {__file__}", file=logfile)
         print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=logfile)
         sys.stdout = logfile
 

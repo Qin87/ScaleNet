@@ -384,6 +384,7 @@ args.num_features, args.num_classes, args.edge_index, args.num_nodes = data_x.sh
 try:
     with open(log_directory + log_file_name_with_timestamp, 'a') as log_file:
         print('Using Device: ', device, file=log_file)
+        print(f"Script: {__file__}", file=logfile)
         print_memory("Start")
         for split in range(num_run):
             print_memory("Before model load")
