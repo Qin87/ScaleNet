@@ -240,28 +240,29 @@ fb100/penn94:
 
 
 snap-patents/:
-#  net: LargeScaleNet
-  alphaDir: 0.5   #
-#  betaDir: 0.5
-#  gamaDir: 0.5
+  net: LargeScaleNet
+  alphaDir: 0.5   # sure
+  betaDir: -1    # sure
+  gamaDir: 0.5   # sure
   num_split: 5  # original split
 #  BN_model: 0   # ?
-#  lr: 0.01
-#  layer: 5  #
-#  hid_dim: 32  #
-  jk: 'max'
-  normalize: 1
+  lr: 0.01   # sure
+  layer: 5  # sure
+  hid_dim: 32  # sure
+  jk: 'max'   # sure
+  normalize: 1   # sure
+  dropout: 0.0  # sure
 
   has_scheduler: 0
 #  patience: 400
-#  NotImproved: 400  #
+  NotImproved: 400  # sure
 
-  zero_order: 0
-  add_selfloop: 0
-  weight_decay: 0.1
-  k_plus: 2
-  exponent: -0.25
-  weight_penalty: exp
+  zero_order: 0       # sure
+  add_selfloop: 0    # sure
+  weight_decay: 0.1   # sure
+  k_plus: 2       # sure
+  exponent: -0.25     # sure
+  weight_penalty: 'None'   # sure
   lrelu_slope: 0
 
 pokec/:

@@ -30,7 +30,7 @@ def parse_args():
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym' 
                     'mlp, link, linkxcat, linkxadd, linkx, linkxgit, Dir-GNN, '
                     'ScaleNet, LargeScaleNet')
-    parser.add_argument('--seed', type=int, default=1, help='random seed')
+    parser.add_argument('--seed', type=int, default=0, help='random seed')
     parser.add_argument('--Dataset', type=str, default='directed-roman-empire/', help=
     'telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
