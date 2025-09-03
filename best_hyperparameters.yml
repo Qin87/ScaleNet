@@ -221,7 +221,7 @@ ogbn-arxiv/:
   num_split: 1
   nonlinear: 1
 #  conv_type: dir-sage
-  layer: 4    # 69.68(4layer)
+#  layer: 4    # 69.68(4layer)
 
   lr: 0.1
 #  add_selfloop: 1
