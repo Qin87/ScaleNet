@@ -223,7 +223,7 @@ ogbn-arxiv/:
 #  conv_type: dir-sage
 #  layer: 4    # 69.68(4layer)
 
-  lr: 0.1
+  lr: 0.01
 #  add_selfloop: 1
 #  BN_model: 1
 #  alphaDir: 0.5
