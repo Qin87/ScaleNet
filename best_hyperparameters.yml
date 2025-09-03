@@ -249,7 +249,7 @@ snap-patents/:
 #  BN_model: 0   # ?
   lr: 0.01   # sure
   layer: 5  # sure
-  hid_dim: 32  # sure
+#  hid_dim: 32  # sure
   jk: 'max'   # sure
   normalize: 1   # sure
   dropout: 0.0  # sure
