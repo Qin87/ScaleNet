@@ -1,5 +1,6 @@
 # 97.2±2.1,  96.8±2.1(0.5,-1,-1)
 telegram/:
+  num_split: 10
   hid_dim: 64
   l2: 0   # 97.0(0), 95.6(5e-4)
   inci_norm: 0  # {94.2±4.4(dir) 95.6±3.0(0)}  {93.2(dir), 97.0(0)}
@@ -194,7 +195,7 @@ directed-roman-empire/:
   exponent: -0.25  # 92.9 for -0.5
 
 
-# 64.78±0.66(0.5_0.0_0.5, lay5), 64.7±0.4(0.5_0.0_0.0+'None'), (0.5_-1.0_1.0+'exp':64.7±0.5)
+# 65.82±0.36(0.5_0.0_0.0,lit, lay6)   64.78±0.66(0.5_0.0_0.5, lay5), 64.7±0.4(0.5_0.0_0.0+'None'), (0.5_-1.0_1.0+'exp':64.7±0.5)
 arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
   net: LargeScaleNet
   num_split: 5
@@ -203,17 +204,17 @@ arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
   add_selfloop: 1
   zero_order: 0
   has_scheduler: 0
-#  NotImproved: 400  # 80
+  NotImproved: 400  # 80
 
-#  hid_dim: 128  # 64:62, 16:61
-#  layer: 7  # 6:64.4 5:64.6  8:64.1
-#  lr: 0.005
+  hid_dim: 128  # 64:62, 16:61
+  layer: 6  # 6:64.4 5:64.6  8:64.1
+  lr: 0.001
 
   alphaDir: 0.5
-#  betaDir: 0  # 0.5:64.1  -1:64.4
-#  gamaDir: 0  # 0.5:64.2  1:64.5
+  betaDir: 0  # 0.5:64.1  -1:64.4
+  gamaDir: 0  # 0.5:64.2  1:64.5
   exponent: -0.5  # 0.25:30
-#  weight_penalty: 'None'  # exp:64.7
+  weight_penalty: 'None'  # exp:64.7
 
 ogbn-arxiv/:
   num_split: 1

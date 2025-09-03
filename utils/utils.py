@@ -169,3 +169,11 @@ def directed_norm(adj, exponent):
     adj = mul(adj, in_deg_inv_sqrt.view(1, -1))
 
     return adj
+
+def print_memory(tag=""):
+    if torch.cuda.is_available():
+        allocated = torch.cuda.memory_allocated() / 1024**2
+        reserved = torch.cuda.memory_reserved() / 1024**2
+        print(f"[{tag}] Allocated: {allocated:.2f} MB | Reserved: {reserved:.2f} MB")
+    else:
+        print(f"[{tag}] CUDA not available, skipping memory check")

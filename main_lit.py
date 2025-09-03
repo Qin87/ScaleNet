@@ -32,8 +32,8 @@ def main():
     n_cls = data_y.max().item() + 1
     args.num_features, args.num_classes, args.edge_index, args.num_nodes = data_x.shape[1], n_cls, edges, data_x.shape[0]
 
-    load_time = time.time()
     log_directory, log_file_name_with_timestamp = name_file(args, IsDirectedGraph)
+    log_file_name_with_timestamp = 'lit_' + log_file_name_with_timestamp
     if not os.path.exists(log_directory):
         os.makedirs(log_directory)
 
@@ -136,6 +136,15 @@ def main():
 
         print(f"Test Acc: {np.mean(test_accs) * 100:.2f}±{np.std(test_accs) * 100:.2f}")
         print(f"Test Acc: {np.mean(test_accs) * 100:.2f}±{np.std(test_accs) * 100:.2f}", file=sys.__stdout__)
+        result_str = f"{np.mean(test_accs) * 100:.2f}±{np.std(test_accs) * 100:.2f}"
+
+    # Rename log file
+    old_path = os.path.join(log_directory, log_file_name_with_timestamp)
+    new_file_name = f"{result_str}_{log_file_name_with_timestamp}"
+    new_path = os.path.join(log_directory, new_file_name)
+
+    os.rename(old_path, new_path)
+    print(f"Log file renamed to: {new_path}", file=sys.__stdout__)
 
 
 if __name__ == "__main__":

@@ -1,10 +1,10 @@
 #!/bin/bash
 
 net_values="LargeScaleNet"
-layer_values="7 8"
-bDir="256"
+layer_values="8"
+bDir="64"
 Dir="0.01 0.05 0.1 "
-Patiences=(400 )
+Patiences=(200 400 )
 
 while pgrep -x python3 > /dev/null; do
   echo "Waiting for all python3 processes to finish..."
