@@ -242,7 +242,7 @@ fb100/penn94:
 snap-patents/:
   net: LargeScaleNet
   alphaDir: 0.5   # sure
-  betaDir: -1    # sure
+#  betaDir: -1    # 0.5
   gamaDir: 0.5   # sure
   num_split: 5  # original split
 #  BN_model: 0   # ?
@@ -262,7 +262,7 @@ snap-patents/:
   weight_decay: 0.1   # sure
   k_plus: 2       # sure
   exponent: -0.25     # sure
-  weight_penalty: 'None'   # sure
+#  weight_penalty: 'None'   # exp
   lrelu_slope: 0
 
 pokec/:
