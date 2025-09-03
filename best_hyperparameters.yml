@@ -220,16 +220,16 @@ arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
 ogbn-arxiv/:
   num_split: 1
   nonlinear: 1
-  conv_type: dir-sage
+#  conv_type: dir-sage
   layer: 4    # 69.68(4layer)
 
   lr: 0.1
-  add_selfloop: 1
-  BN_model: 1
-  alphaDir: 0.5
-  betaDir: 0.5    # OOM
-  gamaDir: -1     # OOM
-  zero_order: 1
+#  add_selfloop: 1
+#  BN_model: 1
+#  alphaDir: 0.5
+#  betaDir: 0.5    # OOM
+#  gamaDir: -1     # OOM
+#  zero_order: 1
 
 
 
