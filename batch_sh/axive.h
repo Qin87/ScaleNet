@@ -6,7 +6,6 @@ bDir="1 2 3 4"
 Dir="0  0.5 1 -1"
 Patiences=(80  200  400)
 Normalize_vals=(0  1)   # 1
-zero= (0  1)
 
 while pgrep -x python3 > /dev/null; do
   echo "Waiting for all python3 processes to finish..."
@@ -48,6 +47,9 @@ python3 main_lit.py  --seed=111 --alphaDir="$alphadir"  --betaDir="$betadir"   -
        done
        done
        done
+       done
+       done
+done
        done
        done
 done
