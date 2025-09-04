@@ -29,6 +29,8 @@ def main():
     device = set_device(args)
 
     data_x, data_y, edges, edges_weight, num_features, data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph, edge_attr, data_batch = load_dataset(args)
+    if args.all1:
+        data_x = torch.ones_like(data_x)
     n_cls = data_y.max().item() + 1
     args.num_features, args.num_classes, args.edge_index, args.num_nodes = data_x.shape[1], n_cls, edges, data_x.shape[0]
 

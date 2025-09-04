@@ -1843,7 +1843,6 @@ class GCN_JKNet(torch.nn.Module):
     def __init__(self, nfeat, nclass, args):
         super().__init__()
         output_dim = args.hid_dim if args.jk else nclass
-        # DirGCNConv_2 = DirGCNConv_3
         if args.layer == 1:
             self.convs = ModuleList([DirGCNConv_2(nfeat, output_dim, args)])
         else:

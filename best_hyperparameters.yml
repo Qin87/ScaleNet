@@ -221,12 +221,12 @@ arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
 
 # 71.43(0.5_1_0.5, 6lay)  71.2(0.5,0,1, 4lay)
 ogbn-arxiv/:
+  net: LargeScaleNet
   num_split: 1
-  nonlinear: 1
 #  conv_type: dir-sage
-  layer: 6    # 69.68(4layer)
+  layer: 3    # 69.68(4layer)
 
-#  lr: 0.01
+#  lr: 0.005
   has_scheduler: 0
   NotImproved: 400  # 80
   alphaDir: 0.5
@@ -255,7 +255,7 @@ snap-patents/:
 #  BN_model: 0   # ?
   lr: 0.01   # sure
   layer: 5  # sure
-#  hid_dim: 32  # sure
+#  hid_dim: 32  # sure  try 64?
   jk: 'max'   # sure
   normalize: 1   # sure
   dropout: 0.0  # sure
