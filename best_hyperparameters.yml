@@ -1,13 +1,14 @@
 # 97.2±2.1,  96.8±2.1(0.5,-1,-1)
 telegram/:
+  monitor: val_loss  # val_acc is bad when few epoch,
   num_split: 10
   hid_dim: 64
   l2: 0   # 97.0(0), 95.6(5e-4)
   inci_norm: 0  # {94.2±4.4(dir) 95.6±3.0(0)}  {93.2(dir), 97.0(0)}
   has_scheduler: 1
+  patience: 80
   NotImproved: 410
   epoch: 1500
-  patience: 80
   net: ScaleNet         # 1iGi3,
   conv_type: "dir-gcn"
   nonlinear: 1
@@ -217,19 +218,24 @@ arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
   exponent: -0.5  # 0.25:30
   weight_penalty: 'None'  # exp:64.7
 
+
+# 71.43(0.5_1_0.5, 6lay)  71.2(0.5,0,1, 4lay)
 ogbn-arxiv/:
   num_split: 1
   nonlinear: 1
 #  conv_type: dir-sage
-#  layer: 4    # 69.68(4layer)
+  layer: 6    # 69.68(4layer)
 
-  lr: 0.01
-#  add_selfloop: 1
-#  BN_model: 1
-#  alphaDir: 0.5
-#  betaDir: 0.5    # OOM
-#  gamaDir: -1     # OOM
-#  zero_order: 1
+#  lr: 0.01
+  has_scheduler: 0
+  NotImproved: 400  # 80
+  alphaDir: 0.5
+  betaDir: 1
+  gamaDir: 0.5
+
+  add_selfloop: 1
+  BN_model: 1
+  zero_order: 1
 
 
 

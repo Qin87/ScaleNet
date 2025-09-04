@@ -525,8 +525,8 @@ try:
                 train_acc, val_acc, tmp_test_acc = accs
                 train_f1, val_f1, tmp_test_f1 = f1s
 
-                monitor_metric = val_acc if args.monitor == 'acc' else -val_loss  # Use -val_loss to handle minimization
-                best_metric = best_val_acc if args.monitor == 'acc' else -best_val_loss
+                monitor_metric = val_acc if args.monitor == 'val_acc' else -val_loss  # Use -val_loss to handle minimization
+                best_metric = best_val_acc if args.monitor == 'val_acc' else -best_val_loss
 
                 if monitor_metric > best_metric:
                 # if val_acc > best_val_acc:
