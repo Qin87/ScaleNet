@@ -1,4 +1,9 @@
+################################
+# Multi-scale Learning for big-sized graph
+################################
+
 import gc
+import shutil
 import socket
 import uuid
 
@@ -6,14 +11,14 @@ import numpy as np
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import EarlyStopping, ModelSummary, ModelCheckpoint
-from torch.utils.data import DataLoader, TensorDataset
-from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
+from torch.utils.data import DataLoader
+from ogb.nodeproppred import Evaluator
 
 from args import parse_args
 from data.data_utils import  set_device, seed_everything
-from data_model import CreatModel, get_name, load_dataset, log_file, name_file
+from utils.data_model import CreatModel, load_dataset, name_file, free_space
 from nets.lit_model import FullBatchGraphDataset, LightingFullBatchModelWrapper
-from utils.utils import CrossEntropy, use_best_hyperparams
+from utils.utils import use_best_hyperparams
 import sys, os
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0' # supress: oneDNN custom operations are on
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # 3 supress warning:Unable to register cuFFT factory...
@@ -147,6 +152,8 @@ def main():
 
     os.rename(old_path, new_path)
     print(f"Log file renamed to: {new_path}", file=sys.__stdout__)
+    free_space()
+
 
 
 if __name__ == "__main__":
@@ -154,3 +161,4 @@ if __name__ == "__main__":
     args = use_best_hyperparams(args, args.Dataset) if args.use_best_hyperparams else args
     print(args)
     main()
+

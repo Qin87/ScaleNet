@@ -5,9 +5,9 @@ telegram/:
   hid_dim: 64
   l2: 0   # 97.0(0), 95.6(5e-4)
   inci_norm: 0  # {94.2±4.4(dir) 95.6±3.0(0)}  {93.2(dir), 97.0(0)}
-  has_scheduler: 1
-  patience: 80
-  NotImproved: 410
+#  has_scheduler: 1
+#  patience: 80
+#  NotImproved: 410
   epoch: 1500
   net: ScaleNet         # 1iGi3,
   conv_type: "dir-gcn"
@@ -252,7 +252,7 @@ snap-patents/:
 #  betaDir: -1    # 0.5
   gamaDir: 0.5   # sure
   num_split: 5  # original split
-#  BN_model: 0   # ?
+  BN_model: 1   # 1:74.6, 0:74.2
   lr: 0.01   # sure
   layer: 5  # sure
 #  hid_dim: 32  # sure  try 64?

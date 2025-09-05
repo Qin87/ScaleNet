@@ -1,6 +1,8 @@
 import os
+import sys
 from datetime import datetime
-
+import shutil
+import psutil
 import numpy as np
 import torch
 from networkx.readwrite import json_graph
@@ -317,26 +319,26 @@ def get_dataset(name, path, split_type='public'):
     elif name == 'Coauthor-physics':
 
         return Coauthor(root=path, name='physics', transform=T.NormalizeFeatures())
-    elif name == 'ppi':     # TODO
-        path = './data/ppi_data'
-        G = json_graph.node_link_graph(json.load(open(path + "/toy-ppi-G.json")))
-        labels = json.load(open(path + "/toy-ppi-class_map.json"))
-        labels = {int(i): l for i, l in labels.iteritems()}
-
-        train_ids = [n for n in G.nodes() if not G.node[n]['val'] and not G.node[n]['test']]
-        test_ids = [n for n in G.nodes() if G.node[n][setting]]
-        train_labels = np.array([labels[i] for i in train_ids])
-        if train_labels.ndim == 1:
-            train_labels = np.expand_dims(train_labels, 1)
-        test_labels = np.array([labels[i] for i in test_ids])
-
-        embeds = np.load(data_dir + "/val.npy")
-        id_map = {}
-        with open(data_dir + "/val.txt") as fp:
-            for i, line in enumerate(fp):
-                id_map[int(line.strip())] = i
-        train_embeds = embeds[[id_map[id] for id in train_ids]]
-        test_embeds = embeds[[id_map[id] for id in test_ids]]
+    # elif name == 'ppi':     #
+    #     path = '../data/ppi_data'
+    #     G = json_graph.node_link_graph(json.load(open(path + "/toy-ppi-G.json")))
+    #     labels = json.load(open(path + "/toy-ppi-class_map.json"))
+    #     labels = {int(i): l for i, l in labels.iteritems()}
+    #
+    #     train_ids = [n for n in G.nodes() if not G.node[n]['val'] and not G.node[n]['test']]
+    #     test_ids = [n for n in G.nodes() if G.node[n][setting]]
+    #     train_labels = np.array([labels[i] for i in train_ids])
+    #     if train_labels.ndim == 1:
+    #         train_labels = np.expand_dims(train_labels, 1)
+    #     test_labels = np.array([labels[i] for i in test_ids])
+    #
+    #     embeds = np.load(data_dir + "/val.npy")
+    #     id_map = {}
+    #     with open(data_dir + "/val.txt") as fp:
+    #         for i, line in enumerate(fp):
+    #             id_map[int(line.strip())] = i
+    #     train_embeds = embeds[[id_map[id] for id in train_ids]]
+    #     test_embeds = embeds[[id_map[id] for id in test_ids]]
     else:
         raise NotImplementedError("Not Implemented Dataset!")
 
@@ -797,3 +799,38 @@ def print_x(x):
     print(f"Number of ones: {one_count}")
 
     return x
+
+def clear_directory(path):
+    if os.path.exists(path):
+        for filename in os.listdir(path):
+            file_path = os.path.join(path, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print(f"Failed to delete {file_path}: {e}",  file=sys.__stdout__)
+    else:
+        print("Path:", path, "not existed!", file=sys.__stdout__)
+
+def free_space():
+    current_pid = os.getpid()
+    python_procs = [
+        p.info for p in psutil.process_iter(attrs=["pid", "name"])
+        if "python" in p.info["name"].lower() and p.info["pid"] != current_pid
+    ]
+
+    if not python_procs:
+        print("No other Python processes detected. Clearing logs...", file=sys.__stdout__)
+
+        cwd = os.getcwd()
+        print(f"Current working directory: {cwd}", file=sys.__stdout__)
+
+        checkpoint_path = os.path.join(cwd,  "checkpoint")
+        logs_path = os.path.join(cwd,  "lightning_logs")
+
+        clear_directory(checkpoint_path)
+        clear_directory(logs_path)
+    else:
+        print("Other Python processes are still running. Skipping cleanup.")
