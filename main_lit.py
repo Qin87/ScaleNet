@@ -1,9 +1,8 @@
 ################################
-# Multi-scale Learning for big-sized graph
+# PyTorch Lightning Version: Multi-scale Learning for big-sized graph
 ################################
 
 import gc
-import shutil
 import socket
 import uuid
 
@@ -14,9 +13,9 @@ from pytorch_lightning.callbacks import EarlyStopping, ModelSummary, ModelCheckp
 from torch.utils.data import DataLoader
 from ogb.nodeproppred import Evaluator
 
-from args import parse_args
+from utils.args import parse_args
 from data.data_utils import  set_device, seed_everything
-from utils.data_model import CreatModel, load_dataset, name_file, free_space
+from utils.data_model import CreatModel, load_dataset, name_file, free_space, rename_log
 from nets.lit_model import FullBatchGraphDataset, LightingFullBatchModelWrapper
 from utils.utils import use_best_hyperparams
 import sys, os
@@ -146,12 +145,8 @@ def main():
         result_str = f"{np.mean(test_accs) * 100:.2f}±{np.std(test_accs) * 100:.2f}"
 
     # Rename log file
-    old_path = os.path.join(log_directory, log_file_name_with_timestamp)
-    new_file_name = f"{result_str}_{log_file_name_with_timestamp}"
-    new_path = os.path.join(log_directory, new_file_name)
+    rename_log(log_directory, log_file_name_with_timestamp, result_str)
 
-    os.rename(old_path, new_path)
-    print(f"Log file renamed to: {new_path}", file=sys.__stdout__)
     free_space()
 
 

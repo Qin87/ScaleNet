@@ -834,3 +834,11 @@ def free_space():
         clear_directory(logs_path)
     else:
         print("Other Python processes are still running. Skipping cleanup.")
+
+def rename_log(log_directory, log_file_name_with_timestamp, result_str):
+    old_path = os.path.join(log_directory, log_file_name_with_timestamp)
+    new_file_name = f"{result_str}_{log_file_name_with_timestamp}"
+    new_path = os.path.join(log_directory, new_file_name)
+
+    os.rename(old_path, new_path)
+    print(f"Log file renamed to: {new_path}", file=sys.__stdout__)
