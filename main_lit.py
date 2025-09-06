@@ -5,7 +5,8 @@
 import gc
 import socket
 import uuid
-
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 import torch
 import pytorch_lightning as pl
@@ -18,7 +19,7 @@ from data.data_utils import  set_device, seed_everything
 from utils.data_model import CreatModel, load_dataset, name_file, free_space, rename_log
 from nets.lit_model import FullBatchGraphDataset, LightingFullBatchModelWrapper
 from utils.utils import use_best_hyperparams
-import sys, os
+
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0' # supress: oneDNN custom operations are on
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # 3 supress warning:Unable to register cuFFT factory...
 import warnings   # ScaleNet2
@@ -26,7 +27,7 @@ warnings.filterwarnings("ignore")
 import logging
 logging.getLogger("pytorch_lightning").setLevel(logging.WARNING)   #
 import time
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 
 def main():
     seed_everything(args.seed)
