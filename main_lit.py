@@ -2,11 +2,12 @@
 # PyTorch Lightning Version: Multi-scale Learning for big-sized graph
 ################################
 
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 import gc
 import socket
 import uuid
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 import torch
 import pytorch_lightning as pl
