@@ -13,7 +13,7 @@ from pytorch_lightning.callbacks import EarlyStopping, ModelSummary, ModelCheckp
 from torch.utils.data import DataLoader
 from ogb.nodeproppred import Evaluator
 
-from utils.args import parse_args
+from args import parse_args
 from data.data_utils import  set_device, seed_everything
 from utils.data_model import CreatModel, load_dataset, name_file, free_space, rename_log
 from nets.lit_model import FullBatchGraphDataset, LightingFullBatchModelWrapper
