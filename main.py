@@ -25,13 +25,13 @@ from nets.src2.quaternion_laplacian import process_quaternion_laplacian
 from data.preprocess import  F_in_out, F_in_out0
 from utils.utils import CrossEntropy, use_best_hyperparams, print_memory
 from sklearn.metrics import balanced_accuracy_score, f1_score
-from sagemaker.pytorch import PyTorchModelParallel
 
 import warnings
 warnings.filterwarnings("ignore")
 
 import torch
-
+from torch.distributed.tensor.parallel import RowwiseParallel, ColwiseParallel, parallelize_module
+from torch.distributed.device_mesh import init_device_mesh
 
 def signal_handler(sig, frame):
     global end_time
@@ -382,11 +382,22 @@ try:
         print_memory("Start")
         for split in range(num_run):
             print_memory("Before model load")
-            # model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device)
+            model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device)
 
-            model = PyTorchModelParallel(
-                model_fn=CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device),
-                num_gpus=4,)
+            mesh = init_device_mesh("cuda", (1, 4))
+            tp_plan = {}
+
+            # Add tensor parallelism for each conv layer
+            for i in range(len(model.convs)):
+                tp_plan[f"convs.{i}"] = RowwiseParallel(mp_mesh_dim="tp")  # or ColumnwiseParallel
+
+            # If JumpingKnowledge + Linear classifier exist, parallelize the linear too
+            if hasattr(model, "lin"):
+                tp_plan["lin"] = ColwiseParallel(mp_mesh_dim="tp")
+
+            model = parallelize_module(model, mesh, tp_plan=tp_plan)
+
+
             print_memory("After model load")
             if split==0:
                 print(model, file=logfile)
