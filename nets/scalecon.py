@@ -98,6 +98,8 @@ class ScaleConv(torch.nn.Module):
     def forward(self, x, edge_index):
         if self.adj_norm is None:
             row, col = edge_index
+            print(f"Type of x: {type(x)}")
+            print(f"Content of x: {x}")
             num_nodes = x.shape[0]
 
             adj = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
