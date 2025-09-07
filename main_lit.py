@@ -60,14 +60,14 @@ def main():
         print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=logfile)
         sys.stdout = logfile
 
-        if not args.multiple_GPU:
-            graph_data = (data_x, edges, data_y)
-            dataset = FullBatchGraphDataset(graph_data)
-            loader = DataLoader(dataset, batch_size=1, collate_fn=lambda batch: batch[0])
-        else:
-            data = Data(x=data_x, edge_index=edges, y=data_y)
-            cluster_data = ClusterData(data, num_parts=4, recursive=False)  # 4 partitions for 4 GPUs
-            loader = ClusterLoader(cluster_data, batch_size=1, shuffle=True)
+        # if not args.multiple_GPU:
+        #     graph_data = (data_x, edges, data_y)
+        #     dataset = FullBatchGraphDataset(graph_data)
+        #     loader = DataLoader(dataset, batch_size=1, collate_fn=lambda batch: batch[0])
+        # else:
+        data = Data(x=data_x, edge_index=edges, y=data_y)
+        cluster_data = ClusterData(data, num_parts=4, recursive=False)  # 4 partitions for 4 GPUs
+        loader = ClusterLoader(cluster_data, batch_size=1, shuffle=True)
 
         val_accs, test_accs = [], []
         for split in range(args.num_split):
