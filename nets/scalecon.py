@@ -98,7 +98,7 @@ class ScaleConv(torch.nn.Module):
     def forward(self, x, edge_index):
         if self.adj_norm is None:
             row, col = edge_index
-            print(f"Type of x: {type(x)}")
+            print(f"Qin:m Type of x: {type(x)}")
             print(f"Content of x: {x}")
             num_nodes = x.shape[0]
 
