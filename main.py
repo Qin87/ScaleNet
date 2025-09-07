@@ -386,7 +386,7 @@ try:
 
             model = PyTorchModelParallel(
                 model_fn=CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device),
-                num_gpus=8,)
+                num_gpus=4,)
             print_memory("After model load")
             if split==0:
                 print(model, file=logfile)
