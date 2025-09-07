@@ -133,6 +133,8 @@ def main():
                 print(lit_model)
 
             # trainer.fit(lit_model, train_dataloaders=loader)
+            for batch in loader:
+                print(type(batch), len(batch))   # debug
             trainer.fit(lit_model, train_dataloaders=(batch for batch in loader))
 
             val_acc = model_checkpoint_callback.best_model_score.item()
