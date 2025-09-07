@@ -122,6 +122,7 @@ def main():
 
                 devices="auto",  # use all available GPUs
                 strategy="ddp",
+                precision=16,   # Use half precision - cuts memory in half!
             )
             if split==0:
                 print(lit_model)
