@@ -118,10 +118,8 @@ def main():
                 ],
                 profiler="simple" if args.profiler else None,
                 accelerator="gpu" if torch.cuda.is_available() else "cpu",
-                # devices=[args.GPU] if torch.cuda.is_available() else None,
-
-                devices="auto",  # use all available GPUs
-                strategy="ddp",
+                devices=[args.GPU] if torch.cuda.is_available() else None,
+                strategy="ddp2",
                 precision=16,   # Use half precision - cuts memory in half!
             )
             if split==0:

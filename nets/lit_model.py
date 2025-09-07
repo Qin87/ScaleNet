@@ -24,6 +24,9 @@ class LightingFullBatchModelWrapper(pl.LightningModule):
         self.train_mask, self.val_mask, self.test_mask = train_mask, val_mask, test_mask
 
     def training_step(self, batch, batch_idx):
+        if batch_idx % 5 == 0:
+            torch.cuda.empty_cache()  # Clear cache regularly
+
         x, y, edge_index = batch.x, batch.y.long(), batch.edge_index
         out = self.model(x, edge_index)
 
@@ -62,9 +65,6 @@ class LightingFullBatchModelWrapper(pl.LightningModule):
         return acc
 
     def test_step(self, batch, batch_idx):
-        if batch_idx % 5 == 0:
-            torch.cuda.empty_cache()  # Clear cache regularly
-
         x, y, edge_index = batch.x, batch.y.long(), batch.edge_index
         out = self.model(x, edge_index)
 

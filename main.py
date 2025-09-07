@@ -25,6 +25,7 @@ from nets.src2.quaternion_laplacian import process_quaternion_laplacian
 from data.preprocess import  F_in_out, F_in_out0
 from utils.utils import CrossEntropy, use_best_hyperparams, print_memory
 from sklearn.metrics import balanced_accuracy_score, f1_score
+from sagemaker.pytorch import PyTorchModelParallel
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -381,7 +382,11 @@ try:
         print_memory("Start")
         for split in range(num_run):
             print_memory("Before model load")
-            model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device)
+            # model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device)
+
+            model = PyTorchModelParallel(
+                model_fn=CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device),
+                num_gpus=8,)
             print_memory("After model load")
             if split==0:
                 print(model, file=logfile)
