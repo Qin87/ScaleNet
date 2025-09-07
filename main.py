@@ -32,6 +32,7 @@ warnings.filterwarnings("ignore")
 import torch
 from torch.distributed.tensor.parallel import RowwiseParallel, ColwiseParallel, parallelize_module
 from torch.distributed.device_mesh import init_device_mesh
+from torch.nn.parallel import DistributedDataParallel as DDP
 
 def signal_handler(sig, frame):
     global end_time
@@ -382,20 +383,25 @@ try:
         print_memory("Start")
         for split in range(num_run):
             print_memory("Before model load")
+
             model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device)
+            local_rank = int(os.environ["LOCAL_RANK"])
+            device = torch.device(f"cuda:{local_rank}")
 
-            mesh = init_device_mesh("cuda", (1, 4))
-            tp_plan = {}
+            model = DDP(model, device_ids=[local_rank])
 
-            # Add tensor parallelism for each conv layer
-            for i in range(len(model.convs)):
-                tp_plan[f"convs.{i}"] = RowwiseParallel()  # or ColumnwiseParallel
+            # mesh = init_device_mesh("cuda", (1, 4))
+            # tp_plan = {}
 
-            # If JumpingKnowledge + Linear classifier exist, parallelize the linear too
-            if hasattr(model, "lin"):
-                tp_plan["lin"] = ColwiseParallel()
+            # # Add tensor parallelism for each conv layer
+            # for i in range(len(model.convs)):
+            #     tp_plan[f"convs.{i}"] = RowwiseParallel()  # or ColumnwiseParallel
+            #
+            # # If JumpingKnowledge + Linear classifier exist, parallelize the linear too
+            # if hasattr(model, "lin"):
+            #     tp_plan["lin"] = ColwiseParallel()
 
-            model = parallelize_module(model, mesh, tp_plan)
+            # model = parallelize_module(model, mesh, tp_plan)
 
 
             print_memory("After model load")
