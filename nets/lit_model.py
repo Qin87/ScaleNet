@@ -27,7 +27,7 @@ class LightingFullBatchModelWrapper(pl.LightningModule):
         x, y, edge_index = batch.x, batch.y.long(), batch.edge_index
         out = self.model(x, edge_index)
 
-        self.train_mask = batch.self.train_mask
+        self.train_mask = batch.train_mask
         self.val_mask = batch.self.val_mask
 
         train_loss = F.cross_entropy(out[self.train_mask], y[self.train_mask])

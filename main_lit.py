@@ -60,14 +60,9 @@ def main():
         print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=logfile)
         sys.stdout = logfile
 
-        # if not args.multiple_GPU:
-        #     graph_data = (data_x, edges, data_y)
-        #     dataset = FullBatchGraphDataset(graph_data)
-        #     loader = DataLoader(dataset, batch_size=1, collate_fn=lambda batch: batch[0])
-        # else:
         data = Data(x=data_x, edge_index=edges, y=data_y)
-        cluster_data = ClusterData(data, num_parts=4, recursive=False)  # 4 partitions for 4 GPUs
-        loader = ClusterLoader(cluster_data, batch_size=1, shuffle=True)
+        dataset = FullBatchGraphDataset(data)
+        loader = DataLoader(dataset, batch_size=1, collate_fn=lambda batch: batch[0])
 
         val_accs, test_accs = [], []
         for split in range(args.num_split):
@@ -119,7 +114,6 @@ def main():
                 max_epochs=args.epoch,
                 callbacks=[
                     early_stopping_callback,  # comment out will be much slower!
-                    # model_summary_callback,
                     model_checkpoint_callback,  # delete will not working
                 ],
                 profiler="simple" if args.profiler else None,
@@ -127,7 +121,7 @@ def main():
                 # devices=[args.GPU] if torch.cuda.is_available() else None,
 
                 devices="auto",  # use all available GPUs
-                strategy="ddp_find_unused_parameters_true",
+                strategy="ddp",
             )
             if split==0:
                 print(lit_model)
