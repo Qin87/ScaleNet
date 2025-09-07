@@ -5,6 +5,7 @@ def parse_args():
     parser.add_argument("--monitor", type=str, help="optimiser monitor: val_acc(acc), val_loss(loss)", default="val_acc")
 
     parser.add_argument("--use_best_hyperparams", type=int, default=1, help="whether use parameters in best_hyperparameters.yml")
+    parser.add_argument('--multiple_GPU',  type=int, default=1, help='add selfloop in before model')
     parser.add_argument('--GPU', type=int, default=0, help='GPU device number')
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
     parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=0)
@@ -109,6 +110,7 @@ def parse_args():
     parser.add_argument('--paraD', action='store_true', help='ib is weighted sum')
     parser.add_argument('--gcn_norm', '-gcnnorm', type=int, default=1, help='GCNConv forward, normalize edge_index during training')
     parser.add_argument('--add_selfloop',  type=int, default=1, help='add selfloop in before model')
+
     parser.add_argument("--all1", type=int, help="feature all 1 ", default=0)
     parser.add_argument('--to_undirected', '-tud', type=int, default=0, help='if convert graph to undirected')
     parser.add_argument('--to_reverse_edge', '-tre', type=int, default=0, help='if reverse direction of edges')

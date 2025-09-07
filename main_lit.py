@@ -5,6 +5,8 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from torch_geometric.data import Data
+from torch_geometric.loader import ClusterData, ClusterLoader
 import gc
 import socket
 import uuid
@@ -58,9 +60,14 @@ def main():
         print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=logfile)
         sys.stdout = logfile
 
-        graph_data = (data_x, edges, data_y)
-        dataset = FullBatchGraphDataset(graph_data)
-        loader = DataLoader(dataset, batch_size=1, collate_fn=lambda batch: batch[0])
+        if not args.multiple_GPU:
+            graph_data = (data_x, edges, data_y)
+            dataset = FullBatchGraphDataset(graph_data)
+            loader = DataLoader(dataset, batch_size=1, collate_fn=lambda batch: batch[0])
+        else:
+            data = Data(x=data_x, edge_index=edges, y=data_y)
+            cluster_data = ClusterData(data, num_parts=4, recursive=False)  # 4 partitions for 4 GPUs
+            loader = ClusterLoader(cluster_data, batch_size=1, shuffle=True)
 
         val_accs, test_accs = [], []
         for split in range(args.num_split):
@@ -118,8 +125,11 @@ def main():
                 profiler="simple" if args.profiler else None,
                 accelerator="gpu" if torch.cuda.is_available() else "cpu",
                 # devices=[args.GPU] if torch.cuda.is_available() else None,
-                devices="auto",  # use all available GPUs
-                strategy="ddp_find_unused_parameters_true",  # distributed data parallel (recommended)
+                # devices="auto",  # use all available GPUs
+                # strategy="ddp_find_unused_parameters_true",  # distributed data parallel (recommended)
+
+                devices=[0, 1, 2, 3],  # specify all 4 GPUs
+                strategy="ddp_find_unused_parameters_true",
             )
             if split==0:
                 print(lit_model)
