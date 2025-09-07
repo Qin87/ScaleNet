@@ -132,7 +132,8 @@ def main():
             if split==0:
                 print(lit_model)
 
-            trainer.fit(lit_model, train_dataloaders=loader)
+            # trainer.fit(lit_model, train_dataloaders=loader)
+            trainer.fit(lit_model, train_dataloaders=(batch for batch in loader))
 
             val_acc = model_checkpoint_callback.best_model_score.item()
             test_acc = trainer.test(ckpt_path="best", dataloaders=loader)[0]["test_acc"]
