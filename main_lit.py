@@ -125,12 +125,9 @@ def main():
                 profiler="simple" if args.profiler else None,
                 accelerator="gpu" if torch.cuda.is_available() else "cpu",
                 # devices=[args.GPU] if torch.cuda.is_available() else None,
-                devices="auto",  # use all available GPUs
-                # strategy="ddp_find_unused_parameters_true",  # distributed data parallel (recommended)
 
-                # devices=[0, 1, 2, 3],  # specify all 4 GPUs
+                devices="auto",  # use all available GPUs
                 strategy="ddp_find_unused_parameters_true",
-                replace_sampler_ddp=False
             )
             if split==0:
                 print(lit_model)
