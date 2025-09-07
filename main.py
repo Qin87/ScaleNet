@@ -389,13 +389,13 @@ try:
 
             # Add tensor parallelism for each conv layer
             for i in range(len(model.convs)):
-                tp_plan[f"convs.{i}"] = RowwiseParallel(mp_mesh_dim="tp")  # or ColumnwiseParallel
+                tp_plan[f"convs.{i}"] = RowwiseParallel()  # or ColumnwiseParallel
 
             # If JumpingKnowledge + Linear classifier exist, parallelize the linear too
             if hasattr(model, "lin"):
-                tp_plan["lin"] = ColwiseParallel(mp_mesh_dim="tp")
+                tp_plan["lin"] = ColwiseParallel()
 
-            model = parallelize_module(model, mesh, tp_plan=tp_plan)
+            model = parallelize_module(model, mesh, tp_plan)
 
 
             print_memory("After model load")
