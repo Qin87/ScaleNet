@@ -384,38 +384,7 @@ try:
         for split in range(num_run):
             print_memory("Before model load")
 
-            model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1])
-            local_rank = int(os.environ["LOCAL_RANK"])
-            world_size = int(os.environ["WORLD_SIZE"])
-            rank = int(os.environ["RANK"])
-
-            device = torch.device(f"cuda:{local_rank}")
-            torch.cuda.set_device(device)
-
-            torch.distributed.init_process_group(
-                backend="nccl",
-                init_method="env://",  # torchrun sets all required env variables
-                world_size=world_size,
-                rank=rank
-            )
-
-            model = model.to(device)
-
-            model = DDP(model, device_ids=[local_rank])
-
-            # mesh = init_device_mesh("cuda", (1, 4))
-            # tp_plan = {}
-
-            # # Add tensor parallelism for each conv layer
-            # for i in range(len(model.convs)):
-            #     tp_plan[f"convs.{i}"] = RowwiseParallel()  # or ColumnwiseParallel
-            #
-            # # If JumpingKnowledge + Linear classifier exist, parallelize the linear too
-            # if hasattr(model, "lin"):
-            #     tp_plan["lin"] = ColwiseParallel()
-
-            # model = parallelize_module(model, mesh, tp_plan)
-
+            model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device)
 
             print_memory("After model load")
             if split==0:

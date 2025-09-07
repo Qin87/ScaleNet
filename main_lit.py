@@ -6,7 +6,6 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from torch_geometric.data import Data
-from torch_geometric.loader import ClusterData, ClusterLoader
 import gc
 import socket
 import uuid
@@ -100,7 +99,6 @@ def main():
                 mode = "max"
 
             early_stopping_callback = EarlyStopping(monitor=monitor_metric, mode=mode, patience=args.NotImproved)
-            model_summary_callback = ModelSummary(max_depth=-1)
             model_checkpoint_callback = ModelCheckpoint(
                 monitor=monitor_metric,
                 mode=mode,
@@ -119,16 +117,11 @@ def main():
                 profiler="simple" if args.profiler else None,
                 accelerator="gpu" if torch.cuda.is_available() else "cpu",
                 devices=[args.GPU] if torch.cuda.is_available() else None,
-                strategy="ddp2",
-                precision=16,   # Use half precision - cuts memory in half!
             )
             if split==0:
                 print(lit_model)
 
-            # trainer.fit(lit_model, train_dataloaders=loader)
-            for batch in loader:
-                print('Qin', type(batch), len(batch))   # debug
-            trainer.fit(lit_model, train_dataloaders=(batch for batch in loader))
+            trainer.fit(lit_model, train_dataloaders=loader)
 
             val_acc = model_checkpoint_callback.best_model_score.item()
             test_acc = trainer.test(ckpt_path="best", dataloaders=loader)[0]["test_acc"]
@@ -140,7 +133,6 @@ def main():
             del lit_model
             del trainer
             del early_stopping_callback
-            del model_summary_callback
             del model_checkpoint_callback
             torch.cuda.empty_cache()
             gc.collect()
