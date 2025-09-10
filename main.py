@@ -25,14 +25,10 @@ from nets.src2.quaternion_laplacian import process_quaternion_laplacian
 from data.preprocess import  F_in_out, F_in_out0
 from utils.utils import CrossEntropy, use_best_hyperparams, print_memory
 from sklearn.metrics import balanced_accuracy_score, f1_score
-
 import warnings
 warnings.filterwarnings("ignore")
-
 import torch
-from torch.distributed.tensor.parallel import RowwiseParallel, ColwiseParallel, parallelize_module
-from torch.distributed.device_mesh import init_device_mesh
-from torch.nn.parallel import DistributedDataParallel as DDP
+
 
 def signal_handler(sig, frame):
     global end_time
@@ -41,6 +37,7 @@ def signal_handler(sig, frame):
     # calculate_time()
     log_results()
     sys.exit(0)
+
 
 def log_results():
     global start_time, end_time

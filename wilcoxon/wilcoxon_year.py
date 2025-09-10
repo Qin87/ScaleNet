@@ -1,13 +1,13 @@
 import numpy as np
 from scipy.stats import wilcoxon
 
-# 93.58
-LargeScaleNet=np.array([93.735, 93.717, 93.505, 93.099, 93.329, 93.858, 93.717, 93.346, 93.823, 93.717,
-                        94.070, 93.346, 93.346, 93.240, 93.346, 92.852, 93.805, 93.329, 93.787, 93.540,
-                        94.140, 93.276, 93.117, 93.152, 93.540, 93.893, 93.717, 93.576, 93.311, 93.576])
+# 75.05
+LargeScaleNet=np.array([])
 
 
-FaberNet=np.array([])
+FaberNet=np.array([
+                   ])
+
 
 
 
@@ -34,4 +34,4 @@ for result in results:
     comparison, stat, p_value = result
     print(f'Comparison: {comparison}')
     print(f'  Statistic: {stat}')
-    print(f'  p-value: {p_value:.4f}\n')
+    print(f'  p-value: {p_value:.10f}\n')
