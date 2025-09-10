@@ -45,7 +45,7 @@ for result in results:
     comparison, stat, p_value = result
     print(f'Comparison: {comparison}')
     print(f'  Statistic: {stat}')
-    print(f'  p-value: {p_value:.10f}\n')
+    print(f'  p-value: {p_value:.11f}\n')
 
     # Comparison: LargeScaleNet vs FaberNet
     #   Statistic: 0.0

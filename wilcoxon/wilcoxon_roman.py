@@ -7,7 +7,10 @@ LargeScaleNet=np.array([93.735, 93.717, 93.505, 93.099, 93.329, 93.858, 93.717, 
                         94.140, 93.276, 93.117, 93.152, 93.540, 93.893, 93.717, 93.576, 93.311, 93.576])
 
 
-FaberNet=np.array([])
+FaberNet=np.array([93.134, 91.970, 91.899, 92.252, 92.252, 92.711, 92.146, 92.605, 92.640, 91.991,
+                   92.076, 92.217, 92.093, 92.005, 92.676, 92.446, 92.252, 92.499, 92.411, 92.534,
+                   92.640, 92.146, 92.111, 92.093, 92.270, 92.711, 92.252, 91.793, 92.693, 92.199])
+
 
 
 
@@ -34,4 +37,12 @@ for result in results:
     comparison, stat, p_value = result
     print(f'Comparison: {comparison}')
     print(f'  Statistic: {stat}')
-    print(f'  p-value: {p_value:.4f}\n')
+    print(f'  p-value: {p_value:.12f}\n')
+
+    # LargeScaleNet: 93.53±0.30
+    # FaberNet: 92.32±0.30
+    # Comparison: LargeScaleNet
+    # vs
+    # FaberNet
+    # Statistic: 0.0
+    # p - value: 0.0000000019
