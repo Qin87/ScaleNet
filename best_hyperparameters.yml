@@ -147,9 +147,9 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   BN_model: 0  #  without layerNorm, very bad(but Dir-GNN prefer no LN)
   add_selfloop: 0
   jk: 'max'
-  alphaDir: 1
-  betaDir: 1
-  gamaDir: 1
+#  alphaDir: 1
+#  betaDir: 1
+#  gamaDir: 1
   seed: 101   # tried 2099,
 
 # (1_1_-1) 74.7±2.4,   (1,-1,-1) 75.2±1.7

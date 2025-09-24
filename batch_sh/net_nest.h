@@ -1,6 +1,6 @@
 #!/bin/bash
 
-net_values=" LargeScaleNet  ScaleNet"
+net_values=" LargeScaleNet "
 layer_values="  2 "
 
 
@@ -26,7 +26,7 @@ for Didataset in "${Direct_dataset[@]}"; do
             log_output="${Didataset//\//_}_${timestamp}_${net}_layer${layer}.log"
 
             # Run the Python script with parameters and log output
-            python3 main.py    --net="$net"  \
+            python3 main.py    --net="$net" --to_reverse_edge=1 \
             --Dataset="$Didataset" > "$log_output"
              2>&1
             wait $pid
