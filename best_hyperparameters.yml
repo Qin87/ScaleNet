@@ -6,10 +6,10 @@ telegram/:
   l2: 0   # 97.0(0), 95.6(5e-4)
   inci_norm: 0  # {94.2±4.4(dir) 95.6±3.0(0)}  {93.2(dir), 97.0(0)}
   has_scheduler: 1
-#  patience: 80
-#  NotImproved: 410
+  patience: 80
+  NotImproved: 410
   epoch: 1500
-  net: ScaleNet         # 1iGi3,
+#  net: ScaleNet         # 1iGi3,
   conv_type: "dir-gcn"
   nonlinear: 1
   layer: 4
@@ -33,7 +33,7 @@ cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
   has_scheduler: 1
   conv_type: "dir-gcn"
   nonlinear: 1
-  net: ScaleNet   #  net: 1iGi3
+#  net: ScaleNet   #  net: 1iGi3
   hid_dim: 128   # better than 64
   layer: 3   # 2(80), 3(75), 4(79.8), 5(79.6)
   lr: 0.01    # 0.1(79), 0.01(80.7)
@@ -46,15 +46,17 @@ cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
   alphaDir: 2   # 0.5,1.-1 before having 2
   betaDir: -1  # 1
   gamaDir: -1  # -1 , 0.5
+  num_split: 10
   seed: 1999
 
 #
 citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.0_0.0_0.5----2.0_0.0_0.0----2.0_2.0_0.5-----0.5_2.0_0.5---0.0_0.5_2.0--0.5_2.0_2.0
+  num_split: 10
   NotImproved: 810
   epoch: 10000
   patience: 400
   has_scheduler: 1
-  net: ScaleNet
+#  net: ScaleNet
   conv_type: "dir-gcn"
   nonlinear: 0    # 0(68.3), 1(67.6)
   hid_dim: 128
@@ -78,7 +80,7 @@ WikiCS/:
   NotImproved: 410
   epoch: 1500
   patience: 80
-  net: ScaleNet
+#  net: ScaleNet
   conv_type: "dir-gcn"
   nonlinear: 1
   layer: 2
@@ -96,6 +98,7 @@ WikiCS/:
 
 #
 dgl/pubmed:
+  num_split: 10
 #  net: ScaleNet
   conv_type: "dir-gcn"   # sage
   nonlinear: 1
@@ -111,7 +114,7 @@ dgl/pubmed:
   gamaDir: 1
   inci_norm: "sym"
   hid_dim: 64
-#  to_undirected: 1
+  to_undirected: 1
 
 #  net: ScaleNet
 #  lr: 0.01
@@ -126,6 +129,7 @@ dgl/pubmed:
 
 # (1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5)
 WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5)
+  num_split: 10  # original dataset
   l2: 0  # 5e-4 is a bit worse
   NotImproved: 810
   epoch: 10000
@@ -136,7 +140,7 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   inci_norm: "dir"
   dropout: 0.0  # 0.5(acc65), 0.0(acc75)
   nonlinear: 0   #
-  net: ScaleNet
+#  net: ScaleNet
   layer: 5      # 80.1
   lr: 0.005
   normalize: 1
@@ -150,6 +154,7 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
 
 # (1_1_-1) 74.7±2.4,   (1,-1,-1) 75.2±1.7
 WikipediaNetwork/squirrel:
+  num_split: 10  # original dataset
   hid_dim: 128
   l2: 0
   NotImproved: 810
@@ -160,7 +165,7 @@ WikipediaNetwork/squirrel:
   inci_norm: "dir"  # 0(70.5),
   nonlinear: 1
   dropout: 0.0  # 0.5(acc72.7), 0.0(acc75)
-  net: ScaleNet
+#  net: ScaleNet
   layer: 6
   lr: 0.01
   normalize: 1
@@ -224,18 +229,15 @@ ogbn-arxiv/:
   net: LargeScaleNet
   num_split: 1
 #  conv_type: dir-sage
-  layer: 3    # 69.68(4layer)
+#  layer: 4    # 69.68(4layer)
 
-#  lr: 0.005
-  has_scheduler: 0
-  NotImproved: 400  # 80
-  alphaDir: 0.5
-  betaDir: 1
-  gamaDir: 0.5
-
-  add_selfloop: 1
-  BN_model: 1
-  zero_order: 1
+  lr: 0.01
+#  add_selfloop: 1
+#  BN_model: 1
+#  alphaDir: 0.5
+#  betaDir: 0.5    # OOM
+#  gamaDir: -1     # OOM
+#  zero_order: 1
 
 
 
@@ -255,7 +257,7 @@ snap-patents/:
   BN_model: 1   # 1:74.6, 0:74.2
   lr: 0.01   # sure
   layer: 5  # sure
-#  hid_dim: 32  # sure  try 64?
+#  hid_dim: 32  # sure
   jk: 'max'   # sure
   normalize: 1   # sure
   dropout: 0.0  # sure

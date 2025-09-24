@@ -36,7 +36,7 @@ for Didataset in "${Direct_dataset[@]}"; do
 
             # Run the Python script with parameters and log output
 python3 main_lit.py  --seed=111 --alphaDir="$alphadir"  --betaDir="$betadir"   --gamaDir="$gamadir"  --num_split=1   \
---NotImproved="$patience"  --use_best_hyperparams=1     --weight_penalty='None'\
+--NotImproved="$patience"  --use_best_hyperparams=1     --weight_penalty='None'  --has_scheduler=1  --patience=40 \
   --normalize="$normalize"   --zero_order="$zero"  --BN_model="$BN"  --add_selfloop="$sloop"  --dropout=0.0  --all1=1 \
  --net="$net"  --layer="$layer"   --Dataset="$Didataset" >  \
 "$log_output"
@@ -51,5 +51,6 @@ python3 main_lit.py  --seed=111 --alphaDir="$alphadir"  --betaDir="$betadir"   -
 done
        done
        done
+done
 done
 done
