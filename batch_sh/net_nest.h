@@ -1,11 +1,11 @@
 #!/bin/bash
 
-net_values=" LargeScaleNet "
+net_values=" ScaleNet "
 layer_values="  2 "
 
 
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'  'WikipediaNetwork/chameleon' 'WikipediaNetwork/squirrel'
-Direct_dataset=( 'telegram/'  'citeseer/' 'cora_ml/'    'dgl/pubmed' 'WikiCS/'  'WikipediaNetwork/chameleon' 'WikipediaNetwork/squirrel' )
+Direct_dataset=( 'telegram/'  'citeseer/' 'cora_ml/'  'WikiCS/'  )
 generate_timestamp() {
   date +"%d%H%Ms%S"
 }
@@ -26,7 +26,7 @@ for Didataset in "${Direct_dataset[@]}"; do
             log_output="${Didataset//\//_}_${timestamp}_${net}_layer${layer}.log"
 
             # Run the Python script with parameters and log output
-            python3 main.py    --net="$net" --to_reverse_edge=1 \
+            python3 main.py    --net="$net" --add_selfloop=0 \
             --Dataset="$Didataset" > "$log_output"
              2>&1
             wait $pid
