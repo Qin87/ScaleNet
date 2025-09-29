@@ -21,7 +21,7 @@ By following these steps, you can resolve compatibility issues and avoid segment
 ## Dataset
 Specify the name of the dataset you want to use. The available datasets are categorized as follows:
 
-- **Directed Datasets**:
+- **Medium Datasets**:
   - **Homophilic Graph**:
     - `citeseer/`
     - `cora_ml/`
@@ -32,6 +32,11 @@ Specify the name of the dataset you want to use. The available datasets are cate
   - **Heterophilic Graph**:
     - `WikipediaNetwork/squirrel`
     - `WikipediaNetwork/chameleon`
+    
+- **Large Datasets**:
+  - `directed-roman-empire/`
+  - `arxiv-year/`
+  - `snap-patents/`
 
 ## GNN Models 
 - **GNN baselines**:
@@ -59,6 +64,9 @@ Specify the name of the dataset you want to use. The available datasets are cate
     Number 2, 3 can be replaced with any number k>1.
 - **BiDirectional models**:
   - `Dir-GNN`
+  - `FaberNet`
+  - `ScaleNet`
+  - `LargeScaleNet` 
 
 ### How to Run
 

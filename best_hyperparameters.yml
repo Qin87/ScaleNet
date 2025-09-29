@@ -9,7 +9,7 @@ telegram/:
   patience: 80
   NotImproved: 410
   epoch: 1500
-  net: ScaleNet         # 1iGi3,
+#  net: ScaleNet         # 1iGi3,
   conv_type: "dir-gcn"
   nonlinear: 1
   layer: 4

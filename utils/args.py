@@ -29,7 +29,7 @@ def parse_args():
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc, ParaGCN, SimGAT, SloopNet, tSNE,RandomNet, HFNet '
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym' 
                     'mlp, link, linkxcat, linkxadd, linkx, linkxgit, Dir-GNN, '
-                    'ScaleNet, LargeScaleNet')
+                    'ScaleNet, LargeScaleNet, FaberNet')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
     parser.add_argument('--Dataset', type=str, default='telegram/', help=
     'telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
