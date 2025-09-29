@@ -22,14 +22,14 @@ By following these steps, you can resolve compatibility issues and avoid segment
 Specify the name of the dataset you want to use. The available datasets are categorized as follows:
 
 - **Directed Datasets**:
-  - **Assortative Graph**:
+  - **Homophilic Graph**:
     - `citeseer/`
     - `cora_ml/`
     - `WikiCS/`
     - `telegram/`
     - `dgl/pubmed`
   
-  - **Disassortative Graph**:
+  - **Heterophilic Graph**:
     - `WikipediaNetwork/squirrel`
     - `WikipediaNetwork/chameleon`
 
