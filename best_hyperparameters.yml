@@ -96,36 +96,6 @@ WikiCS/:
   num_split: 20
   seed: 7
 
-#
-dgl/pubmed:
-  num_split: 10
-  net: ScaleNet
-  conv_type: "dir-gcn"   # sage
-  nonlinear: 1
-  layer: 4
-  lr: 0.01
-  normalize: 0
-  BN_model: 0  #
-  add_selfloop : 1
-  jk: 'max'
-  dropout: 0.0  #0.5(39), 0.0(77.5)
-  alphaDir: 1   # 0.5(72.2), 0(73.2)
-  betaDir: 1    #
-  gamaDir: 1
-  inci_norm: "sym"
-  hid_dim: 64
-  to_undirected: 1
-
-#  net: ScaleNet
-#  lr: 0.01
-
-  # Alternative configuration (commented out)
-  # net: 1iG
-  # lr: 0.001   # 0.01(74.8), 0.001(76.0)
-  #  net: 1iGi2
-  #  lr: 0.001   # 0.01(70.0), 0.001(75.1)
-
-
 
 # (1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5)
 WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5)
@@ -224,30 +194,6 @@ arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
   weight_penalty: 'None'  # exp:64.7
 
 
-# 71.43(0.5_1_0.5, 6lay)  71.2(0.5,0,1, 4lay)
-ogbn-arxiv/:
-  net: LargeScaleNet
-  num_split: 1
-  conv_type: dir-sage
-  layer: 4    # 69.68(4layer)
-
-  lr: 0.01
-#  add_selfloop: 1
-#  BN_model: 1
-#  alphaDir: 0.5
-#  betaDir: 0.5    # OOM
-#  gamaDir: -1     # OOM
-#  zero_order: 1
-
-
-
-fb100/penn94:
-  add_selfloop: 0
-  epoch: 10000
-  num_split: 5
-
-
-
 snap-patents/:
   net: LargeScaleNet
   alphaDir: 0.5   # sure
@@ -273,19 +219,3 @@ snap-patents/:
   exponent: -0.25     # sure
   weight_penalty: 'None'   # exp
   lrelu_slope: 0
-
-pokec/:
-  num_split: 10  # original split
-  net: linkx  # all bad
-  epoch: 10000
-
-film/:
-  epoch: 10000
-
-genius/:
-  epoch: 10000
-  num_split: 5  # original split
-
-
-
-
