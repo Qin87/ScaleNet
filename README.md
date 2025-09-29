@@ -93,15 +93,13 @@ To run with your own configurations, revise net_nest.h by kicking in all the net
 all the datasets in Direct_dataset. Then in terminal, run: 
 
   ```
-  ./net_nest.h
+  batch_sh/net_nest.h
   ```
-
-
 
 - **(3) To compare ScaleNet with the enumeration of the parameters alpha, beta, and gamma, use the following command**:
 
   ```
-  ./scale.h &
+  batch_sh/scale.h &
   ```
 
 - **(4) To get performance of removing shared edges with lower-scale graphs**:
@@ -112,12 +110,11 @@ all the datasets in Direct_dataset. Then in terminal, run:
     
     args.differ_AA=1
 - **(5) Wilcoxon test** 
+
 To run the Wilcoxon test on each dataset, execute the corresponding script. For example:
   ```
   python3 ./wilcoxon/wilcoxon_cham.py  &
   ```
-- **(6) For Pytorch Lightning **
-Run main_lit.py instead of main.py
 
 
 ## License
@@ -125,7 +122,9 @@ MIT License
 
 ## Acknowledgements
 
-The code is implemented based on [DiGCN](https://github.com/flyingtango/DiGCN),  [DirGNN](https://github.com/emalgorithm/directed-graph-neural-network)and 
-[MagNet](https://github.com/matthew-hirn/magnet).
+This code is implemented based on the following repositories:
+- [DiGCN](https://github.com/flyingtango/DiGCN)
+- [DirGNN](https://github.com/emalgorithm/directed-graph-neural-network)
+- [MagNet](https://github.com/matthew-hirn/magnet)
+- [FaberNet](https://github.com/ChristianKoke/HoloNets)
 
-[//]: # (## Citation)
