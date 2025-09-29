@@ -76,10 +76,7 @@ Specify the name of the dataset you want to use. The available datasets are cate
     ```
     python3 main.py  --net='ScaleNet' --use_best_hyperparams=1  --Dataset='cora_ml/'
     ```
-  
-    ```
-    python3 main.py --net='Dir-GNN' --use_best_hyperparams=1   --Dataset='citeseer_npz/'
-    ```
+
     To use PyTorch Lightning instead, replace main.py with main_lit.py in any of the above commands:
     ```
     python3 main_lit.py --net='ScaleNet' --use_best_hyperparams=1 --Dataset='cora_ml/'

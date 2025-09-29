@@ -9,14 +9,14 @@ telegram/:
   patience: 80
   NotImproved: 410
   epoch: 1500
-#  net: ScaleNet         # 1iGi3,
+  net: ScaleNet         # 1iGi3,
   conv_type: "dir-gcn"
   nonlinear: 1
   layer: 4
   lr: 0.01
   normalize: 1
   BN_model: 1    # sure
-#  add_selfloop: 1
+  add_selfloop: 1
   jk: 'max'
   dropout: 0.0
   alphaDir: 0.5     # 0.5, 0.2(94.8)
@@ -33,14 +33,14 @@ cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
   has_scheduler: 1
   conv_type: "dir-gcn"
   nonlinear: 1
-#  net: ScaleNet   #  net: 1iGi3
+  net: ScaleNet   #  net: 1iGi3
   hid_dim: 128   # better than 64
   layer: 3   # 2(80), 3(75), 4(79.8), 5(79.6)
   lr: 0.01    # 0.1(79), 0.01(80.7)
   l2: 0.0005
   normalize: 0
   BN_model: 0   # 0(29), 1(79)  # 1(79), 0(82.7)
-#  add_selfloop : 1  # sure
+  add_selfloop : 1  # sure
   jk: "max"     # max(80.7), cat(79.8), 0(76.9)
   dropout: 0.5   # 0.0(80.51), 0.5(80.76)
   alphaDir: 2   # 0.5,1.-1 before having 2
@@ -56,7 +56,7 @@ citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.
   epoch: 10000
   patience: 400
   has_scheduler: 1
-#  net: ScaleNet
+  net: ScaleNet
   conv_type: "dir-gcn"
   nonlinear: 0    # 0(68.3), 1(67.6)
   hid_dim: 128
@@ -64,7 +64,7 @@ citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.
   lr: 0.01
   normalize: 1    # 1(68.3), 0 much worse60.7,
   BN_model: 0   # 0(68.3), 1(66.9)  # for high performance 0 is better.
-#  add_selfloop : 1     # 1(64.75), -1(58.2), 0(57.5)
+  add_selfloop : 1     # 1(64.75), -1(58.2), 0(57.5)
   jk: 'max'   # 'max'(68.3). 'cat'(), 0(67.8)
   dropout: 0.5   # 0(61.44), 0.5(64.75)
   inci_norm: 'dir'    # dir(64.8), sym(63.9), row(63.8)
@@ -80,14 +80,14 @@ WikiCS/:
   NotImproved: 410
   epoch: 1500
   patience: 80
-#  net: ScaleNet
+  net: ScaleNet
   conv_type: "dir-gcn"
   nonlinear: 1
   layer: 2
   lr: 0.001   #0.01
   normalize: 1
   BN_model: 0  # 0(23), 1(73.5)
-#  add_selfloop : 1  # add(79.1±0.8),0(77.3±0.8), remove(77.4)
+  add_selfloop : 1  # add(79.1±0.8),0(77.3±0.8), remove(77.4)
   jk: 'max'   # max(75.9),cat(75.99), 0(73.5)
   dropout: 0.5  # 0.5(75.9), 0.0(73.9)
   alphaDir: 0.5
@@ -99,7 +99,7 @@ WikiCS/:
 #
 dgl/pubmed:
   num_split: 10
-#  net: ScaleNet
+  net: ScaleNet
   conv_type: "dir-gcn"   # sage
   nonlinear: 1
   layer: 4
@@ -140,12 +140,12 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   inci_norm: "dir"
   dropout: 0.0  # 0.5(acc65), 0.0(acc75)
   nonlinear: 0   #
-#  net: ScaleNet
+  net: ScaleNet
   layer: 5      # 80.1
   lr: 0.005
   normalize: 1
   BN_model: 0  #  without layerNorm, very bad(but Dir-GNN prefer no LN)
-#  add_selfloop: 0
+  add_selfloop: 0
   jk: 'max'
   alphaDir: 1
   betaDir: 1
@@ -165,12 +165,12 @@ WikipediaNetwork/squirrel:
   inci_norm: "dir"  # 0(70.5),
   nonlinear: 1
   dropout: 0.0  # 0.5(acc72.7), 0.0(acc75)
-#  net: ScaleNet
+  net: ScaleNet
   layer: 6
   lr: 0.01
   normalize: 1
   BN_model: 1 # 0(48.9), 1(72)
-#  add_selfloop: 0     # 0 or 1 is worse
+  add_selfloop: 0     # 0 or 1 is worse
   jk: 'max'
   alphaDir: 1   # best is 1,1,-1
   betaDir: 1    #-1
@@ -193,9 +193,9 @@ directed-roman-empire/:
   layer: 6  # 5:93.4  7:93.1  8:93.0
   jk: "cat"   # >max
   dropout: 0.2
-#  alphaDir: 0.5   #
-#  betaDir: -1     # 0 is 88, 1 is 20
-#  gamaDir: -1     # all much worse
+  alphaDir: 0.5   #
+  betaDir: -1     # 0 is 88, 1 is 20
+  gamaDir: -1     # all much worse
   conv_type: "dir-sage"   # gcn+mlp is worse  # for ScaleNet
   zero_order: 1  # for LargeScaleNet
   exponent: -0.25  # 92.9 for -0.5
@@ -203,7 +203,7 @@ directed-roman-empire/:
 
 # 65.82±0.36(0.5_0.0_0.0,lit, lay6)   64.78±0.66(0.5_0.0_0.5, lay5), 64.7±0.4(0.5_0.0_0.0+'None'), (0.5_-1.0_1.0+'exp':64.7±0.5)
 arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
-#  net: LargeScaleNet
+  net: LargeScaleNet
   num_split: 5
   epoch: 10000
   BN_model: 1  # 0:61
@@ -221,15 +221,15 @@ arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
   betaDir: 0  # 0.5:64.1  -1:64.4
   gamaDir: 0  # 0.5:64.2  1:64.5
   exponent: -0.5  # 0.25:30
-#  weight_penalty: 'None'  # exp:64.7
+  weight_penalty: 'None'  # exp:64.7
 
 
 # 71.43(0.5_1_0.5, 6lay)  71.2(0.5,0,1, 4lay)
 ogbn-arxiv/:
   net: LargeScaleNet
   num_split: 1
-#  conv_type: dir-sage
-#  layer: 4    # 69.68(4layer)
+  conv_type: dir-sage
+  layer: 4    # 69.68(4layer)
 
   lr: 0.01
 #  add_selfloop: 1
@@ -244,26 +244,26 @@ ogbn-arxiv/:
 fb100/penn94:
   add_selfloop: 0
   epoch: 10000
-#  num_split: 5
+  num_split: 5
 
 
 
 snap-patents/:
   net: LargeScaleNet
   alphaDir: 0.5   # sure
-#  betaDir: -1    # 0.5
+  betaDir: -1    # 0.5
   gamaDir: 0.5   # sure
   num_split: 5  # original split
   BN_model: 1   # 1:74.6, 0:74.2
   lr: 0.01   # sure
   layer: 5  # sure
-#  hid_dim: 32  # sure
+  hid_dim: 32  # sure
   jk: 'max'   # sure
   normalize: 1   # sure
   dropout: 0.0  # sure
 
   has_scheduler: 0
-#  patience: 400
+  patience: 400
   NotImproved: 400  # sure
 
   zero_order: 0       # sure
@@ -271,7 +271,7 @@ snap-patents/:
   weight_decay: 0.1   # sure
   k_plus: 2       # sure
   exponent: -0.25     # sure
-#  weight_penalty: 'None'   # exp
+  weight_penalty: 'None'   # exp
   lrelu_slope: 0
 
 pokec/:
