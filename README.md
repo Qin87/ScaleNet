@@ -1,11 +1,11 @@
-# ScaleNet
+# Scale-Aware Message Passing for Graph Node Classification
 
 ## Requirements
 
 This repository has been tested with the following packages:
 - Python == 3.9 - 3.12
-- PyTorch == 2.1.2
-- PyTorch Geometric == 2.4.0
+- PyTorch == 2.1.2 - 2.2.1
+- PyTorch Geometric == 2.4.0- 2.5.0
 - torch-scatter==2.1.2
 - torch-sparse==0.6.18
 
