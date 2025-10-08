@@ -1,11 +1,11 @@
 #!/bin/bash
 
 net_values="LargeScaleNet "
-layer_values=" 2 3 4 5 6 7 8"
+layer_values=" 8"
 aDir="0  0.5 1 -1"
 bDir="0  0.5 1 -1"
 cDir="0  0.5 1 -1"
-Patiences=(100 200 400)
+Patiences=(400)
 
 while pgrep -x python3 > /dev/null; do
   echo "Waiting for all python3 processes to finish..."
@@ -20,7 +20,7 @@ generate_timestamp() {
 }
 timestamp=$(generate_timestamp)
 for Didataset in "${Direct_dataset[@]}"; do
-       for patience in "${Patiences[@]}"; do
+      # for patience in "${Patiences[@]}"; do
     for layer in $layer_values; do
         logfile="outforlayer${layer}.log"
         exec > "$logfile" 2>&1  # Redirect stdout and stderr to log file
@@ -36,9 +36,9 @@ python3 main_lit.py   --alphaDir="$alphadir"  --betaDir="$betadir"    --gamaDir=
 --use_best_hyperparams=1   \
 --weight_penalty='None'\
  --net="$net"  \
- --patience="$patience"  \
- --Dataset="$Didataset" >  \
-"$log_output"  2>&1
+ --all1=1 \
+ #--patience="$patience"  \
+--Dataset="$Didataset" > "$log_output" 2>&1
 
             wait $pid
         done
