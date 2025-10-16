@@ -250,9 +250,9 @@ fb100/penn94:
 
 snap-patents/:
   net: LargeScaleNet
-  alphaDir: 0.5   # sure
-  betaDir: -1    # 0.5
-  gamaDir: 0.5   # sure
+#  alphaDir: 0.5   # sure
+#  betaDir: -1    # 0.5
+#  gamaDir: 0.5   # sure
   num_split: 5  # original split
   BN_model: 1   # 1:74.6, 0:74.2
   lr: 0.01   # sure

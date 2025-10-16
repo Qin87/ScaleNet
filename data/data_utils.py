@@ -3,7 +3,8 @@ import random
 from torch_geometric.datasets import QM9, MalNetTiny, LINKXDataset
 import scipy
 from torch_geometric.data import download_url
-
+import numpy as np
+from collections import defaultdict
 import torch_geometric.transforms as transforms
 
 from torch_geometric.datasets import Actor
@@ -13,8 +14,12 @@ import os.path as osp
 from typing import Callable, Optional
 import gdown
 from torch_geometric.data import Data, InMemoryDataset
-
+import networkx as nx
+import matplotlib.pyplot as plt
+import torch
+import numpy as np
 from data.pokec_dataset import PokecDataset
+from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
 
 try:
     import dgl
@@ -147,7 +152,7 @@ class DummyDataset(object):
         self.data = data
         self.num_classes = num_classes
 
-from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
+
 def load_directedData(args):
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     load_func, subset = args.Dataset.split('/')[0], args.Dataset.split('/')[1]
@@ -513,8 +518,7 @@ def even_quantile_labels(vals, nclasses, verbose=True):
     return label
 
 
-import numpy as np
-from collections import defaultdict
+
 
 
 def find_max_spanning_tree(edge_index, num_nodes, weights=None):
@@ -585,10 +589,7 @@ def example():
     return mst
 
 
-import networkx as nx
-import matplotlib.pyplot as plt
-import torch
-import numpy as np
+
 
 
 def visualize_tensor_network_Undirected(edges_tensor, y_tensor, sample_size=100):
