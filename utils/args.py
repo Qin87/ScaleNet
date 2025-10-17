@@ -42,7 +42,7 @@ def parse_args():
 
     parser.add_argument('-AP_K', '--AP_K', default=10, type=int)  # for APPNP
 
-    parser.add_argument('--hid_dim', type=int, default=256, help='feature dimension')
+    parser.add_argument('--hid_dim', type=int, default=16, help='feature dimension')
     parser.add_argument('--epoch', type=int, default=10000, help='epoch1500,')
     parser.add_argument("--has_scheduler", type=int, default=0, help="Whether Optimizer has a scheduler")
     parser.add_argument('--patience', type=int, default=10, help='patience to reduce lr,80')
