@@ -846,3 +846,13 @@ def rename_log(log_directory, log_file_name_with_timestamp, result_str):
 
     os.rename(old_path, new_path)
     print(f"Log file renamed to: {new_path}", file=sys.__stdout__)
+
+import uuid
+import time
+def get_unique_run_id():
+    job_id = os.environ.get("SLURM_JOB_ID")
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    unique_id = str(uuid.uuid4())[:8]
+    if job_id:
+        return f"job{job_id}_{timestamp}_{unique_id}"
+    return f"run_{timestamp}_{unique_id}"

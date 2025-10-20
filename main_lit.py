@@ -18,7 +18,7 @@ from ogb.nodeproppred import Evaluator
 
 from utils.args import parse_args
 from data.data_utils import  set_device, seed_everything
-from utils.data_model import CreatModel, load_dataset, name_file, free_space, rename_log
+from utils.data_model import CreatModel, load_dataset, name_file, free_space, rename_log, get_unique_run_id
 from nets.lit_model import FullBatchGraphDataset, LightingFullBatchModelWrapper
 from utils.utils import use_best_hyperparams
 
@@ -97,15 +97,21 @@ def main():
                 mode = "min"
             else:
                 mode = "max"
-
+            unique_run_id = get_unique_run_id()
+            checkpoint_dir = os.path.join(args.checkpoint_directory, unique_run_id)
+            os.makedirs(checkpoint_dir, exist_ok=True)
             early_stopping_callback = EarlyStopping(monitor=monitor_metric, mode=mode, patience=args.NotImproved)
             model_checkpoint_callback = ModelCheckpoint(
                 monitor=monitor_metric,
                 mode=mode,
-                dirpath=f"{args.checkpoint_directory}/{str(uuid.uuid4())}/",
+                # dirpath=f"{args.checkpoint_directory}/{str(uuid.uuid4())}/",
+                dirpath=checkpoint_dir,  # unique per job
+                save_top_k=1,
+                save_last=True,
             )
 
             trainer = pl.Trainer(
+                default_root_dir=checkpoint_dir,
                 log_every_n_steps=1,
                 enable_progress_bar=False,
                 enable_model_summary=False,  # suppresses the model table  # ScaleNet2
