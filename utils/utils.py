@@ -73,7 +73,7 @@ def use_best_hyperparams(args, dataset_name):
     # print(args)
     return args
 
-def get_norm_adj(adj, norm, exponent = -0.25 ):
+def get_norm_adj(adj, norm, exponent =-0.25 ):
     if norm == "sym":       # Din^(-0.5)ADin^(-0.5)
         return gcn_norm(adj, add_self_loops=False)
     elif norm == "dir_ones":
