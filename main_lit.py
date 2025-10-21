@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 from ogb.nodeproppred import Evaluator
 
 from args import parse_args
-from data.data_utils import  set_device, seed_everything
+from data.data_utils import set_device, seed_everything, calculate_degree_features
 from utils.data_model import CreatModel, load_dataset, name_file, free_space, rename_log, get_unique_run_id
 from nets.lit_model import FullBatchGraphDataset, LightingFullBatchModelWrapper
 from utils.utils import use_best_hyperparams
@@ -38,6 +38,9 @@ def main():
     data_x, data_y, edges, edges_weight, num_features, data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph, edge_attr, data_batch = load_dataset(args)
     if args.all1:
         data_x = torch.ones_like(data_x)
+    if args.degfea:
+        data_x = calculate_degree_features(edges, args.degfea)
+        num_features = abs(args.degfea)
     n_cls = data_y.max().item() + 1
     args.num_features, args.num_classes, args.edge_index, args.num_nodes = data_x.shape[1], n_cls, edges, data_x.shape[0]
 

@@ -111,6 +111,8 @@ def parse_args():
     parser.add_argument('--add_selfloop',  type=int, default=1, help='add selfloop in before model')
 
     parser.add_argument("--all1", type=int, help="feature all 1 ", default=1)
+    parser.add_argument("--degfea", type=int, help="degree as feature: in-degree 1, out-degree -1, both 2, no 0  ", default=2)
+
     parser.add_argument('--to_undirected', '-tud', type=int, default=0, help='if convert graph to undirected')
     parser.add_argument('--to_reverse_edge', '-tre', type=int, default=0, help='if reverse direction of edges')
 

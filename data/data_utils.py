@@ -1095,3 +1095,43 @@ def visualize_class_relationships(edges_tensor, y_tensor, filename='class_relati
         for dst_cls in sorted(class_connections.get(cls, {}).keys()):
             avg = class_connections[cls][dst_cls]
             print(f"    → Class {dst_cls}: {avg:.1f}")
+
+from collections import Counter
+def calculate_degree_features(edge_index, degfea, num_nodes=None):
+    """
+    Calculate in-degree for each node and return as node features.
+
+    Args:
+        edge_index (torch.Tensor): Edge index tensor of shape [2, num_edges]
+        num_nodes (int, optional): Number of nodes in the graph. If None, inferred from edge_index.
+
+    Returns:
+        torch.Tensor: Node features tensor of shape [num_nodes, 1] containing in-degrees
+    """
+    # If num_nodes not provided, infer from edge_index
+    if num_nodes is None:
+        num_nodes = edge_index.max().item() + 1
+
+    dst_nodes = edge_index[1].tolist()
+    in_degrees = Counter(dst_nodes)
+
+    # Calculate out-degrees (using source nodes)
+    src_nodes = edge_index[0].tolist()
+    out_degrees = Counter(src_nodes)
+
+
+    if degfea == 2:
+        features = torch.zeros(num_nodes, 2)
+        for node in range(num_nodes):
+            features[node, 0] = in_degrees.get(node, 0)  # in-degree in first column
+            features[node, 1] = out_degrees.get(node, 0)
+    else:
+        features = torch.zeros(num_nodes, 1)
+        if degfea == 1:
+            degrees = in_degrees
+        else:
+            degrees = out_degrees
+        for node, degree in degrees.items():
+            features[node] = degree
+
+    return features
