@@ -12,11 +12,11 @@ import uuid
 import numpy as np
 import torch
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import EarlyStopping, ModelSummary, ModelCheckpoint
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from torch.utils.data import DataLoader
 from ogb.nodeproppred import Evaluator
 
-from utils.args import parse_args
+from args import parse_args
 from data.data_utils import  set_device, seed_everything
 from utils.data_model import CreatModel, load_dataset, name_file, free_space, rename_log, get_unique_run_id
 from nets.lit_model import FullBatchGraphDataset, LightingFullBatchModelWrapper
@@ -111,14 +111,15 @@ def main():
             )
 
             trainer = pl.Trainer(
-                default_root_dir=checkpoint_dir,
+                logger=False,
+                # default_root_dir=checkpoint_dir,
                 log_every_n_steps=1,
                 enable_progress_bar=False,
                 enable_model_summary=False,  # suppresses the model table  # ScaleNet2
                 max_epochs=args.epoch,
                 callbacks=[
                     early_stopping_callback,  # comment out will be much slower!
-                    model_checkpoint_callback,  # delete will not working
+                    # model_checkpoint_callback,  # delete will not working
                 ],
                 profiler="simple" if args.profiler else None,
                 accelerator="gpu" if torch.cuda.is_available() else "cpu",
@@ -129,10 +130,10 @@ def main():
 
             trainer.fit(lit_model, train_dataloaders=loader)
 
-            val_acc = model_checkpoint_callback.best_model_score.item()
+            # val_acc = model_checkpoint_callback.best_model_score.item()
             test_acc = trainer.test(ckpt_path="best", dataloaders=loader)[0]["test_acc"]
             test_accs.append(test_acc)
-            val_accs.append(val_acc)
+            # val_accs.append(val_acc)
             print(f"Test Acc: {test_acc * 100:.2f}", file=sys.__stdout__)
 
             del model

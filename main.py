@@ -15,7 +15,7 @@ import sys
 import time
 import torch.nn.functional as F
 
-from utils.args import parse_args
+from args import parse_args
 from data.data_utils import keep_all_data, seed_everything, set_device
 from nets.edge_data import get_second_directed_adj, WCJ_get_directed_adj, Qin_get_second_directed_adj, Qin_get_directed_adj, get_appr_directed_adj2, Qin_get_second_directed_adj0, Qin_get_second_adj, Qin_get_all_directed_adj, normalize_row_edges
 from utils.data_model import CreatModel, log_file, get_name, load_dataset, feat_proximity, delete_edges, make_imbalanced
