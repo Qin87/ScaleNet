@@ -40,7 +40,7 @@ def get_second_directed_adj(args,  edge_index, num_nodes, dtype):
     edge_weight = L_values
 
     # row normalization
-    if args.inci_norm is not None:
+    if args.inci_norm != "0":
         row, col = edge_index
         deg = scatter_add(edge_weight, row, dim=0, dim_size=num_nodes)
         deg_inv_sqrt = deg.pow(-0.5)

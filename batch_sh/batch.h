@@ -40,6 +40,7 @@ mkdir -p "$RESULTS_DIR"
 # Customize this section to suit your needs.
 net_values="QiGi2 QiGi3 QiGu3 QiGu2 QiGu4 QiGi4"
 layer_values="1 2 3  4  "    #
+Norms=("0" "dir" "sym" "row" )
 
 # 'citeseer_npz/' 'cora_ml/'  'telegram/telegram'
 Direct_dataset=( 'citeseer_npz/' 'cora_ml/'  'telegram/telegram' 'dgl/pubmed' 'dgl/cora' 'WikiCS/'  )  # 'cora_ml/'  'citeseer_npz/'  'WebKB/Cornell' 'WebKB/wisconsin'  'WebKB/texas' 'WebKB/texas' 'WebKB/wisconsin'  telegram/telegram
@@ -51,12 +52,13 @@ timestamp=$(generate_timestamp)
 
 # Iterate over each dataset
 for Didataset in "${Direct_dataset[@]}"; do
+ for norm in "${Norms[@]}"; do
     for layer in $layer_values; do
         logfile="outforlayer${layer}.log"
         exec > "$logfile" 2>&1  # Redirect stdout and stderr to log file
         for net in $net_values; do
             # Run the Python script with parameters and log output
-            python3 main.py --net="$net"  --W_degree=5  --layer="$layer" --q="$q_value" --Dataset="$Didataset" > "NormQym_NoSelfLoop_${Didataset//\//_}_${timestamp}_${net}_layer${layer}q${q_value}.log"
+            python3 main.py --net="$net"  --W_degree=5 --inci_norm="$norm"  --layer="$layer" --q="$q_value" --Dataset="$Didataset" > "NormQym_NoSelfLoop_${Didataset//\//_}_${timestamp}_${net}_layer${layer}q${q_value}.log"
 
             wait $pid
           done
