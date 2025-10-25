@@ -156,7 +156,7 @@ def main():
     # Rename log file
     rename_log(log_directory, log_file_name_with_timestamp, result_str)
 
-    free_space()
+    # free_space()
 
 
 

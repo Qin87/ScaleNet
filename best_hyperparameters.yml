@@ -203,7 +203,7 @@ directed-roman-empire/:
 
 # 65.82±0.36(0.5_0.0_0.0,lit, lay6)   64.78±0.66(0.5_0.0_0.5, lay5), 64.7±0.4(0.5_0.0_0.0+'None'), (0.5_-1.0_1.0+'exp':64.7±0.5)
 arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
-  net: LargeScaleNet
+#  net: LargeScaleNet
   num_split: 5
   epoch: 10000
   BN_model: 1  # 0:61
@@ -250,7 +250,7 @@ fb100/penn94:
 
 
 snap-patents/:
-  net: LargeScaleNet
+#  net: LargeScaleNet
   alphaDir: 0.5   # sure
   betaDir: -1    # 0.5
   gamaDir: 0.5   # sure

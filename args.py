@@ -22,7 +22,7 @@ def parse_args():
     parser.add_argument("--learn_alpha", action="store_true")
     parser.add_argument("--differ_AA", type=int, default=0, help="Whether test AA-A-At")
     parser.add_argument("--differ_AAt", type=int, default=0,  help="Whether test AAt-A-At")
-    parser.add_argument('--num_split', type=int, default=1, help='num of run in spite of many splits')
+    parser.add_argument('--num_split', type=int, default=5, help='num of run in spite of many splits')
 
 
     parser.add_argument('--net', type=str, default='FaberNet', help='Mag, Sig, QuaNet, '
@@ -110,7 +110,7 @@ def parse_args():
     parser.add_argument('--gcn_norm', '-gcnnorm', type=int, default=1, help='GCNConv forward, normalize edge_index during training')
     parser.add_argument('--add_selfloop',  type=int, default=1, help='add selfloop in before model')
 
-    parser.add_argument("--all1", type=int, help="feature all 1 ", default=1)
+    parser.add_argument("--all1", type=int, help="feature all 1 ", default=0)
     parser.add_argument("--degfea", type=int, help="degree as feature: in-degree 1, out-degree -1, both 2, no 0  ", default=0)
 
     parser.add_argument('--to_undirected', '-tud', type=int, default=0, help='if convert graph to undirected')
