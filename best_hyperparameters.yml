@@ -9,7 +9,7 @@ telegram/:
   patience: 80
   NotImproved: 410
   epoch: 1500
-  net: ScaleNet         # 1iGi3,
+#  net: ScaleNet         # 1iGi3,
   conv_type: "dir-gcn"
   nonlinear: 1
   layer: 4
@@ -33,7 +33,7 @@ cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
   has_scheduler: 1
   conv_type: "dir-gcn"
   nonlinear: 1
-  net: ScaleNet   #  net: 1iGi3
+#  net: ScaleNet   #  net: 1iGi3
   hid_dim: 128   # better than 64
   layer: 3   # 2(80), 3(75), 4(79.8), 5(79.6)
   lr: 0.01    # 0.1(79), 0.01(80.7)
@@ -56,7 +56,7 @@ citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.
   epoch: 10000
   patience: 400
   has_scheduler: 1
-  net: ScaleNet
+#  net: ScaleNet
   conv_type: "dir-gcn"
   nonlinear: 0    # 0(68.3), 1(67.6)
   hid_dim: 128
@@ -80,7 +80,7 @@ WikiCS/:
   NotImproved: 410
   epoch: 1500
   patience: 80
-  net: ScaleNet
+#  net: ScaleNet
   conv_type: "dir-gcn"
   nonlinear: 1
   layer: 2
@@ -140,7 +140,7 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   inci_norm: "dir"
   dropout: 0.0  # 0.5(acc65), 0.0(acc75)
   nonlinear: 0   #
-  net: ScaleNet
+#  net: ScaleNet
   layer: 5      # 80.1
   lr: 0.005
   normalize: 1

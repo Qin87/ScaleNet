@@ -95,16 +95,21 @@ class ScaleConv(torch.nn.Module):
         if self.zero_order:
             self.lin_zero = Linear(input_dim, output_dim)
 
+        self.W1, self.W2 = None, None
+        if args.Norm_W:
+            self.W1 = nn.Parameter(torch.ones(args.edge_index.shape[1]))
+            self.W2 = nn.Parameter(torch.ones(args.edge_index.shape[1]))
+
     def forward(self, x, edge_index):
         if self.adj_norm is None:
             row, col = edge_index
             num_nodes = x.shape[0]
 
             adj = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
-            self.adj_norm = get_norm_adj(adj, norm=self.inci_norm, exponent=self.exponent)
+            self.adj_norm = get_norm_adj(adj, norm=self.inci_norm, exponent=self.exponent, W=self.W1)
 
             adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
-            self.adj_t_norm = get_norm_adj(adj_t, norm=self.inci_norm, exponent=self.exponent)
+            self.adj_t_norm = get_norm_adj(adj_t, norm=self.inci_norm, exponent=self.exponent, W=self.W2)
 
         y = self.adj_norm @ x
         y_t = self.adj_t_norm @ x

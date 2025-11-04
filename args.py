@@ -13,6 +13,8 @@ def parse_args():
     # for DirGNN
     parser.add_argument("--conv_type", type=str, help="DirGNN Model, scale, ", default="dir-gcn")
     parser.add_argument("--normalize", type=int, help="whether use batch normalization in ScaleNet, model:0/1", default=0)
+    parser.add_argument("--Norm_W", type=int, help="whether learnable normalization:0/1", default=0)
+    parser.add_argument("--Pre_W", type=int, help="whether adding learnable weights before normalization:0/1", default=1)
     parser.add_argument("--jk", type=str, choices=["max", "cat", 'weighted',  0], default='max')
     parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', "0"], default="0")
     parser.add_argument("--fs", type=str, choices=["sum", "cat", 'weight_sum', 'linear'], default="dir", help='fusion method')
@@ -25,13 +27,13 @@ def parse_args():
     parser.add_argument('--num_split', type=int, default=5, help='num of run in spite of many splits')
 
 
-    parser.add_argument('--net', type=str, default='FaberNet', help='Mag, Sig, QuaNet, '
+    parser.add_argument('--net', type=str, default='Dir-GNN', help='Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc, ParaGCN, SimGAT, SloopNet, tSNE,RandomNet, HFNet '
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym' 
                     'mlp, link, linkxcat, linkxadd, linkx, linkxgit, Dir-GNN, '
                     'ScaleNet, LargeScaleNet, FaberNet')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='telegram/', help=
+    parser.add_argument('--Dataset', type=str, default='WikipediaNetwork/chameleon', help=
     'telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/, '

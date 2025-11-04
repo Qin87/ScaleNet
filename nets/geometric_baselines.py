@@ -23,7 +23,7 @@ from nets.scalecon import FaberConv, ScaleConv
 from utils.utils import get_norm_adj
 
 
-def get_conv(conv_type, input_dim, output_dim, alpha):      # from Rossi(LoG)
+def get_conv(conv_type, input_dim, output_dim, alpha, args=None):      # from Rossi(LoG)
     if conv_type == "gcn":
         return GCNConv(input_dim, output_dim, add_self_loops=False)
     elif conv_type == "sage":
@@ -31,8 +31,7 @@ def get_conv(conv_type, input_dim, output_dim, alpha):      # from Rossi(LoG)
     elif conv_type == "gat":
         return GATConv(input_dim, output_dim, heads=1)
     elif conv_type == "dir-gcn":
-        return DirGCNConv(input_dim, output_dim, alpha)
-        # return DirGCNConv(input_dim, output_dim)
+        return DirGCNConv(input_dim, output_dim, alpha, args)
     elif conv_type == "dir-sage":
         return DirSageConv(input_dim, output_dim, alpha)
     elif conv_type == "dir-gat":
@@ -41,7 +40,38 @@ def get_conv(conv_type, input_dim, output_dim, alpha):      # from Rossi(LoG)
         raise ValueError(f"Convolution type {conv_type} not supported")
 
 class DirGCNConv(torch.nn.Module):
-    # def __init__(self, input_dim, output_dim, alpha):
+    def __init__(self, input_dim, output_dim, alpha, args):
+        super().__init__()
+
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+
+        self.lin_src_to_dst = Linear(input_dim, output_dim)
+        self.lin_dst_to_src = Linear(input_dim, output_dim)
+        self.alpha = alpha
+        self.adj_norm, self.adj_t_norm = None, None
+
+        self.W1, self.W2 = None, None
+        if args.Norm_W:
+            self.W1 = nn.Parameter(torch.ones(args.edge_index.shape[1]))
+            self.W2 = nn.Parameter(torch.ones(args.edge_index.shape[1]))
+
+    def forward(self, x, edge_index):
+        if self.adj_norm is None:
+            row, col = edge_index
+            num_nodes = x.shape[0]
+
+            adj = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+            self.adj_norm = get_norm_adj(adj, norm="dir", W=self.W1)     # this is key: improve from 57 to 72
+
+            adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
+            self.adj_t_norm = get_norm_adj(adj_t, norm="dir", W=self.W2)  #
+
+        return self.alpha * self.lin_src_to_dst(self.adj_norm @ x) + (1 - self.alpha) * self.lin_dst_to_src(
+            self.adj_t_norm @ x
+        )
+
+class WDirGCNConv(torch.nn.Module):
     def __init__(self, input_dim, output_dim, alpha):
         super().__init__()
 
@@ -340,11 +370,11 @@ class HighFreConv(torch.nn.Module):
         # if args.mlp:
         #     self.mlp = torch.nn.Linear(input_dim, output_dim)
 
-        jumping_knowledge = args.jk_inner
-        self.jumping_knowledge_inner = jumping_knowledge
-        if jumping_knowledge:
-            input_dim_jk = output_dim * num_scale if jumping_knowledge == "cat" else output_dim
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=input_dim, num_layers=3)
+        jk = args.jk_inner
+        self.jk_inner = jk
+        if jk:
+            input_dim_jk = output_dim * num_scale if jk == "cat" else output_dim
+            self.jump = JumpingKnowledge(mode=jk, channels=input_dim, num_layers=3)
             self.lin = Linear(input_dim_jk, output_dim)
 
 
@@ -440,7 +470,7 @@ class HighFreConv(torch.nn.Module):
         # if self.mlp:
         #     xs.append(self.mlp(x))
 
-        if self.jumping_knowledge_inner:
+        if self.jk_inner:
             x = self.jump(xs)
             x = self.lin(x)
         else:
@@ -515,11 +545,11 @@ class RanConv(torch.nn.Module):
         self.Intersect_alpha, self.Union_alpha, self.Intersect_beta, self.Union_beta, self.Intersect_gama, self.Union_gama = None, None, None, None, None, None
 
         num_scale = 3
-        jumping_knowledge = args.jk_inner
-        self.jumping_knowledge_inner = jumping_knowledge
-        if jumping_knowledge:
-            input_dim_jk = output_dim * num_scale if jumping_knowledge == "cat" else output_dim
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=input_dim, num_layers=3)
+        jk = args.jk_inner
+        self.jk_inner = jk
+        if jk:
+            input_dim_jk = output_dim * num_scale if jk == "cat" else output_dim
+            self.jump = JumpingKnowledge(mode=jk, channels=input_dim, num_layers=3)
             self.lin = Linear(input_dim_jk, output_dim)
 
 
@@ -612,7 +642,7 @@ class RanConv(torch.nn.Module):
 
         xs = [out1, out2, out3]
 
-        if self.jumping_knowledge_inner:
+        if self.jk_inner:
             x = self.jump(xs)
             x = self.lin(x)
         else:
@@ -689,11 +719,11 @@ class DirConv_tSNE(torch.nn.Module):
         # if args.mlp:
         #     self.mlp = torch.nn.Linear(input_dim, output_dim)
         #     num_scale += 1
-        jumping_knowledge = args.jk_inner
-        self.jumping_knowledge_inner = jumping_knowledge
-        if jumping_knowledge:
-            input_dim_jk = output_dim * num_scale if jumping_knowledge == "cat" else output_dim
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=input_dim, num_layers=3)
+        jk = args.jk_inner
+        self.jk_inner = jk
+        if jk:
+            input_dim_jk = output_dim * num_scale if jk == "cat" else output_dim
+            self.jump = JumpingKnowledge(mode=jk, channels=input_dim, num_layers=3)
             self.lin = Linear(input_dim_jk, output_dim)
 
 
@@ -790,7 +820,7 @@ class DirConv_tSNE(torch.nn.Module):
         # if self.mlp:
         #     xs.append(self.mlp(x))
 
-        if self.jumping_knowledge_inner:
+        if self.jk_inner:
             x = self.jump(xs)
             x = self.lin(x)
         else:
@@ -1239,18 +1269,18 @@ class DirGCNConv_sloop(torch.nn.Module):
         # if args.mlp:
         #     self.mlp = torch.nn.Linear(input_dim, output_dim)
         #     num_scale += 1
-        jumping_knowledge = args.jk_inner
-        self.jumping_knowledge_inner = jumping_knowledge
-        if jumping_knowledge:
-            input_dim_jk = output_dim * num_scale if jumping_knowledge == "cat" else output_dim
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=input_dim, num_layers=3)
+        jk = args.jk_inner
+        self.jk_inner = jk
+        if jk:
+            input_dim_jk = output_dim * num_scale if jk == "cat" else output_dim
+            self.jump = JumpingKnowledge(mode=jk, channels=input_dim, num_layers=3)
             self.lin = Linear(input_dim_jk, output_dim)
 
-        self.jumping_knowledge_sloop = jk_sl
-        if self.jumping_knowledge_sloop:
+        self.jk_sloop = jk_sl
+        if self.jk_sloop:
             num_scale_sl = 2
-            input_dim_jk_sl = output_dim * num_scale_sl if self.jumping_knowledge_sloop == "cat" else output_dim
-            self.jump = JumpingKnowledge(mode=self.jumping_knowledge_sloop, channels=input_dim, num_layers=3)
+            input_dim_jk_sl = output_dim * num_scale_sl if self.jk_sloop == "cat" else output_dim
+            self.jump = JumpingKnowledge(mode=self.jk_sloop, channels=input_dim, num_layers=3)
             self.lin = Linear(input_dim_jk_sl, output_dim)
 
     def forward(self, x, edge_index, flag):
@@ -1364,7 +1394,7 @@ class DirGCNConv_sloop(torch.nn.Module):
             # if self.mlp:
             #     xs.append(self.mlp(x))
 
-            if self.jumping_knowledge_inner:
+            if self.jk_inner:
                 x = self.jump(xs)
                 x = self.lin(x)
             else:
@@ -1380,7 +1410,7 @@ class DirGCNConv_sloop(torch.nn.Module):
         #
         # are_close = torch.allclose(x_sloop[0], x_sloop[2], rtol=1e-5, atol=1e-8)
         # print(f"Are the tensors (0 and 2) close enough to be considered equal? {are_close}")
-        if self.jumping_knowledge_sloop:
+        if self.jk_sloop:
             x = self.jump(x_sloop)
             x = self.lin(x)
         else:
@@ -1730,20 +1760,6 @@ def directed_norm_weight(adj, edge_weight=None):
 
     return adj1
 
-def get_model(args):
-    return GNN(
-        num_features=args.num_features,
-        hidden_dim=args.hid_dim,
-        num_layers=args.layer,
-        num_classes=args.n_cls,
-        dropout=args.dropout,
-        conv_type=args.conv_type,
-        jumping_knowledge=args.jk,
-        normalize=args.normalize,
-        alpha=args.alphaDir,
-        learn_alpha=args.learn_alpha,
-    )
-
 
 class DirSageConv(torch.nn.Module):
     def __init__(self, input_dim, output_dim, alpha):
@@ -1784,55 +1800,44 @@ class DirGATConv(torch.nn.Module):
         )
 
 
-
 class GNN(torch.nn.Module):     # from Rossi(LoG paper)
     def __init__(
         self,
-        num_features,
-        num_classes,
-        hidden_dim,
-        num_layers=2,
-        dropout=0,
-        conv_type="dir-gcn",
-        jumping_knowledge=False,
-        normalize=False,
-        alpha=1/2,
-        learn_alpha=False,
+        args
     ):
         super().__init__()
-
-        self.alpha = nn.Parameter(torch.ones(1) * alpha, requires_grad=learn_alpha)
-        output_dim = hidden_dim if jumping_knowledge else num_classes
-        if num_layers == 1:
-            self.convs = ModuleList([get_conv(conv_type, num_features, output_dim, self.alpha)])
+        self.alpha = nn.Parameter(torch.ones(1) * args.alphaDir, requires_grad=args.learn_alpha)
+        output_dim = args.hid_dim if args.jk else args.num_classes
+        if args.layer == 1:
+            self.convs = ModuleList([get_conv(args.conv_type, args.num_features, output_dim, self.alpha, args=args)])
         else:
-            self.convs = ModuleList([get_conv(conv_type, num_features, hidden_dim, self.alpha)])
-            for _ in range(num_layers - 2):
-                self.convs.append(get_conv(conv_type, hidden_dim, hidden_dim, self.alpha))
-            self.convs.append(get_conv(conv_type, hidden_dim, output_dim, self.alpha))
+            self.convs = ModuleList([get_conv(args.conv_type, args.num_features, args.hid_dim, self.alpha, args=args)])
+            for _ in range(args.layer - 2):
+                self.convs.append(get_conv(args.conv_type, args.hid_dim, args.hid_dim, self.alpha, args=args))
+            self.convs.append(get_conv(args.conv_type, args.hid_dim, output_dim, self.alpha, args=args))
 
-        if jumping_knowledge:
-            input_dim = hidden_dim * num_layers if jumping_knowledge == "cat" else hidden_dim
-            self.lin = Linear(input_dim, num_classes)
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=hidden_dim, num_layers=num_layers)
+        if args.jk:
+            input_dim = args.hid_dim * args.layer if args.jk == "cat" else args.hid_dim
+            self.lin = Linear(input_dim, args.num_classes)
+            self.jump = JumpingKnowledge(mode=args.jk, channels=args.hid_dim, num_layers=args.layer)
 
-        self.num_layers = num_layers
-        self.dropout = dropout
-        self.jumping_knowledge = jumping_knowledge
-        self.normalize = normalize
+        self.num_layers = args.layer
+        self.dropout = args.dropout
+        self.jk = args.jk
+        self.normalize = args.normalize
 
     def forward(self, x, edge_index):
         xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index)
-            if i != len(self.convs) - 1 or self.jumping_knowledge:
+            if i != len(self.convs) - 1 or self.jk:
                 x = F.relu(x)
                 x = F.dropout(x, p=self.dropout, training=self.training)
                 if self.normalize:
                     x = F.normalize(x, p=2, dim=1)
             xs += [x]
 
-        if self.jumping_knowledge:
+        if self.jk:
             x = self.jump(xs)
             x = self.lin(x)
 
@@ -1884,15 +1889,15 @@ class GCN_JKNet(torch.nn.Module):
 class High_Frequent(torch.nn.Module):
     def __init__(self, nfeat, nclass, args):
         super().__init__()
-        jumping_knowledge = args.jk
+        jk = args.jk
         layer = args.layer
         nhid = args.hid_dim
-        hidden_dim = nhid
+        hid_dim = nhid
         normalize = args.normalize
         dropout = args.dropout
         nonlinear = args.nonlinear
 
-        output_dim = nhid if jumping_knowledge else nclass
+        output_dim = nhid if jk else nclass
         if layer == 1:
             self.convs = ModuleList([HighFreConv(nfeat, output_dim, args)])
         else:
@@ -1902,14 +1907,14 @@ class High_Frequent(torch.nn.Module):
             self.convs.append(HighFreConv(nhid, output_dim, args))
 
         num_scale = layer
-        if jumping_knowledge:
-            input_dim = hidden_dim * num_scale if jumping_knowledge == "cat" else hidden_dim
+        if jk:
+            input_dim = hid_dim * num_scale if jk == "cat" else hid_dim
             self.lin = Linear(input_dim, nclass)
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=hidden_dim, num_layers=layer)
+            self.jump = JumpingKnowledge(mode=jk, channels=hid_dim, num_layers=layer)
 
         self.num_layers = layer
         self.dropout = dropout
-        self.jumping_knowledge = jumping_knowledge
+        self.jk = jk
         self.normalize = normalize
         self.nonlinear = nonlinear
 
@@ -1918,7 +1923,7 @@ class High_Frequent(torch.nn.Module):
         xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index)
-            if i != len(self.convs) - 1 or self.jumping_knowledge:
+            if i != len(self.convs) - 1 or self.jk:
                 if self.nonlinear:
                     x = F.relu(x)
                 x = F.dropout(x, p=self.dropout, training=self.training)
@@ -1926,7 +1931,7 @@ class High_Frequent(torch.nn.Module):
                     x = F.normalize(x, p=2, dim=1)
             xs += [x]
 
-        if self.jumping_knowledge:
+        if self.jk:
             x = self.jump(xs)
             x = self.lin(x)
 
@@ -1935,15 +1940,15 @@ class High_Frequent(torch.nn.Module):
 class RandomNet(torch.nn.Module):
     def __init__(self, nfeat, nclass, args):
         super().__init__()
-        jumping_knowledge = args.jk
+        jk = args.jk
         layer = args.layer
         nhid = args.hid_dim
-        hidden_dim = nhid
+        hid_dim = nhid
         normalize = args.normalize
         dropout = args.dropout
         nonlinear = args.nonlinear
 
-        output_dim = nhid if jumping_knowledge else nclass
+        output_dim = nhid if jk else nclass
         if layer == 1:
             self.convs = ModuleList([RanConv(nfeat, output_dim, args)])
         else:
@@ -1953,14 +1958,14 @@ class RandomNet(torch.nn.Module):
             self.convs.append(RanConv(nhid, output_dim, args))
 
         num_scale = layer
-        if jumping_knowledge:
-            input_dim = hidden_dim * num_scale if jumping_knowledge == "cat" else hidden_dim
+        if jk:
+            input_dim = hid_dim * num_scale if jk == "cat" else hid_dim
             self.lin = Linear(input_dim, nclass)
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=hidden_dim, num_layers=layer)
+            self.jump = JumpingKnowledge(mode=jk, channels=hid_dim, num_layers=layer)
 
         self.num_layers = layer
         self.dropout = dropout
-        self.jumping_knowledge = jumping_knowledge
+        self.jk = jk
         self.normalize = normalize
         self.nonlinear = nonlinear
 
@@ -1969,7 +1974,7 @@ class RandomNet(torch.nn.Module):
         xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index)
-            if i != len(self.convs) - 1 or self.jumping_knowledge:
+            if i != len(self.convs) - 1 or self.jk:
                 if self.nonlinear:
                     x = F.relu(x)
                 x = F.dropout(x, p=self.dropout, training=self.training)
@@ -1977,7 +1982,7 @@ class RandomNet(torch.nn.Module):
                     x = F.normalize(x, p=2, dim=1)
             xs += [x]
 
-        if self.jumping_knowledge:
+        if self.jk:
             x = self.jump(xs)
             x = self.lin(x)
 
@@ -1986,15 +1991,15 @@ class RandomNet(torch.nn.Module):
 class ScaleNet(torch.nn.Module):
     def __init__(self, nfeat, nclass, args):
         super().__init__()
-        jumping_knowledge = args.jk
+        jk = args.jk
         layer = args.layer
         nhid = args.hid_dim
-        hidden_dim = nhid
+        hid_dim = nhid
         normalize = args.normalize
         dropout = args.dropout
         nonlinear = args.nonlinear
 
-        output_dim = nhid if jumping_knowledge else nclass
+        output_dim = nhid if jk else nclass
         if layer == 1:
             self.convs = ModuleList([DirConv_tSNE(nfeat, output_dim, args, visualize=True )])
         else:
@@ -2004,14 +2009,14 @@ class ScaleNet(torch.nn.Module):
             self.convs.append(DirConv_tSNE(nhid, output_dim, args, visualize=True))
 
         num_scale = layer
-        if jumping_knowledge:
-            input_dim = hidden_dim * num_scale if jumping_knowledge == "cat" else hidden_dim
+        if jk:
+            input_dim = hid_dim * num_scale if jk == "cat" else hid_dim
             self.lin = Linear(input_dim, nclass)
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=hidden_dim, num_layers=layer)
+            self.jump = JumpingKnowledge(mode=jk, channels=hid_dim, num_layers=layer)
 
         self.num_layers = layer
         self.dropout = dropout
-        self.jumping_knowledge = jumping_knowledge
+        self.jk = jk
         self.normalize = normalize
         self.nonlinear = nonlinear
 
@@ -2020,7 +2025,7 @@ class ScaleNet(torch.nn.Module):
         xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index, y, epoch)
-            if i != len(self.convs) - 1 or self.jumping_knowledge:
+            if i != len(self.convs) - 1 or self.jk:
                 if self.nonlinear:
                     x = F.relu(x)
                 x = F.dropout(x, p=self.dropout, training=self.training)
@@ -2028,7 +2033,7 @@ class ScaleNet(torch.nn.Module):
                     x = F.normalize(x, p=2, dim=1)
             xs += [x]
 
-        if self.jumping_knowledge:
+        if self.jk:
             x = self.jump(xs)
             x = self.lin(x)
 
@@ -2037,15 +2042,15 @@ class ScaleNet(torch.nn.Module):
 class Sloop_JKNet(torch.nn.Module):
     def __init__(self, nfeat, nclass, args):
         super().__init__()
-        jumping_knowledge = args.jk
+        jk = args.jk
         layer = args.layer
         nhid = args.hid_dim
-        hidden_dim = nhid
+        hid_dim = nhid
         normalize = args.normalize
         dropout = args.dropout
         nonlinear = args.nonlinear
 
-        output_dim = nhid if jumping_knowledge else nclass
+        output_dim = nhid if jk else nclass
         jkSl_end = 'max'
         jkSl_inner = 0
         if layer == 1:
@@ -2056,15 +2061,15 @@ class Sloop_JKNet(torch.nn.Module):
                 self.convs.append(DirGCNConv_sloop(nhid, nhid, args, jk_sl=jkSl_inner))
             self.convs.append(DirGCNConv_sloop(nhid, output_dim, args, jk_sl=jkSl_end))
 
-        if jumping_knowledge:
+        if jk:
             n= layer*3
-            input_dim = hidden_dim * n if jumping_knowledge == "cat" else hidden_dim
+            input_dim = hid_dim * n if jk == "cat" else hid_dim
             self.lin = Linear(input_dim, nclass)
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=hidden_dim, num_layers=layer)
+            self.jump = JumpingKnowledge(mode=jk, channels=hid_dim, num_layers=layer)
 
         self.num_layers = layer
         self.dropout = dropout
-        self.jumping_knowledge = jumping_knowledge
+        self.jk = jk
         self.normalize = normalize
         self.nonlinear = nonlinear
 
@@ -2072,7 +2077,7 @@ class Sloop_JKNet(torch.nn.Module):
         xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index, flag=1-i)
-            if i != len(self.convs) - 1 or self.jumping_knowledge:
+            if i != len(self.convs) - 1 or self.jk:
                 if self.nonlinear:
                     if isinstance(x, list):
                         x = [F.relu(i) for i in x]
@@ -2094,7 +2099,7 @@ class Sloop_JKNet(torch.nn.Module):
             else:
                 xs.append(x)
 
-        if self.jumping_knowledge:
+        if self.jk:
             x = self.jump(xs)
             x = self.lin(x)
 

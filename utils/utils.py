@@ -73,8 +73,18 @@ def use_best_hyperparams(args, dataset_name):
     # print(args)
     return args
 
-def get_norm_adj(adj, norm, exponent =-0.25 ):
-    if norm == "sym":       # Din^(-0.5)ADin^(-0.5)
+def get_norm_adj(adj, norm, exponent=-0.25, W=None):
+    if W is not None:
+        row, col, value = adj.coo()
+        if value is None:
+            weighted_value = W
+        else:
+            weighted_value = value * W
+        from torch_sparse import SparseTensor
+        adj = SparseTensor(row=row, col=col, value=weighted_value,
+                           sparse_sizes=adj.sparse_sizes())
+        return adj
+    elif norm == "sym":       # Din^(-0.5)ADin^(-0.5)
         return gcn_norm(adj, add_self_loops=False)
     elif norm == "dir_ones":
         return directed_norm_ones(adj)
