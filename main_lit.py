@@ -42,6 +42,10 @@ def main():
         data_x = calculate_degree_features(edges, args.degfea)
         num_features = abs(args.degfea)
     n_cls = data_y.max().item() + 1
+    splits = data_train_maskOrigin.shape[1]
+    if len(data_test_maskOrigin.shape) < splits:
+        data_test_maskOrigin = data_test_maskOrigin.unsqueeze(1).repeat(1, splits)
+
     args.num_features, args.num_classes, args.edge_index, args.num_nodes = data_x.shape[1], n_cls, edges, data_x.shape[0]
 
     log_directory, log_file_name_with_timestamp = name_file(args, IsDirectedGraph)
