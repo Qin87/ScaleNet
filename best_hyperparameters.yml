@@ -218,8 +218,8 @@ arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
   lr: 0.001
 
   alphaDir: 0.5
-  betaDir: 0  # 0.5:64.1  -1:64.4
-  gamaDir: 0  # 0.5:64.2  1:64.5
+#  betaDir: 0  # 0.5:64.1  -1:64.4
+#  gamaDir: 0  # 0.5:64.2  1:64.5
   exponent: -0.5  # 0.25:30
   weight_penalty: 'None'  # exp:64.7
 #  inci_norm: 'dir'
@@ -253,7 +253,7 @@ snap-patents/:
 #  net: LargeScaleNet
   alphaDir: 0.5   # sure
   betaDir: -1    # 0.5
-  gamaDir: 0.5   # sure
+#  gamaDir: 0.5   # sure
   num_split: 5  # original split
   BN_model: 1   # 1:74.6, 0:74.2
   lr: 0.01   # sure
