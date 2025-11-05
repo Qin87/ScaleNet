@@ -43,7 +43,7 @@ def main():
         num_features = abs(args.degfea)
     n_cls = data_y.max().item() + 1
     splits = data_train_maskOrigin.shape[1]
-    if len(data_test_maskOrigin.shape) < splits:
+    if len(data_test_maskOrigin.shape) < 2:   #WikiCS have only 1 test
         data_test_maskOrigin = data_test_maskOrigin.unsqueeze(1).repeat(1, splits)
 
     args.num_features, args.num_classes, args.edge_index, args.num_nodes = data_x.shape[1], n_cls, edges, data_x.shape[0]

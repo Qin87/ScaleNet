@@ -179,7 +179,7 @@ WikipediaNetwork/squirrel:
 
 # 93.5±0.3(0.5,-1,-1 Acer), 93.4±0.3(0.5,-1,-1 Dell), --Done!
 directed-roman-empire/:
-  net: LargeScaleNet
+#  net: LargeScaleNet
   num_split: 10  # original dataset
   nonlinear: 1    # must have this, or acc is 85
   has_scheduler: 1
