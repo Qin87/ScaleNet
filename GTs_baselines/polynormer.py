@@ -3,20 +3,20 @@ import torch.nn.functional as F
 from torch_geometric.nn import GATConv
 
 class GlobalAttn(torch.nn.Module):
-    def __init__(self, hidden_channels, heads, num_layers, beta, dropout, qk_shared=True):
+    def __init__(self, hidden_channels, heads, num_layers, beta_poly, dropout, qk_shared=True):
         super(GlobalAttn, self).__init__()
 
         self.hidden_channels = hidden_channels
         self.heads = heads
         self.num_layers = num_layers
-        self.beta = beta
+        self.beta_poly = beta_poly
         self.dropout = dropout
         self.qk_shared = qk_shared
 
-        if self.beta < 0:
-            self.betas = torch.nn.Parameter(torch.zeros(num_layers, heads*hidden_channels))
+        if self.beta_poly < 0:
+            self.beta_polys = torch.nn.Parameter(torch.zeros(num_layers, heads*hidden_channels))
         else:
-            self.betas = torch.nn.Parameter(torch.ones(num_layers, heads*hidden_channels)*self.beta)
+            self.beta_polys = torch.nn.Parameter(torch.ones(num_layers, heads*hidden_channels)*self.beta_poly)
 
         self.h_lins = torch.nn.ModuleList()
         if not self.qk_shared:
@@ -45,10 +45,10 @@ class GlobalAttn(torch.nn.Module):
             v_lin.reset_parameters()
         for ln in self.lns:
             ln.reset_parameters()
-        if self.beta < 0:
-            torch.nn.init.xavier_normal_(self.betas)
+        if self.beta_poly < 0:
+            torch.nn.init.xavier_normal_(self.beta_polys)
         else:
-            torch.nn.init.constant_(self.betas, self.beta)
+            torch.nn.init.constant_(self.beta_polys, self.beta_poly)
         self.lin_out.reset_parameters()
 
     def forward(self, x):
@@ -71,12 +71,12 @@ class GlobalAttn(torch.nn.Module):
             den = torch.einsum('ndh, dh -> nh', q, k_sum).unsqueeze(1)
 
             # linear global attention based on kernel trick
-            if self.beta < 0:
-                beta = F.sigmoid(self.betas[i]).unsqueeze(0)
+            if self.beta_poly < 0:
+                beta_poly = F.sigmoid(self.beta_polys[i]).unsqueeze(0)
             else:
-                beta = self.betas[i].unsqueeze(0)
+                beta_poly = self.beta_polys[i].unsqueeze(0)
             x = (num/den).reshape(seq_len, -1)
-            x = self.lns[i](x) * (h+beta)
+            x = self.lns[i](x) * (h+beta_poly)
             x = F.relu(self.lin_out(x))
             x = F.dropout(x, p=self.dropout, training=self.training)
 
@@ -86,7 +86,7 @@ class GlobalAttn(torch.nn.Module):
 
 class Polynormer(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, local_layers=3, global_layers=2,
-            in_dropout=0.15, dropout=0.5, global_dropout=0.5, heads=1, beta=-1, pre_ln=False):
+            in_dropout=0.15, dropout=0.5, global_dropout=0.5, heads=1, beta_poly=-1, pre_ln=False):
         super(Polynormer, self).__init__()
 
         self._global = False
@@ -94,12 +94,12 @@ class Polynormer(torch.nn.Module):
         self.dropout = dropout
         self.pre_ln = pre_ln
 
-        ## Two initialization strategies on beta
-        self.beta = beta
-        if self.beta < 0:
-            self.betas = torch.nn.Parameter(torch.zeros(local_layers,heads*hidden_channels))
+        ## Two initialization strategies on beta_poly
+        self.beta_poly = beta_poly
+        if self.beta_poly < 0:
+            self.beta_polys = torch.nn.Parameter(torch.zeros(local_layers,heads*hidden_channels))
         else:
-            self.betas = torch.nn.Parameter(torch.ones(local_layers,heads*hidden_channels)*self.beta)
+            self.beta_polys = torch.nn.Parameter(torch.ones(local_layers,heads*hidden_channels)*self.beta_poly)
 
         self.h_lins = torch.nn.ModuleList()
         self.local_convs = torch.nn.ModuleList()
@@ -119,7 +119,7 @@ class Polynormer(torch.nn.Module):
 
         self.lin_in = torch.nn.Linear(in_channels, heads*hidden_channels)
         self.ln = torch.nn.LayerNorm(heads*hidden_channels)
-        self.global_attn = GlobalAttn(hidden_channels, heads, global_layers, beta, global_dropout)
+        self.global_attn = GlobalAttn(hidden_channels, heads, global_layers, beta_poly, global_dropout)
         self.pred_local = torch.nn.Linear(heads*hidden_channels, out_channels)
         self.pred_global = torch.nn.Linear(heads*hidden_channels, out_channels)
 
@@ -140,10 +140,10 @@ class Polynormer(torch.nn.Module):
         self.global_attn.reset_parameters()
         self.pred_local.reset_parameters()
         self.pred_global.reset_parameters()
-        if self.beta < 0:
-            torch.nn.init.xavier_normal_(self.betas)
+        if self.beta_poly < 0:
+            torch.nn.init.xavier_normal_(self.beta_polys)
         else:
-            torch.nn.init.constant_(self.betas, self.beta)
+            torch.nn.init.constant_(self.beta_polys, self.beta_poly)
 
     def forward(self, x, edge_index):
         x = F.dropout(x, p=self.in_drop, training=self.training)
@@ -160,11 +160,11 @@ class Polynormer(torch.nn.Module):
             x = local_conv(x, edge_index) + self.lins[i](x)
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
-            if self.beta < 0:
-                beta = F.sigmoid(self.betas[i]).unsqueeze(0)
+            if self.beta_poly < 0:
+                beta_poly = F.sigmoid(self.beta_polys[i]).unsqueeze(0)
             else:
-                beta = self.betas[i].unsqueeze(0)
-            x = (1-beta)*self.lns[i](h*x) + beta*x
+                beta_poly = self.beta_polys[i].unsqueeze(0)
+            x = (1-beta_poly)*self.lns[i](h*x) + beta_poly*x
             x_local = x_local + x
 
         ## equivariant global attention

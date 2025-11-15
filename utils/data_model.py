@@ -10,6 +10,7 @@ from networkx.readwrite import json_graph
 from torch_scatter import scatter_add
 
 from GTs_baselines.network.gps_model import GPSModel
+from GTs_baselines.polynormer import Polynormer
 from nets.link_model import LINK, LINK_Concat, LINKX, LINK_Add
 from nets.gat import StandGAT1BN_Qin
 from nets.gcn import ParaGCNXBN, StandGCNXBN
@@ -52,7 +53,11 @@ def init_model(model):
             module.reset_parameters()  # Res
 
 def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
-    if args.net.lower() == 'gps':
+    if args.net.lower() == 'polynormer':
+        model = Polynormer(num_features, args.hid_dim, n_cls, local_layers=args.local_layers, global_layers=args.global_layers,
+                           in_dropout=args.in_dropout, dropout=args.dropout, global_dropout=args.global_dropout,
+                           heads=args.heads, beta_poly=args.beta_poly, pre_ln=args.pre_ln).to(device)
+    elif args.net.lower() == 'gps':
         model = GPSModel(args, num_features, n_cls).to(device)
     elif args.net.lower() == 'largescalenet':
         args.conv_type2 = "scale"

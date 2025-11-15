@@ -1,11 +1,11 @@
 #!/bin/bash
 
-net_values="linkxadd  "
+net_values="gps  "
 layer_values="1 2 3 4 5 9 20 231 110  "
 Binary="0 1 "
 
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'  'WikipediaNetwork/chameleon' 'WikipediaNetwork/squirrel'
-Direct_dataset=('directed-roman-empire/' )
+Direct_dataset=('citeseer/'   'telegram/'   'dgl/pubmed'  'WikiCS/'     'directed-roman-empire/' )
 generate_timestamp() {
   date +"%d%H%Ms%S"
 }
@@ -25,8 +25,8 @@ for Didataset in "${Direct_dataset[@]}"; do
 
             # Run the Python script with parameters and log output
             python3 main_lit.py   --seed="$layer" \
-            # --net="$net"   \
-           # --Dataset="$Didataset"  \
+             --net="$net"   \
+            --Dataset="$Didataset"  \
             > "$log_output"
              2>&1
             wait $pid

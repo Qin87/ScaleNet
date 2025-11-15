@@ -20,6 +20,7 @@ import torch
 import numpy as np
 from data.pokec_dataset import PokecDataset
 from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
+from nets.edge_data import to_undirected
 
 try:
     import dgl
@@ -451,6 +452,7 @@ class DirectedHeterophilousGraphDataset(InMemoryDataset):
         x = torch.from_numpy(raw["node_features"])
         y = torch.from_numpy(raw["node_labels"])
         edge_index = torch.from_numpy(raw["edges"]).t().contiguous()
+        # edge_index = to_undirected(edge_index, num_nodes=x.size(0))   # debug scale
         train_mask = torch.from_numpy(raw["train_masks"]).t().contiguous()
         val_mask = torch.from_numpy(raw["val_masks"]).t().contiguous()
         test_mask = torch.from_numpy(raw["test_masks"]).t().contiguous()
