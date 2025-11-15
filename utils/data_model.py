@@ -9,6 +9,7 @@ from networkx.readwrite import json_graph
 # from torch_geometric.nn import LINKX
 from torch_scatter import scatter_add
 
+from GTs_baselines.network.gps_model import GPSModel
 from nets.link_model import LINK, LINK_Concat, LINKX, LINK_Add
 from nets.gat import StandGAT1BN_Qin
 from nets.gcn import ParaGCNXBN, StandGCNXBN
@@ -51,7 +52,9 @@ def init_model(model):
             module.reset_parameters()  # Res
 
 def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
-    if args.net.lower() == 'largescalenet':
+    if args.net.lower() == 'gps':
+        model = GPSModel(args, num_features, n_cls).to(device)
+    elif args.net.lower() == 'largescalenet':
         args.conv_type2 = "scale"
         model = GNN2(args).to(device)
     elif args.net.lower() == 'fabernet':

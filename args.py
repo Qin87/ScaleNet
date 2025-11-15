@@ -27,13 +27,13 @@ def parse_args():
     parser.add_argument('--num_split', type=int, default=5, help='num of run in spite of many splits')
 
 
-    parser.add_argument('--net', type=str, default='Dir-GNN', help='Mag, Sig, QuaNet, '
+    parser.add_argument('--net', type=str, default='gps', help='Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc, ParaGCN, SimGAT, SloopNet, tSNE,RandomNet, HFNet '
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym' 
                     'mlp, link, linkxcat, linkxadd, linkx, linkxgit, Dir-GNN, '
                     'ScaleNet, LargeScaleNet, FaberNet')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='arxiv-year/', help=
+    parser.add_argument('--Dataset', type=str, default='telegram/', help=
     'telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/, '
@@ -92,6 +92,34 @@ def parse_args():
     parser.add_argument('--link_init_layers_X', type=int, default=1)
     parser.add_argument('--inner_activation', action='store_true', help='Whether linkV3 uses inner activation')
     parser.add_argument('--inner_dropout', action='store_true', help='Whether linkV3 uses inner dropout')
+
+    # GPS
+    parser.add_argument('--pe_types', type=str, default='RWSE')
+    parser.add_argument('--local_gnn_type', type=str, default='GCN')
+    parser.add_argument('--layers', type=int, default=1)
+    # poly
+    parser.add_argument('--global_layers', type=int, default=2,
+                        help='number of layers for global attention')
+    parser.add_argument('--beta', type=float, default=-1.0,
+                        help='Polynormer beta initialization')
+    parser.add_argument('--global_dropout', type=float, default=None)
+    # sgformer
+    parser.add_argument('--alpha_sg', type=float, default=0.5,
+                        help='weight for residual link')
+    parser.add_argument('--use_bn', action='store_true', help='use layernorm')
+    parser.add_argument('--use_graph', action='store_true', help='use pos emb')
+    parser.add_argument('--use_weight', action='store_true')
+    parser.add_argument('--attention', type=str, default='gcn')
+    parser.add_argument('--graph_weight', type=float,
+                        default=0.8, help='graph weight.')
+    parser.add_argument('--use_residual', action='store_true', help='use residual link for each trans layer')
+    parser.add_argument('--use_act', action='store_true', help='use activation for each trans layer')
+    parser.add_argument('--aggregate', type=str, default='add',
+                        help='aggregate type, add or cat.')
+    # nagphormer
+    parser.add_argument('--hops', type=int, default=10)
+    # goat
+    parser.add_argument('--num_centroids', type=int, default=4096)
 
     # for scale_big
     parser.add_argument("--profiler", action="store_true")
