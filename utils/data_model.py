@@ -11,6 +11,7 @@ from torch_scatter import scatter_add
 
 from GTs_baselines.network.gps_model import GPSModel
 from GTs_baselines.polynormer import Polynormer
+from GTs_baselines.sgformer import SGFormer, GCN
 from nets.link_model import LINK, LINK_Concat, LINKX, LINK_Add
 from nets.gat import StandGAT1BN_Qin
 from nets.gcn import ParaGCNXBN, StandGCNXBN
@@ -53,7 +54,17 @@ def init_model(model):
             module.reset_parameters()  # Res
 
 def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
-    if args.net.lower() == 'polynormer':
+    if args.net.lower() == 'sgformer':
+        gnn = GCN(in_channels=num_features,
+                  hidden_channels=args.hid_dim,
+                  out_channels=args.hid_dim,
+                  num_layers=args.layer,
+                  dropout=args.dropout)
+        model = SGFormer(num_features, args.hid_dim, n_cls, num_layers=args.layer, alpha=args.alpha_sg, dropout=args.dropout,
+                         num_heads=args.heads, use_bn=args.use_bn, use_residual=args.use_residual,
+                         use_graph=args.use_graph, use_weight=args.use_weight, use_act=args.use_act,
+                         graph_weight=args.graph_weight, gnn=gnn, aggregate=args.aggregate, jk=args.jk).to(device)
+    elif args.net.lower() == 'polynormer':
         model = Polynormer(num_features, args.hid_dim, n_cls, local_layers=args.local_layers, global_layers=args.global_layers,
                            in_dropout=args.in_dropout, dropout=args.dropout, global_dropout=args.global_dropout,
                            heads=args.heads, beta_poly=args.beta_poly, pre_ln=args.pre_ln).to(device)
@@ -72,7 +83,7 @@ def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
     elif args.net.lower() == 'linkxadd':
         model = LINK_Add(args).to(device)
     elif args.net.lower() == 'linkx':  # linkx is opposite aggregation of linkxgit
-    #     model = LINKX(num_nodes=args.num_node, in_channels= num_features, hidden_channels=args.hid_dim, out_channels=n_cls, num_layers=args.layer,
+    #     model = LINKX(num_nodes=args.num_node, in_channels= num_features, hid_dim=args.hid_dim, out_channels=n_cls, num_layers=args.layer,
     #         num_edge_layers=args.link_init_layers_A, num_node_layers=args.link_init_layers_X,
     #                    dropout=args.dropout).to(device)
     # elif args.net.lower() == 'linkxgit':
