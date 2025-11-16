@@ -1,11 +1,11 @@
 #!/bin/bash
 
-net_values="gps "
+net_values="polynormer "
 layer_values="  2 "
 
 
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'  'WikipediaNetwork/chameleon' 'WikipediaNetwork/squirrel'
-Direct_dataset=( 'citeseer/' 'cora_ml/'  'WikiCS/'  )
+Direct_dataset=( 'directed-roman-empire/'  'citeseer/' 'cora_ml/'  'WikiCS/'  )
 generate_timestamp() {
   date +"%d%H%Ms%S"
 }
