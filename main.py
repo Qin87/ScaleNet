@@ -5,7 +5,7 @@ import socket, uuid
 import sys
 import os
 import numpy as np
-from torch_geometric.utils import add_self_loops
+
 print("Python Path:", sys.path)
 print("Current Working Directory:", os.getcwd())
 import os
@@ -194,11 +194,6 @@ log_file_name_with_timestamp = 'main_' + log_file_name_with_timestamp
 if not os.path.exists(log_directory):
     os.makedirs(log_directory)
 print(args)
-
-if args.add_selfloop:
-    edges, _ = add_self_loops(edges)
-if args.to_reverse_edge:
-    edges = edges[torch.tensor([1, 0])]
 
 seed_everything(args.seed)
 

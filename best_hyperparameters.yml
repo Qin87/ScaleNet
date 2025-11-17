@@ -2,7 +2,7 @@
 telegram/:
   monitor: val_loss  # val_acc is bad when few epoch,
   num_split: 10
-  hid_dim: 64
+#  hid_dim: 64
   l2: 0   # 97.0(0), 95.6(5e-4)
   inci_norm: "0"  # {94.2±4.4(dir) 95.6±3.0(0)}  {93.2(dir), 97.0(0)}
   has_scheduler: 1
@@ -34,7 +34,7 @@ cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
   conv_type: "dir-gcn"
   nonlinear: 1
 #  net: ScaleNet   #  net: 1iGi3
-  hid_dim: 128   # better than 64
+#  hid_dim: 128   # better than 64
   layer: 3   # 2(80), 3(75), 4(79.8), 5(79.6)
   lr: 0.01    # 0.1(79), 0.01(80.7)
   l2: 0.0005
@@ -59,7 +59,7 @@ citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.
 #  net: ScaleNet
   conv_type: "dir-gcn"
   nonlinear: 0    # 0(68.3), 1(67.6)
-  hid_dim: 128
+#  hid_dim: 128
   layer: 3     # 1(65.3),2(64.8), 3(62.6), 4(64.0), 5(64.4)
   lr: 0.01
   normalize: 1    # 1(68.3), 0 much worse60.7,
@@ -75,7 +75,7 @@ citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.
 
 # 79.1±0.8-----
 WikiCS/:
-  hid_dim: 128
+#  hid_dim: 128
   inci_norm: 'dir'  # key
   NotImproved: 410
   epoch: 1500
@@ -113,7 +113,7 @@ dgl/pubmed:
   betaDir: 1    #
   gamaDir: 1
   inci_norm: "sym"
-  hid_dim: 64
+#  hid_dim: 64
   to_undirected: 1
 
 #  net: ScaleNet
@@ -135,7 +135,7 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   epoch: 10000
   patience: 400
   has_scheduler: 1
-  hid_dim: 128
+#  hid_dim: 128
   conv_type: "dir-gcn"
   inci_norm: "dir"
   dropout: 0.0  # 0.5(acc65), 0.0(acc75)
@@ -155,7 +155,7 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
 # (1_1_-1) 74.7±2.4,   (1,-1,-1) 75.2±1.7
 WikipediaNetwork/squirrel:
   num_split: 10  # original dataset
-  hid_dim: 128
+#  hid_dim: 128
   l2: 0
   NotImproved: 810
   epoch: 10000
@@ -165,7 +165,7 @@ WikipediaNetwork/squirrel:
   inci_norm: "dir"  # 0(70.5),
   nonlinear: 1
   dropout: 0.0  # 0.5(acc72.7), 0.0(acc75)
-  net: ScaleNet
+#  net: ScaleNet
   layer: 6
   lr: 0.01
   normalize: 1
@@ -189,7 +189,7 @@ directed-roman-empire/:
   add_selfloop: 0   # Add 93.3
   BN_model: 0  # no batch norm is better
   normalize: 0  #
-  hid_dim: 256
+#  hid_dim: 256
   layer: 6  # 5:93.4  7:93.1  8:93.0
   jk: "cat"   # >max
   dropout: 0.2

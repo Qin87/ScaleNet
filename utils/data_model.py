@@ -357,7 +357,7 @@ def get_dataset(name, path, split_type='public'):
         raise NotImplementedError("Not Implemented Dataset!")
 
     return dataset
-
+from torch_geometric.utils import add_self_loops
 import os.path as osp
 def load_dataset(args):
     if len(args.Dataset.split('/')) < 2:
@@ -456,16 +456,23 @@ def load_dataset(args):
     # print("This is directed graph: ", IsDirectedGraph)
     # print("data_x", data_x.shape)  # [11701, 300])
 
+    # post-process
     if IsDirectedGraph and args.to_undirected:
         edges = to_undirectedBen(edges)
         IsDirectedGraph = False
         print("Converted to undirected data")
+    if args.add_selfloop:
+        edges, _ = add_self_loops(edges)
+    if args.to_reverse_edge:
+        edges = edges[torch.tensor([1, 0])]
     try:
         edge_attr = data.edge_attr
         data_batch = data.batch
     except:
         edge_attr = None
         data_batch = None
+
+
 
     return data_x, data_y, edges, edges_weight, dataset_num_features,data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph, edge_attr, data_batch
 
