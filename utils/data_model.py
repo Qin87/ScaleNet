@@ -6,6 +6,7 @@ import psutil
 import numpy as np
 import torch
 from networkx.readwrite import json_graph
+from torch_geometric.utils import add_self_loops
 # from torch_geometric.nn import LINKX
 from torch_scatter import scatter_add
 
@@ -212,6 +213,9 @@ def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
     init_model(model)
     return model
 
+def count_selfloop(edges):
+    return (edges[0] == edges[1]).sum().item()
+
 def get_name(args, IsDirectedGraph):
     dataset_to_print = args.Dataset.replace('/', '_')
 
@@ -307,8 +311,15 @@ import numpy as np
 def get_dataset(name, path, split_type='public'):
     import torch_geometric.transforms as T
     from torch_geometric.datasets import Coauthor
+    if name in ['COCO-SP', 'PascalVOC-SP']:
+        from torch_geometric.datasets import LRGBDataset
+        dataset = {
+            'train': LRGBDataset(root=path, name=name, split="train"),
+            'val': LRGBDataset(root=path, name=name, split="val"),
+            'test': LRGBDataset(root=path, name=name, split="test"),
+        }
 
-    if name == "Cora" or name == "CiteSeer" or name == "PubMed":
+    elif name in ["Cora", "CiteSeer", "PubMed"]:
         from torch_geometric.datasets import Planetoid
         dataset = Planetoid(path, name, transform=T.NormalizeFeatures(), split=split_type)
     elif name == 'Amazon-Computers':
@@ -450,12 +461,19 @@ def load_dataset(args):
         edges = to_undirectedBen(edges)
         IsDirectedGraph = False
         print("Converted to undirected data")
+    if args.add_selfloop:
+        edges, _ = add_self_loops(edges)
+    if args.to_reverse_edge:
+        edges = edges[torch.tensor([1, 0])]
+
     try:
         edge_attr = data.edge_attr
         data_batch = data.batch
     except:
         edge_attr = None
         data_batch = None
+
+
 
     return data_x, data_y, edges, edges_weight, dataset_num_features,data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph, edge_attr, data_batch
 

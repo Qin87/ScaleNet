@@ -4,7 +4,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--monitor", type=str, help="optimiser monitor: val_acc(acc), val_loss(loss)", default="val_acc")
 
-    parser.add_argument("--use_best_hyperparams", type=int, default=1, help="whether use parameters in best_hyperparameters.yml")
+    parser.add_argument("--use_best_hyperparams", type=int, default=0, help="whether use parameters in best_hyperparameters.yml")
+    parser.add_argument("--runtime", type=int, default=1, help="whether test runtime and memory")
     parser.add_argument('--GPU', type=int, default=0, help='GPU device number')
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
     parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=0)
@@ -25,13 +26,13 @@ def parse_args():
     parser.add_argument('--num_split', type=int, default=1, help='num of run in spite of many splits')
 
 
-    parser.add_argument('--net', type=str, default='FaberNet', help='Mag, Sig, QuaNet, '
+    parser.add_argument('--net', type=str, default='Dir-GNN', help='Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc, ParaGCN, SimGAT, SloopNet, tSNE,RandomNet, HFNet '
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym' 
                     'mlp, link, linkxcat, linkxadd, linkx, linkxgit, Dir-GNN, '
                     'ScaleNet, LargeScaleNet, FaberNet')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='telegram/', help=
+    parser.add_argument('--Dataset', type=str, default='cora_ml/', help=
     'telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/, '
@@ -46,7 +47,7 @@ def parse_args():
     parser.add_argument('--epoch', type=int, default=10000, help='epoch1500,')
     parser.add_argument("--has_scheduler", type=int, default=0, help="Whether Optimizer has a scheduler")
     parser.add_argument('--patience', type=int, default=10, help='patience to reduce lr,80')
-    parser.add_argument('--NotImproved', type=int, default=1, help='consecutively Not Improved, break, 500, 450, 410, 210, 60')
+    parser.add_argument('--NotImproved', type=int, default=10, help='consecutively Not Improved, break, 500, 450, 410, 210, 60')
 
     parser.add_argument('--lr', type=float, default=0.005, help='learning rate')
     parser.add_argument('--lrweight', type=float, default=0.4, help='learning rate for edge_weight')

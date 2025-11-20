@@ -1,9 +1,12 @@
 ################################
 # Multi-scale Learning for medium-sized graph
 ################################
+import gc
 import socket, uuid
 import sys
 import os
+import tracemalloc
+
 import numpy as np
 from torch_geometric.utils import add_self_loops
 print("Python Path:", sys.path)
@@ -18,7 +21,7 @@ import torch.nn.functional as F
 from utils.args import parse_args
 from data.data_utils import keep_all_data, seed_everything, set_device
 from nets.edge_data import get_second_directed_adj, WCJ_get_directed_adj, Qin_get_second_directed_adj, Qin_get_directed_adj, get_appr_directed_adj2, Qin_get_second_directed_adj0, Qin_get_second_adj, Qin_get_all_directed_adj, normalize_row_edges
-from utils.data_model import CreatModel, log_file, get_name, load_dataset, feat_proximity, delete_edges, make_imbalanced
+from utils.data_model import CreatModel, log_file, get_name, load_dataset, feat_proximity, delete_edges, make_imbalanced, count_selfloop
 from nets.DiG_NoConv import union_edges
 from nets.src2 import laplacian
 from nets.src2.quaternion_laplacian import process_quaternion_laplacian
@@ -185,6 +188,7 @@ args = parse_args()
 args = use_best_hyperparams(args, args.Dataset) if args.use_best_hyperparams else args
 
 data_x, data_y, edges, edges_weight, num_features, data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph, edge_attr, data_batch = load_dataset(args)
+print("num of selfloops:", count_selfloop(edges))
 if data_y.dim() > 1 and data_y.shape[1] == 1:
     data_y = data_y.squeeze(1)
 load_time = time.time()
@@ -195,10 +199,7 @@ if not os.path.exists(log_directory):
     os.makedirs(log_directory)
 print(args)
 
-if args.add_selfloop:
-    edges, _ = add_self_loops(edges)
-if args.to_reverse_edge:
-    edges = edges[torch.tensor([1, 0])]
+
 
 seed_everything(args.seed)
 
@@ -519,7 +520,22 @@ try:
             end_epoch = 0
             set_new_opt = True
             print_memory("Before training")
+            tracemalloc.start()  # start memory tracking
+             # start timer
+            if args.runtime:
+                total_epochs = 11
+                memory_epoch = 0  # measure memory on the first epoch
+                runtime_epochs = list(range(1, total_epochs))  # epochs 2..11 for runtime
+
+                cpu_memory_peak = None
+                gpu_memory_peak = None
+                runtime_list = []
+
             for epoch in range(args.epoch):
+                epoch_start = time.time()
+                if epoch == memory_epoch and torch.cuda.is_available():
+                    torch.cuda.reset_peak_memory_stats()
+
                 val_loss, new_edge_index, new_x, new_y, new_y_train = train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight, X_real, X_img, Sigedge_index, norm_real,norm_imag,
                                                                                 X_img_i, X_img_j, X_img_k,norm_imag_i, norm_imag_j, norm_imag_k, Quaedge_index)
                 accs, baccs, f1s, logits, class_detail = test()
@@ -528,6 +544,32 @@ try:
 
                 monitor_metric = val_acc if args.monitor == 'val_acc' else -val_loss  # Use -val_loss to handle minimization
                 best_metric = best_val_acc if args.monitor == 'val_acc' else -best_val_loss
+
+                if epoch == memory_epoch:
+                    cpu_tensor_mem = 0
+                    for obj in gc.get_objects():
+                        try:
+                            if torch.is_tensor(obj) and obj.device.type == 'cpu':
+                                cpu_tensor_mem += obj.element_size() * obj.nelement()
+                        except Exception:
+                            pass
+                    cpu_memory_peak = cpu_tensor_mem / (1024 ** 2)  # MB
+
+                    # GPU memory: peak VRAM
+                    if torch.cuda.is_available():
+                        gpu_memory_peak = torch.cuda.max_memory_allocated() / (1024 ** 2)
+                    print("CPU memory:", cpu_memory_peak)
+                    print("GPU memory:", gpu_memory_peak)
+                    epoch_runtime = time.time() - epoch_start
+                    print("epoch runtime:", epoch, epoch_runtime, file=logfile)
+
+                # --- RECORD RUNTIME FOR LATER EPOCHS ---
+                if epoch in runtime_epochs:
+                    epoch_runtime = time.time() - epoch_start
+                    runtime_list.append(epoch_runtime)
+                    print("epoch runtime:",epoch,  epoch_runtime, file=logfile)
+                # --- stop training ---
+                    # exit()
 
                 if monitor_metric > best_metric:
                 # if val_acc > best_val_acc:
@@ -540,8 +582,6 @@ try:
                     test_bacc = baccs[2]
                     test_f1 = f1s[2]
                     CountNotImproved = 0
-                    # print('test_f1 CountNotImproved reset to 0 in epoch', epoch, file=logfile)
-                    # Store the calculated metrics in variables instead of printing
 
 
                 else:
@@ -566,6 +606,16 @@ try:
                         print(f"Class {class_id}: {class_info}", file=logfile)
 
                     break
+
+                if epoch > total_epochs:
+                    break
+            if args.runtime:
+                avg_runtime = sum(runtime_list) / len(runtime_list) if runtime_list else 0
+                print("\n=== MODEL PROFILING RESULTS ===")
+                print(f"Peak CPU memory (epoch 1): {cpu_memory_peak:.2f} MB", file=logfile)
+                if gpu_memory_peak is not None:
+                    print(f"Peak GPU memory (epoch 1): {gpu_memory_peak:.2f} MB", file=logfile)
+                print(f"Average runtime per epoch (epochs 2-{total_epochs}): {avg_runtime:.4f} sec", file=logfile)
             dataset_to_print = args.Dataset.replace('/', '_') + str(args.to_undirected)
             print(net_to_print+'layer'+str(args.layer), dataset_to_print, 'EndEpoch', str(end_epoch), 'lr', args.lr)
             print('Split{:3d}, acc: {:.2f}, bacc: {:.2f}, f1: {:.2f}'.format(split, test_acc * 100, test_bacc * 100, test_f1 * 100))
