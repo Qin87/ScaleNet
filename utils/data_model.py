@@ -13,7 +13,7 @@ from torch_scatter import scatter_add
 from nets.link_model import LINK, LINK_Concat, LINKX, LINK_Add
 from nets.gat import StandGAT1BN_Qin
 from nets.gcn import ParaGCNXBN, StandGCNXBN
-from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model, Sloop_JKNet, ScaleNet, RandomNet, High_Frequent
+from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model, Sloop_JKNet, ScaleNet, RandomNet, High_Frequent, GNN
 from nets.models import JKNet, create_MLP, create_SGC, create_pgnn, GPRGNNNet1, GraphModel
 
 from nets.Signum_quaternion import QuaNet_node_prediction_one_laplacian_Qin
@@ -89,7 +89,7 @@ def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
     elif args.net.lower() == 'sgc':
         model = create_SGC(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, nlayer=args.layer,K=args.K)
     elif args.net == 'Dir-GNN':
-        model = get_model(args)
+        model = GNN(args)
     elif args.net.lower() == 'jk':
         model = JKNet(in_channels=num_features,
                         out_channels=n_cls,
