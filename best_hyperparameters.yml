@@ -159,7 +159,7 @@ directed-roman-empire/:
   add_selfloop: 0   # Add 93.3
   BN_model: 0  # no batch norm is better
   normalize: 0  #
-#  hid_dim: 256
+  hid_dim: 256
   layer: 6  # 5:93.4  7:93.1  8:93.0
   jk: "cat"   # >max
   dropout: 0.2
