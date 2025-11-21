@@ -532,9 +532,10 @@ try:
                 runtime_list = []
 
             for epoch in range(args.epoch):
-                epoch_start = time.time()
-                if epoch == memory_epoch and torch.cuda.is_available():
-                    torch.cuda.reset_peak_memory_stats()
+                if args.runtime:
+                    epoch_start = time.time()
+                    if epoch == memory_epoch and torch.cuda.is_available():
+                        torch.cuda.reset_peak_memory_stats()
 
                 val_loss, new_edge_index, new_x, new_y, new_y_train = train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight, X_real, X_img, Sigedge_index, norm_real,norm_imag,
                                                                                 X_img_i, X_img_j, X_img_k,norm_imag_i, norm_imag_j, norm_imag_k, Quaedge_index)
@@ -545,29 +546,30 @@ try:
                 monitor_metric = val_acc if args.monitor == 'val_acc' else -val_loss  # Use -val_loss to handle minimization
                 best_metric = best_val_acc if args.monitor == 'val_acc' else -best_val_loss
 
-                if epoch == memory_epoch:
-                    cpu_tensor_mem = 0
-                    for obj in gc.get_objects():
-                        try:
-                            if torch.is_tensor(obj) and obj.device.type == 'cpu':
-                                cpu_tensor_mem += obj.element_size() * obj.nelement()
-                        except Exception:
-                            pass
-                    cpu_memory_peak = cpu_tensor_mem / (1024 ** 2)  # MB
+                if args.runtime:
+                    if epoch == memory_epoch:
+                        cpu_tensor_mem = 0
+                        for obj in gc.get_objects():
+                            try:
+                                if torch.is_tensor(obj) and obj.device.type == 'cpu':
+                                    cpu_tensor_mem += obj.element_size() * obj.nelement()
+                            except Exception:
+                                pass
+                        cpu_memory_peak = cpu_tensor_mem / (1024 ** 2)  # MB
 
-                    # GPU memory: peak VRAM
-                    if torch.cuda.is_available():
-                        gpu_memory_peak = torch.cuda.max_memory_allocated() / (1024 ** 2)
-                    print("CPU memory:", cpu_memory_peak)
-                    print("GPU memory:", gpu_memory_peak)
-                    epoch_runtime = time.time() - epoch_start
-                    print("epoch runtime:", epoch, epoch_runtime, file=logfile)
+                        # GPU memory: peak VRAM
+                        if torch.cuda.is_available():
+                            gpu_memory_peak = torch.cuda.max_memory_allocated() / (1024 ** 2)
+                        print("CPU memory:", cpu_memory_peak)
+                        print("GPU memory:", gpu_memory_peak)
+                        epoch_runtime = time.time() - epoch_start
+                        print("epoch runtime:", epoch, epoch_runtime, file=logfile)
 
-                # --- RECORD RUNTIME FOR LATER EPOCHS ---
-                if epoch in runtime_epochs:
-                    epoch_runtime = time.time() - epoch_start
-                    runtime_list.append(epoch_runtime)
-                    print("epoch runtime:",epoch,  epoch_runtime, file=logfile)
+                    # --- RECORD RUNTIME FOR LATER EPOCHS ---
+                    if epoch in runtime_epochs:
+                        epoch_runtime = time.time() - epoch_start
+                        runtime_list.append(epoch_runtime)
+                        print("epoch runtime:",epoch,  epoch_runtime, file=logfile)
                 # --- stop training ---
                     # exit()
 
@@ -607,8 +609,9 @@ try:
 
                     break
 
-                if epoch > total_epochs:
-                    break
+                if args.runtime:
+                    if epoch > total_epochs:
+                        break
             if args.runtime:
                 avg_runtime = sum(runtime_list) / len(runtime_list) if runtime_list else 0
                 print("\n=== MODEL PROFILING RESULTS ===")

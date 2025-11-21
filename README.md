@@ -112,7 +112,17 @@ To run the Wilcoxon test on each dataset, execute the corresponding script. For 
   ```
   python3 ./wilcoxon/wilcoxon_cham.py  &
   ```
-
+- **(6) To test runtime** 
+  - **Set runtime test flags**
+args.runtime = 1
+args.use_best_hyperparams = 0
+  
+  - **Set other model parameters:**
+Adjust these for the models you want to test, such as number of layers, lr,hid_dim
+  - **Run the training/testing loop**
+The script will print peak GPU and CPU memory usage.
+It will measure runtime for each epoch.
+The average runtime will be calculated from epoch 2 to epoch 11.
 
 ## License
 MIT License

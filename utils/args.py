@@ -4,8 +4,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--monitor", type=str, help="optimiser monitor: val_acc(acc), val_loss(loss)", default="val_acc")
 
-    parser.add_argument("--use_best_hyperparams", type=int, default=0, help="whether use parameters in best_hyperparameters.yml")
-    parser.add_argument("--runtime", type=int, default=1, help="whether test runtime and memory")
+    parser.add_argument("--use_best_hyperparams", type=int, default=1, help="whether use parameters in best_hyperparameters.yml")
+    parser.add_argument("--runtime", type=int, default=0, help="whether test runtime and memory")
     parser.add_argument('--GPU', type=int, default=0, help='GPU device number')
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
     parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=0)
@@ -32,7 +32,7 @@ def parse_args():
                     'mlp, link, linkxcat, linkxadd, linkx, linkxgit, Dir-GNN, '
                     'ScaleNet, LargeScaleNet, FaberNet')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='cora_ml/', help=
+    parser.add_argument('--Dataset', type=str, default='telegram/', help=
     'telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/, '
