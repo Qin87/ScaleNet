@@ -1,11 +1,11 @@
 #!/bin/bash
 
-net_values=" LargeScaleNet"   #  Dir-GNN   LargeScaleNet FaberNet
-layer_values="  0.0 0.1  0.2  0.3 0.4 0.5 0.6 0.7 0.8 0.9  "
+net_values=" Dir-GNN  LargeScaleNet "   #  Dir-GNN   LargeScaleNet FaberNet
+layer_values=" 0.0 0.1  0.2  0.3 0.4 0.5 0.6 0.7 0.8 0.9  "
 
 # 'arxiv-year/') #  'directed-roman-empire/')  #
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'  'WikipediaNetwork/chameleon' 'WikipediaNetwork/squirrel'
-Direct_dataset=('WikipediaNetwork/chameleon'   'telegram/'  'citeseer/' 'cora_ml/'   'WikiCS/'  'WikipediaNetwork/squirrel'  )
+Direct_dataset=('WikipediaNetwork/chameleon' 'telegram/'  'citeseer/' 'cora_ml/'   'WikiCS/'  'WikipediaNetwork/squirrel'  )
 generate_timestamp() {
   date +"%d%H%Ms%S"
 }
@@ -18,10 +18,11 @@ done
 
 # Iterate over each dataset   --net="$net"    --layer="$layer"
 for Didataset in "${Direct_dataset[@]}"; do
+for net in $net_values; do
      for layer in $layer_values; do
         logfile="outforlayer${layer}.log"
         exec > "$logfile" 2>&1  # Redirect stdout and stderr to log file
-        for net in $net_values; do
+
             log_output="${Didataset//\//_}_${timestamp}_${net}_dropout.log"
 
             # Run the Python script with parameters and log output

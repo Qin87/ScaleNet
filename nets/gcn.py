@@ -216,8 +216,9 @@ class GraphSAGEXBatNorm(nn.Module):
         self.BN = args.BN_model
 
     def forward(self, x, adj, edge_weight=None):
-        edge_index = adj
-        x = self.conv1(x, edge_index)
+        num_nodes = int(x.shape[0])
+        adj = SparseTensor.from_edge_index(adj, sparse_sizes=(num_nodes, num_nodes)).t()
+        x = self.conv1(x, adj)
         # x2 = self.conv1_1(x, edge_index, edge_weight)
         # x= torch.cat((x1, x2), dim=-1)
         # x = self.mlp1(x1) + self.mlp2(x2)
@@ -236,13 +237,13 @@ class GraphSAGEXBatNorm(nn.Module):
         if self.layer > 2:
             for iter_layer in self.convx:
                 x = F.dropout(x, p=self.dropout_p, training=self.training)
-                x = iter_layer(x, edge_index,edge_weight)
+                x = iter_layer(x, adj,edge_weight)
                 if self.BN:
                     x = self.batch_norm3(x)
                 x = F.relu(x)
 
         x = F.dropout(x, p=self.dropout_p, training=self.training)
-        x = self.conv2(x, edge_index,edge_weight)
+        x = self.conv2(x, adj,edge_weight)
         if self.BN:
             x = self.batch_norm2(x)
 
