@@ -1,11 +1,11 @@
 #!/bin/bash
 
-net_values="ScaleNet LargeScaleNet "
-layer_values="  4 "
+net_values=" sgformer gps Polynormer "    #
+layer_values="  5 "
 
-
+# 'directed-roman-empire/' 'telegram/'  'citeseer/' 'cora_ml/'   'WikiCS/'
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'  'WikipediaNetwork/chameleon' 'WikipediaNetwork/squirrel'
-Direct_dataset=(   'citeseer/' 'cora_ml/'   'WikiCS/'  'WikipediaNetwork/chameleon' 'WikipediaNetwork/squirrel'  )
+Direct_dataset=(  'WikipediaNetwork/chameleon' 'WikipediaNetwork/squirrel' )
 generate_timestamp() {
   date +"%d%H%Ms%S"
 }
@@ -13,7 +13,7 @@ timestamp=$(generate_timestamp)
 
 while pgrep -x python3 > /dev/null; do
   echo "Waiting for all python3 processes to finish..."
-  sleep 10
+  sleep 600
 done
 
 # Iterate over each dataset   --net="$net"    --layer="$layer"
@@ -25,7 +25,7 @@ for Didataset in "${Direct_dataset[@]}"; do
             log_output="${Didataset//\//_}_${timestamp}_${net}_dropout.log"
 
             # Run the Python script with parameters and log output
-            python3 main.py    --net="$net"   --layer="$layer"  --add_selfloop=1 --dropout=0.2   \
+            python3 main.py    --net="$net"   --layer="$layer"  --add_selfloop=0 --dropout=0.2 --to_undirected=1  \
             --Dataset="$Didataset" > "$log_output"
              2>&1
             wait $pid
