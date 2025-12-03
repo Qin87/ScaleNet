@@ -154,10 +154,8 @@ class StandGCNXBN(nn.Module):
         num_nodes = int(x.shape[0])
         adj = SparseTensor.from_edge_index(adj, sparse_sizes=(num_nodes, num_nodes)).t()
         x = self.conv1(x, adj)
-        # x = self.mlp1(x)
         if self.layer == 1:
             return x
-        # x = self.batch_norm1(x)
         x = F.relu(x)
 
         if self.layer>2:
@@ -181,15 +179,7 @@ class GraphSAGEXBatNorm(nn.Module):
         self.dropout_p = args.dropout
         nhid = args.hid_dim
         nlayer= args.layer
-        # self.Conv = nn.Conv1d(nhid*2 , nclass, kernel_size=1)
-        # SAGEConv(input_dim, output_dim, root_weight=False)
-        # SAGEConv = NormalizedSAGEConv  #  Qin
-        # SAGEConv= SAGEConv_SHA
-        # SAGEConv= SAGEConv_Qin
-        # SAGEConv= GCNConv
-        # SAGEConv= SAGEConv_QinNov
         self.conv1 = SAGEConv(nfeat, nhid)
-        # self.conv1_1 = SAGEConv(nfeat, nhid)
         self.conv2 = SAGEConv(nhid, nclass)
         if nlayer >2:
             self.convx = nn.ModuleList([SAGEConv(nhid, nhid) for _ in range(nlayer-2)])
@@ -220,17 +210,7 @@ class GraphSAGEXBatNorm(nn.Module):
         num_nodes = int(x.shape[0])
         adj = SparseTensor.from_edge_index(adj, sparse_sizes=(num_nodes, num_nodes)).t()
         x = self.conv1(x, adj)
-        # x2 = self.conv1_1(x, edge_index, edge_weight)
-        # x= torch.cat((x1, x2), dim=-1)
-        # x = self.mlp1(x1) + self.mlp2(x2)
-        # if self.BN:
-        #     x = self.batch_norm1(x)
         if self.layer == 1:
-            # x = x.unsqueeze(0)  # can't simplify, because the input of Conv1d is 3D
-            # x = x.permute((0, 2, 1))
-            # x = self.Conv(x)
-            # x = F.log_softmax(x, dim=1)  # transforms the raw output scores (logits) into log probabilities, which are more numerically stable for computation and training
-            # x = x.permute(2, 1, 0).squeeze()
             return x
 
         x = F.relu(x)
