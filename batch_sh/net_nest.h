@@ -1,11 +1,11 @@
 #!/bin/bash
 
-net_values=" Dir-GNN  LargeScaleNet "   #  Dir-GNN   LargeScaleNet FaberNet
+net_values=" Dir-GNN "   #  Dir-GNN   LargeScaleNet FaberNet
 layer_values=" 0.0 0.1  0.2  0.3 0.4 0.5 0.6 0.7 0.8 0.9  "
 
 # 'arxiv-year/') #  'directed-roman-empire/')  #
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'  'WikipediaNetwork/chameleon' 'WikipediaNetwork/squirrel'
-Direct_dataset=('WikipediaNetwork/chameleon' 'telegram/'  'citeseer/' 'cora_ml/'   'WikiCS/'  'WikipediaNetwork/squirrel'  )
+Direct_dataset=('WikipediaNetwork/squirrel'  )
 generate_timestamp() {
   date +"%d%H%Ms%S"
 }

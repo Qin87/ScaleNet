@@ -33,7 +33,7 @@ cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
   has_scheduler: 1
   conv_type: "dir-gcn"
   nonlinear: 1
-  net: ScaleNet     net: 1iGi3
+  net: ScaleNet    # net: 1iGi3
   hid_dim: 128   # better than 64
   layer: 3   # 2(80), 3(75), 4(79.8), 5(79.6)
   lr: 0.01    # 0.1(79), 0.01(80.7)
@@ -150,7 +150,7 @@ WikipediaNetwork/squirrel:
 # 93.5±0.3(0.5,-1,-1 Acer), 93.4±0.3(0.5,-1,-1 Dell), --Done!
 directed-roman-empire/:
   net: LargeScaleNet
-#  num_split: 10  # original dataset
+  num_split: 10  # original dataset
   nonlinear: 1    # must have this, or acc is 85
   has_scheduler: 1
   patience: 80
@@ -174,7 +174,7 @@ directed-roman-empire/:
 # 65.82±0.36(0.5_0.0_0.0,lit, lay6)   64.78±0.66(0.5_0.0_0.5, lay5), 64.7±0.4(0.5_0.0_0.0+'None'), (0.5_-1.0_1.0+'exp':64.7±0.5)
 arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
   net: LargeScaleNet
-#  num_split: 5
+  num_split: 5
   epoch: 10000
   BN_model: 1  # 0:61
   add_selfloop: 1
@@ -199,7 +199,7 @@ snap-patents/:
   alphaDir: 0.5   # sure
   betaDir: -1    # 0.5
   gamaDir: 0.5   # sure
-#  num_split: 5  # original split
+  num_split: 5  # original split
   BN_model: 1   # 1:74.6, 0:74.2
   lr: 0.01   # sure
   layer: 5  # sure
