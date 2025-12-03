@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
-dataset = 'Telegram'
+dataset = 'Patents'
 
 if dataset == 'WikiCS':
-    models = ["MLP", "MagNet", "Dir-GNN", "FaberNet", "LargeScaleNet",
+    models = ["MLP", "GCN-sp","SAGE-sp",
+              "MagNet", "Dir-GNN", "FaberNet", "LScaleNet",
               "ScaleNet", "SAGE", "GCN", "APPNP", "Cheb"]
 
     gpu_512 = [182.25, 708.53, 845.96, 923.45, 1002.32,
@@ -16,7 +17,8 @@ if dataset == 'WikiCS':
     time16 =[0.0417, 0.1134, 0.0492, 0.0576, 0.0677,
             0.2546, 0.3231, 0.0704, 0.3509, 0.3307]
 elif dataset == 'Arxiv-year':
-    models = ["MLP", "Dir-GNN", "FaberNet", "LargeScaleNet",
+    models = ["MLP", "GCN-sp","SAGE-sp",
+              "Dir-GNN", "FaberNet", "LScaleNet",
               "MagNet", "GCN", "APPNP", "SAGE", "Cheb"]
 
     # Your data reordered to same order
@@ -27,8 +29,9 @@ elif dataset == 'Arxiv-year':
     time16 = [0.4221, 0.5307, 0.5568, 0.6053, 1.2735, 0.5842, 1.818, 1.0641, 1.0733]
 
 elif dataset == 'Chameleon':
-    models = ["MLP", "Dir-GNN", "GCN",  "FaberNet",
-              "LargeScaleNet", "ScaleNet", "MagNet", "SAGE", "Cheb", "APPNP"]
+    models = ["MLP", "GCN-sp","SAGE-sp",
+              "Dir-GNN", "GCN",  "FaberNet",
+              "LScaleNet", "ScaleNet", "MagNet", "SAGE", "Cheb", "APPNP"]
     gpu_16 = [87.27, 133.67, 134.04, 174.62,
                  215.87, 351.5, 360.2, 6597.75, 6929.96, 134.18]
 
@@ -43,52 +46,67 @@ elif dataset == 'Chameleon':
                    0.0531, 0.0934, 0.0856, 0.3329, 0.3423, 1.1961]
 
 elif dataset == 'CiteSeer':
-    models = ["MLP", "Dir-GNN", "GCN", "FaberNet",
-              "ScaleNet", "LargeScaleNet", "MagNet", "SAGE", "Cheb", "APPNP"]
+    models = ["MLP","GCN-sp","SAGE-sp", "Dir-GNN", "GCN", "FaberNet",
+              "ScaleNet", "LScaleNet", "MagNet", "SAGE", "Cheb", "APPNP"]
 
-    gpu_512 = [153.14, 421.23, 463.56, 545.4,
+    gpu_512 = [153.14, 160.28, 223.61,
+               421.23, 463.56, 545.4,
                   676.19, 684.87, 842.28, 2380.14, 2472.52, 474.01]
 
-    gpu_16 = [113.39, 212.46, 122.35, 306.89,
+    gpu_16 = [113.39, 113.08,161.19,
+    212.46, 122.35, 306.89,
                  405.71, 401.78, 819.52, 2323.53, 2402.16, 208.89]
 
-    time512 = [0.0221, 0.0372, 0.0418, 0.0524,
+    time512 = [0.0221, 0.0359,0.0293,
+               0.0372, 0.0418, 0.0524,
                    0.0729, 0.0679, 0.1116, 0.144, 0.1493, 0.3361]
 
-    time16 = [0.0211, 0.0285, 0.0274, 0.036,
+    time16 = [0.0211, 0.0361,0.0257,
+    0.0285, 0.0274, 0.036,
                   0.0512, 0.0436, 0.0901, 0.1272, 0.1323, 0.0566]
 elif dataset == 'CoraML':
-    models = ["MLP", "GCN", "Dir-GNN", "FaberNet",
-              "LargeScaleNet", "ScaleNet", "MagNet", "SAGE", "Cheb", "APPNP"]
+    models = ["MLP", "GCN-sp","SAGE-sp",
+              "GCN", "Dir-GNN", "FaberNet",
+              "LScaleNet", "ScaleNet", "MagNet", "SAGE", "Cheb", "APPNP"]
 
     # GPU memory (MB)
-    gpu_16 = [99.37, 112.68, 170.42, 236.93,
+    gpu_16 = [99.37, 99.43, 133.15,
+              112.68, 170.42, 236.93,
                  303.8, 316.88, 624.89, 2522.97, 2649.36, 195.03]
 
-    gpu_512 = [131.9, 581.06, 360.75, 450.4,
+    gpu_512 = [131.9, 138.79,182.52,
+    581.06, 360.75, 450.4,
                   553.81, 558.42, 631.34, 2566.9, 2708.21, 591.49]
 
     # Runtime (seconds)
-    time16 = [0.0201, 0.0262, 0.0255, 0.0313,
+    time16 = [0.0201, 0.0352,0.024,
+    0.0262, 0.0255, 0.0313,
                   0.038, 0.0512, 0.0773, 0.1307, 0.1371, 0.054]
 
-    time512 = [0.0205, 0.0327, 0.0448, 0.0448,
+    time512 = [0.0205, 0.0342,0.0263,
+    0.0327, 0.0448, 0.0448,
                    0.057, 0.0688, 0.0935, 0.1509, 0.1585, 0.437]
 elif dataset== 'Patents':
-    models_raw = ["MLP",  "Dir-GNN", "GCN",  "FaberNet",
-                  "LargeScaleNet", "MagNet", "SAGE", "Cheb", "APPNP"]
+    models_raw = ["MLP",  "GCN-sp","SAGE-sp",
+                  "Dir-GNN", "GCN",  "FaberNet",
+                  "LScaleNet", "MagNet", "SAGE", "Cheb", "APPNP"]
 
-    gpu_1_mem_raw = [3838.37,  13210.28, 10656.59, 17943.47,
+    gpu_1_mem_raw = [3838.37, 5686.82,10119.21,
+                     13210.28, 10656.59, 17943.47,
                     23944.27, "OOM", "OOM", "OOM", 5403.47]
-    gpu_1_time_raw = [6.8086,  7.828, 7.3736,  8.6296,
+    gpu_1_time_raw = [6.8086,  8.1944,8.2966,
+    7.828, 7.3736,  8.6296,
                      9.336, "OOM", "OOM", "OOM", 8.3022]
 
-    gpu_16_mem_raw = [4321.68,  16822.8, 25087.28,23180.54,
+    gpu_16_mem_raw = [4321.68,  6021.45,10119.33,
+                      16822.8, 25087.28,23180.54,
                      29538.33, "OOM", "OOM", "OOM",  25476.61]
-    gpu_16_time_raw = [7.038,  8.2965, 8.3208,10.1527,
+    gpu_16_time_raw = [7.038,  7.376,7.3728,
+    8.2965, 8.3208,10.1527,
                       10.9071, "OOM", "OOM", "OOM", 26.07]
 elif dataset == 'Roman-Empire':
-    models = ["MLP", "MagNet", "Dir-GNN", "FaberNet", "LargeScaleNet",
+    models = ["MLP", "GCN-sp","SAGE-sp",
+              "MagNet", "Dir-GNN", "FaberNet", "LScaleNet",
               "ScaleNet", "SAGE", "GCN", "Cheb", "APPNP"]
 
     # GPU memory
@@ -107,7 +125,8 @@ elif dataset == 'Roman-Empire':
 elif dataset == 'Squirrel':
 
     models = [
-        "MLP", "Dir-GNN", "FaberNet", "LargeScaleNet", "MagNet",
+        "MLP", "GCN-sp","SAGE-sp",
+        "Dir-GNN", "FaberNet", "LScaleNet", "MagNet",
         "GCN", "ScaleNet", "SAGE", "Cheb", "APPNP"
     ]
 
@@ -117,7 +136,8 @@ elif dataset == 'Squirrel':
     gpu_16 = [115.31, 224.74, 309.63, 394.79, 770.81, 394.51, 3737.55, 33880.55, 35632.25, 393.97]
     time16 = [0.0272, 0.0468, 0.068, 0.089, 0.2199, 0.0459, 0.3506, 1.3379, 1.3615, 0.2578]
 elif dataset == 'Telegram':
-    models = ["MLP", "Dir-GNN", "MagNet", "FaberNet", "LargeScaleNet", "ScaleNet", "SAGE", "GCN", "APPNP", "Cheb"]
+    models = ["MLP", "GCN-sp","SAGE-sp",
+              "Dir-GNN", "MagNet", "FaberNet", "LScaleNet", "ScaleNet", "SAGE", "GCN", "APPNP", "Cheb"]
     gpu_16 = [65.33, 66.26, 68.28, 66.31, 66.45, 72.41, 75.02, 75.75, 75.76, 75.76]
     time16 = [0.0146, 0.0175, 0.048, 0.0205, 0.024, 0.0262, 0.019, 0.0202, 0.0478, 0.0244]
 

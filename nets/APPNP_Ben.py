@@ -160,7 +160,7 @@ class APPNP2Simp_BN(nn.Module):
         # x = F.relu(self.batch_norm2(self.conv2(x, edge_index)))
         x = self.batch_norm2(self.conv2(x, edge_index))
         return x
-
+from torch_sparse import SparseTensor
 class APPNP_Model(torch.nn.Module):
     def __init__(self, input_dim, out_dim, filter_num, alpha = 0.1, dropout = False, layer=3):
         super().__init__()
@@ -178,6 +178,8 @@ class APPNP_Model(torch.nn.Module):
         self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
 
     def forward(self, x, edge_index):
+        num_nodes = int(x.shape[0])
+        edge_index = SparseTensor.from_edge_index(edge_index, sparse_sizes=(num_nodes, num_nodes)).t()
         x = self.line1(x)
         x = self.conv1(x, edge_index)
         if self.layer == 1:
