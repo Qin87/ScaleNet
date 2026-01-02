@@ -16,24 +16,24 @@ def parse_args():
     parser.add_argument("--Norm_W", type=int, help="whether learnable normalization:0/1", default=0)
     parser.add_argument("--Pre_W", type=int, help="whether adding learnable weights before normalization:0/1", default=1)
     parser.add_argument("--jk", type=str, choices=["max", "cat", 'weighted',  0], default='max')
-    parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', "0"], default="row")
+    parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', "0"], default="0")
     parser.add_argument("--fs", type=str, choices=["sum", "cat", 'weight_sum', 'linear'], default="dir", help='fusion method')
     parser.add_argument("--alphaDir", type=float, help="Direction convex combination params", default=0.5)
-    parser.add_argument("--betaDir", type=float, help="Direction convex combination params", default=0)
-    parser.add_argument("--gamaDir", type=float, help="Direction convex combination params", default=0)
+    parser.add_argument("--betaDir", type=float, help="Direction convex combination params", default=-1)
+    parser.add_argument("--gamaDir", type=float, help="Direction convex combination params", default=-1)
     parser.add_argument("--learn_alpha", action="store_true")
     parser.add_argument("--differ_AA", type=int, default=0, help="Whether test AA-A-At")
     parser.add_argument("--differ_AAt", type=int, default=0,  help="Whether test AAt-A-At")
     parser.add_argument('--num_split', type=int, default=1, help='num of run in spite of many splits')
 
 
-    parser.add_argument('--net', type=str, default='GAT', help='Mag, Sig, QuaNet, '
+    parser.add_argument('--net', type=str, default='GCN', help='Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc, ParaGCN, SimGAT, SloopNet, tSNE,RandomNet, HFNet '
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym' 
                     'mlp, link, linkxcat, linkxadd, linkx, linkxgit, Dir-GNN, '
                     'ScaleNet, LargeScaleNet, FaberNet, gps, Polynormer,sgformer ')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='cora_ml/', help=
+    parser.add_argument('--Dataset', type=str, default='WikipediaNetwork/squirrel', help=
     'telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/, '
@@ -44,18 +44,18 @@ def parse_args():
 
     parser.add_argument('-AP_K', '--AP_K', default=10, type=int)  # for APPNP
 
-    parser.add_argument('--hid_dim', type=int, default=16, help='feature dimension')
+    parser.add_argument('--hid_dim', type=int, default=512, help='feature dimension')
     parser.add_argument('--epoch', type=int, default=10000, help='epoch1500,')
     parser.add_argument("--has_scheduler", type=int, default=0, help="Whether Optimizer has a scheduler")
-    parser.add_argument('--patience', type=int, default=400, help='patience to reduce lr,80')
-    parser.add_argument('--NotImproved', type=int, default=1000, help='consecutively Not Improved, break, 500, 450, 410, 210, 60')
+    parser.add_argument('--patience', type=int, default=10, help='patience to reduce lr,80')
+    parser.add_argument('--NotImproved', type=int, default=1, help='consecutively Not Improved, break, 500, 450, 410, 210, 60')
 
     parser.add_argument('--lr', type=float, default=0.005, help='learning rate')
     parser.add_argument('--lrweight', type=float, default=0.4, help='learning rate for edge_weight')
     parser.add_argument('--coeflr', type=float, default=2, help='coef lr get multiplied with it')
     parser.add_argument('--wd4coef', type=float, default=5e-2, help='coef change slower with weight decay')
     parser.add_argument('--l2', type=float, default=5e-4, help='l2 regularizer, 5e-4, 0 is better')
-    parser.add_argument('-hds', '--heads', default=8, type=int)
+    parser.add_argument('-hds', '--heads', default=1, type=int)
 
     #  from Magnet
     parser.add_argument('--q', type=float, default=0, help='q value for the phase matrix')
@@ -148,7 +148,7 @@ def parse_args():
     parser.add_argument("--all1", type=int, help="feature all 1 ", default=0)
     parser.add_argument("--degfea", type=int, help="degree as feature: in-degree 1, out-degree -1, both 2, no 0  ", default=0)
 
-    parser.add_argument('--to_undirected', '-tud', type=int, default=1, help='if convert graph to undirected')
+    parser.add_argument('--to_undirected', '-tud', type=int, default=0, help='if convert graph to undirected')
     parser.add_argument('--to_reverse_edge', '-tre', type=int, default=0, help='if reverse direction of edges')
 
     parser.add_argument('--feat_proximity', action='store_true', help='filter out non similar nodes in scaled graph')
