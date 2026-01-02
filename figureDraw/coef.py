@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-norm = 'dir'
+norm = None
 # None Norm
 if norm is None:
     times = [200, 160, 150, 140, 120, 110, 100, 50, 40, 32, 20, 16, 8, 4, 2, 1, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05, 0.04, 0.03, 0.01, 0.005, 0.001, 0.0005, 0.00005, 5e-6, 3e-6, 2e-6, 1e-6, 9e-7, 5e-7, 5e-8]

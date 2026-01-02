@@ -715,10 +715,10 @@ def count_upper_triangle_edges(self):
     upper_triangle_count = upper_triangle_mask.sum().item()
     return upper_triangle_count
 
+
 class DirGCNConv_2(torch.nn.Module):
     def __init__(self, input_dim, output_dim, args):
         super().__init__()
-
 
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -801,7 +801,6 @@ class DirGCNConv_2(torch.nn.Module):
 
 
     def forward(self, x, edge_index):
-        # x0= x
         device = edge_index.device
         if self.First_self_loop == 1:
             edge_index, _ = add_self_loops(edge_index, fill_value=1)
@@ -880,21 +879,6 @@ class DirGCNConv_2(torch.nn.Module):
 
         elif self.conv_type in ['dir-gat', 'dir-sage']:
             edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
-            # if not(self.beta == -1 and self.gama == -1) and self.edge_in_in is None:
-                # self.edge_in_out, self.edge_out_in, self.edge_in_in, self.edge_out_out =get_higher_edge_index(edge_index, num_nodes, rm_gen_sLoop=rm_gen_sLoop)
-                # self.Intersect_alpha, self.Union_alpha = edge_index_u_i(edge_index, edge_index_t)
-                # self.Intersect_beta, self.Union_beta = edge_index_u_i(self.edge_in_out, self.edge_out_in)
-                # self.Intersect_gama, self.Union_gama = edge_index_u_i(self.edge_in_in, self.edge_out_out)
-                #
-                # if self.differ_AA:
-                #     diff_0 = remove_shared_edges(self.edge_in_in, edge_index, edge_index_t)
-                #     diff_1 = remove_shared_edges(self.edge_out_out, edge_index, edge_index_t)
-                # elif self.differ_AAt:
-                #     diff_0 = remove_shared_edges(self.edge_in_out, edge_index, edge_index_t)
-                #     diff_1 = remove_shared_edges(self.edge_out_in, edge_index, edge_index_t)
-                # if self.differ_AA or self.differ_AAt:
-                #     edge_index = diff_0
-                #     edge_index_t = diff_1
 
             out1 = aggregate_index(x, self.alpha, self.lin_src_to_dst, edge_index, self.lin_dst_to_src, edge_index_t, self.Intersect_alpha, self.Union_alpha)
             if not (self.beta == -1 and self.gama == -1):
@@ -922,69 +906,12 @@ class DirGCNConv_2(torch.nn.Module):
         else:
             x = sum(out for out in xs)
 
-        if self.mlp:
-            # x = torch.cat((self.mlp(x0), x), dim=-1)
-            # x = self.conv2_1(x)
-
-            x += self.mlp(x)
-
         if self.BN_model:
             x = self.batch_norm2(x)
 
 
         return x
 
-
-# class AA_GNN(torch.nn.Module):
-#     def __init__(self, input_dim, output_dim, args):
-#         super().__init__()
-#         hidden_dim = output_dim
-#         self.gcn1 = GCNConv_inciNormOption(input_dim, hidden_dim, args)
-#         self.gcn2 = GCNConv_inciNormOption(hidden_dim, output_dim, args)
-#
-#     def forward(self, x, edge_index):
-#         x1 = self.gcn1(x, edge_index)      # First layer (1-hop)
-#         x2 = self.gcn2(x1, edge_index)     # Second layer (2-hop)
-#         return x2
-#
-# class AtA_GNN(torch.nn.Module):
-#     def __init__(self, input_dim, output_dim, args):
-#         super().__init__()
-#         hidden_dim = output_dim
-#         self.gcn1 = GCNConv_inciNormOption(input_dim, hidden_dim, args)
-#         self.gcn2 = GCNConv_inciNormOption(hidden_dim, output_dim, args)
-#
-#     def forward(self, x, edge_index):
-#         edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
-#         x1 = self.gcn1(x, edge_index_t)      # First layer (1-hop)
-#         x2 = self.gcn2(x1, edge_index)     # Second layer (2-hop)
-#         return x2
-#
-# class AAt_GNN(torch.nn.Module):
-#     def __init__(self, input_dim, output_dim, args):
-#         super().__init__()
-#         hidden_dim = output_dim
-#         self.gcn1 = GCNConv_inciNormOption(input_dim, hidden_dim, args)
-#         self.gcn2 = GCNConv_inciNormOption(hidden_dim, output_dim, args)
-#
-#     def forward(self, x, edge_index):
-#         edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
-#         x1 = self.gcn1(x, edge_index)
-#         x2 = self.gcn2(x1, edge_index_t)
-#         return x2
-#
-# class AtAt_GNN(torch.nn.Module):
-#     def __init__(self, input_dim, output_dim, args):
-#         super().__init__()
-#         hidden_dim = output_dim
-#         self.gcn1 = GCNConv_inciNormOption(input_dim, hidden_dim, args)
-#         self.gcn2 = GCNConv_inciNormOption(hidden_dim, output_dim, args)
-#
-#     def forward(self, x, edge_index):
-#         edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
-#         x1 = self.gcn1(x, edge_index_t)
-#         x2 = self.gcn2(x1, edge_index_t)
-#         return x2
 
 def get_conv_layer(input_dim, output_dim, args):
     """Helper to select convolution type based on args"""
@@ -1105,28 +1032,6 @@ class DirGCNConv_layer(torch.nn.Module):
         else:
             out2 = torch.zeros_like(out1)
             out3 = torch.zeros_like(out1)
-
-
-        # elif self.conv_type in ['dir-gat', 'dir-sage']:
-        #     edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
-        #
-        #     out1 = aggregate_index(x, self.alpha, self.lin_src_to_dst, edge_index, self.lin_dst_to_src, edge_index_t, self.Intersect_alpha, self.Union_alpha)
-        #     if not (self.beta == -1 and self.gama == -1):
-        #         if self.beta != -1:
-        #             out2 = aggregate_index(x, self.beta, self.linx[0], self.edge_in_out, self.linx[1], self.edge_out_in, self.Intersect_beta, self.Union_beta)
-        #         else:
-        #             out2 = torch.zeros_like(out1)
-        #         if self.gama != -1:
-        #             out3 = aggregate_index(x, self.gama, self.linx[2], self.edge_in_in, self.linx[3], self.edge_out_out, self.Intersect_gama, self.Union_gama)
-        #         else:
-        #             out3 = torch.zeros_like(out1)
-        #
-        #     else:
-        #         out2 = torch.zeros_like(out1)
-        #         out3 = torch.zeros_like(out1)
-        #
-        # else:
-        #     raise NotImplementedError
 
         xs = [out1, out2, out3]
 
