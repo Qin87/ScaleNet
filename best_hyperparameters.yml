@@ -1,7 +1,7 @@
 # 97.2±2.1,  96.8±2.1(0.5,-1,-1)
 telegram/:
-  monitor: val_loss  # val_acc is bad when few epoch,
-  num_split: 10
+#  monitor: val_loss  # val_acc is bad when few epoch,
+#  num_split: 10
   hid_dim: 64
   l2: 0   # 97.0(0), 95.6(5e-4)
   inci_norm: "0"  # {94.2±4.4(dir) 95.6±3.0(0)}  {93.2(dir), 97.0(0)}
@@ -20,8 +20,8 @@ telegram/:
   jk: 'max'
   dropout: 0.0
   alphaDir: 0.5     # 0.5, 0.2(94.8)
-  betaDir: -1
-  gamaDir: -1
+#  betaDir: -1
+#  gamaDir: -1
   seed: 101   # 96.4±2.5(1), 94.8±2.9(11), 97.0±2.2(101)
 
 #
@@ -214,7 +214,7 @@ arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
   dropout: 0.5
 
   hid_dim: 128  # 64:62, 16:61
-  layer: 6  # 6:64.4 5:64.6  8:64.1
+#  layer: 6  # 6:64.4 5:64.6  8:64.1
   lr: 0.001
 
   alphaDir: 0.5
