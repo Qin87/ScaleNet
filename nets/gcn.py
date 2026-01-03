@@ -134,8 +134,6 @@ class StandGCNXBN(nn.Module):
         self.is_add_self_loops = is_add_self_loops  # Qin True is the original
         if nlayer == 1:
             self.conv1 = GCNConv(nfeat, nclass, cached= False, normalize=norm, add_self_loops=self.is_add_self_loops)
-            # self.conv1 = SAGEConv_QinNov(nfeat, nclass)      #  delete
-            # self.conv1 = SAGEConv(nfeat, nclass)      #  delete
         else:
             self.conv1 = GCNConv(nfeat, nhid, cached= False, normalize=norm, add_self_loops=self.is_add_self_loops)
 
@@ -155,10 +153,10 @@ class StandGCNXBN(nn.Module):
         adj = SparseTensor.from_edge_index(adj, sparse_sizes=(num_nodes, num_nodes)).t()
         x = self.conv1(x, adj)
 
-        # x = self.mlp1(x)
         if self.layer == 1:
+            # x = F.dropout(x,p= self.dropout_p, training=self.training)
+            x = self.batch_norm2(x)
             return x
-        # x = self.batch_norm1(x)
         x = F.relu(x)
 
         if self.layer>2:

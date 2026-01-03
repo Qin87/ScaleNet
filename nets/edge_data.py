@@ -673,7 +673,8 @@ def sparse_remove_self_loops(matrix):
 
 
 def sparse_boolean_multi_hop(args, A, k, mode='union'):
-    selfloop = args.rm_gen_sloop
+    # selfloop = args.rm_gen_sloop
+    selfloop = 0
     # Ensure A is in canonical form
     A = A.coalesce().to(torch.float32)
 
