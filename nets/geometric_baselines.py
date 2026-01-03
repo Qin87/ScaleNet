@@ -56,7 +56,7 @@ class DirGCNConv(torch.nn.Module):
             self.W1 = nn.Parameter(torch.ones(args.edge_index.shape[1]))
             self.W2 = nn.Parameter(torch.ones(args.edge_index.shape[1]))
 
-    def forward(self, x, edge_index):
+    def forward(self, x, edge_index, coef):
         if self.adj_norm is None:
             row, col = edge_index
             num_nodes = x.shape[0]
@@ -67,9 +67,9 @@ class DirGCNConv(torch.nn.Module):
             adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
             self.adj_t_norm = get_norm_adj(adj_t, norm="dir", W=self.W2)  #
 
-        return self.alpha * self.lin_src_to_dst(self.adj_norm @ x) + (1 - self.alpha) * self.lin_dst_to_src(
-            self.adj_t_norm @ x
-        )
+        return  (self.alpha * self.lin_src_to_dst(self.adj_norm @ x) + (1 - self.alpha) * self.lin_dst_to_src(
+            self.adj_t_norm @ x))
+
 
 class WDirGCNConv(torch.nn.Module):
     def __init__(self, input_dim, output_dim, alpha):
@@ -110,6 +110,7 @@ class DirGCNConv_2(torch.nn.Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
 
+        self.coef = args.coef_agg
         if args.conv_type == 'dir-gcn':
             self.lin_src_to_dst = Linear(input_dim, output_dim)
             self.lin_dst_to_src = Linear(input_dim, output_dim)
@@ -224,7 +225,7 @@ class DirGCNConv_2(torch.nn.Module):
                     self.adj_union_in_out = union_adj_norm(self.norm_list[0], self.norm_list[1], self.inci_norm, device)
                     self.adj_union_in_in = union_adj_norm(self.norm_list[2], self.norm_list[3], self.inci_norm, device)
 
-            out1 = aggregate(x, self.alpha, self.lin_src_to_dst, self.adj_norm, self.lin_dst_to_src, self.adj_t_norm, self.adj_intersection, self.adj_union,  inci_norm=self.inci_norm)
+            out1 = self.coef* aggregate(x, self.alpha, self.lin_src_to_dst, self.adj_norm, self.lin_dst_to_src, self.adj_t_norm, self.adj_intersection, self.adj_union,  inci_norm=self.inci_norm)
             if not (self.beta == -1 and self.gama == -1):
                 out2 = aggregate(x, self.beta, self.linx[0], self.norm_list[0], self.linx[1], self.norm_list[1], self.adj_intersection_in_out, self.adj_union_in_out, inci_norm=self.inci_norm)
                 out3 = aggregate(x, self.gama, self.linx[2], self.norm_list[2], self.linx[3], self.norm_list[3], self.adj_intersection_in_in, self.adj_union_in_in, inci_norm=self.inci_norm)
@@ -1806,6 +1807,8 @@ class GNN(torch.nn.Module):     # from Rossi(LoG paper)
         args
     ):
         super().__init__()
+
+        self.coef = args.coef_agg
         self.alpha = nn.Parameter(torch.ones(1) * args.alphaDir, requires_grad=args.learn_alpha)
         output_dim = args.hid_dim if args.jk else args.num_classes
         if args.layer == 1:
@@ -1829,7 +1832,7 @@ class GNN(torch.nn.Module):     # from Rossi(LoG paper)
     def forward(self, x, edge_index):
         xs = []
         for i, conv in enumerate(self.convs):
-            x = conv(x, edge_index)
+            x = self.coef *conv(x, edge_index, self.coef)
             if i != len(self.convs) - 1 or self.jk:
                 x = F.relu(x)
                 x = F.dropout(x, p=self.dropout, training=self.training)

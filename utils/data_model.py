@@ -293,6 +293,9 @@ def get_name(args, IsDirectedGraph):
             args.gamaDir) + '_jk' + str(args.jk) + '_norm' + str(args.inci_norm)
             + '_zero'+str(args.zero_order) + '_struct'+str(args.structure)) + '_cat'+str(args.cat_A_X)+'_exp'+str(args.exponent)
 
+    if args.net in ['ScaleNet', 'Dir-GNN']:
+        if args.coef_agg:
+            net_to_print += 'coef_agg' + str(args.coef_agg)
     net_to_print += '_s'+str(args.seed)+ '_dp'+str(args.dropout)+ '_split'+str(args.num_split)+'_n'+str(args.normalize)
 
     return net_to_print, dataset_to_print
