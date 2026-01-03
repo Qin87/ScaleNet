@@ -126,6 +126,7 @@ def gcn_norm(edge_index, edge_weight=None, num_nodes=None, improved=False,
 class StandGCNXBN(nn.Module):
     def __init__(self, nfeat, nclass, args):
         super().__init__()
+        self.BN_model = args.BN_model
         nhid = args.hid_dim
         dropout = args.dropout
         nlayer = args.layer
@@ -155,7 +156,8 @@ class StandGCNXBN(nn.Module):
 
         if self.layer == 1:
             # x = F.dropout(x,p= self.dropout_p, training=self.training)
-            x = self.batch_norm2(x)
+            # if self.BN_model:
+            #     x = self.batch_norm2(x)
             return x
         x = F.relu(x)
 
@@ -163,14 +165,15 @@ class StandGCNXBN(nn.Module):
             for iter_layer in self.convx:
                 # x = F.dropout(x,p= self.dropout_p, training=self.training)
                 x = iter_layer(x, adj, edge_weight)
-                # x= self.batch_norm3(x)
+                # if self.BN_model:
+                #     x= self.batch_norm3(x)
                 x = F.relu(x)
 
         # x = F.dropout(x, p= self.dropout_p, training=self.training)
         x = self.conv2(x, adj, edge_weight)
-        # x = self.batch_norm2(x)
-        # x = F.relu(x)
-        # x = F.dropout(x, p=self.dropout_p, training=self.training)      # this is the best dropout arrangement
+        # if self.BN_model:
+        #     x = self.batch_norm2(x)
+        # # x = F.dropout(x, p=self.dropout_p, training=self.training)      # this is the best dropout arrangement
         return x
 
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-net_values="GAT "
+net_values="GAT GCN "
 layer_values="1 2 3 4 5"
 Dir="0  0.5 1 -1"
 Patiences=(400)

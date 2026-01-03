@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument('--num_split', type=int, default=1, help='num of run in spite of many splits')
 
 
-    parser.add_argument('--net', type=str, default='GCN', help='Mag, Sig, QuaNet, '
+    parser.add_argument('--net', type=str, default='GAT', help='Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc, ParaGCN, SimGAT, SloopNet, tSNE,RandomNet, HFNet '
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym' 
                     'mlp, link, linkxcat, linkxadd, linkx, linkxgit, Dir-GNN, '
@@ -38,7 +38,7 @@ def parse_args():
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/, '
         'fb100/penn94, pokec/, genius/ ')
-    parser.add_argument('--dropout', type=float, default=0.5, help='dropout prob')
+    parser.add_argument('--dropout', type=float, default=0, help='dropout prob')
     parser.add_argument('--layer', type=int, default=3, help='number of layers (2 or 3), default: 2')
     parser.add_argument('--alpha', type=float, default=0.1, help='alpha teleport prob in DiG(ib)')
 
@@ -55,7 +55,7 @@ def parse_args():
     parser.add_argument('--coeflr', type=float, default=2, help='coef lr get multiplied with it')
     parser.add_argument('--wd4coef', type=float, default=5e-2, help='coef change slower with weight decay')
     parser.add_argument('--l2', type=float, default=5e-4, help='l2 regularizer, 5e-4, 0 is better')
-    parser.add_argument('-hds', '--heads', default=1, type=int)
+    parser.add_argument('-hds', '--heads', default=8, type=int)
 
     #  from Magnet
     parser.add_argument('--q', type=float, default=0, help='q value for the phase matrix')
