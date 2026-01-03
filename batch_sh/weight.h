@@ -1,6 +1,6 @@
 #!/bin/bash
 
-net_values="GAT GCN "
+net_values=" GCN "
 layer_values="1 2 3 4 5"
 Dir="0  0.5 1 -1"
 Patiences=(400)
@@ -9,12 +9,13 @@ Normalize_vals=(0)   # 1
 
 # 'citeseer/' 'cora_ml/'  'telegram/' 'dgl/pubmed' 'WikiCS/'
 #  'WikipediaNetwork/squirrel'  'WikipediaNetwork/chameleon'  'directed-roman-empire/'   'arxiv-year/'
-Direct_dataset=('Cora' 'CiteSeer'   )
+Direct_dataset=( 'citeseer/' 'cora_ml/'  'telegram/' 'dgl/pubmed' 'WikiCS/'  )
 generate_timestamp() {
   date +"%d%H%Ms%S"
 }
 timestamp=$(generate_timestamp)
 
+sleep 600
 
 for Didataset in "${Direct_dataset[@]}"; do
     for layer in $layer_values; do
