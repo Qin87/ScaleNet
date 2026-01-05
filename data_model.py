@@ -222,8 +222,14 @@ def log_file(net_to_print, dataset_to_print, args):
 
     return log_directory, log_file_name_with_timestamp
 
+import os.path as osp
 def load_dataset(args):
-    dataset = load_directedData(args)
+    if len(args.Dataset.split('/')) < 2:
+        path = args.data_path
+        path = osp.join(path, args.Dataset)
+        dataset = get_dataset(args.Dataset, path, split_type='full')
+    else:
+        dataset = load_directedData(args)
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     if args.Dataset in ['ogbn-arxiv/', 'directed-roman-empire/']:
@@ -285,11 +291,17 @@ def load_dataset(args):
             data_y = data_y[:, 1]
         dataset_num_features = data_x.shape[1]
 
+
     else:
         edges = data.edge_index  # for torch_geometric librar
         data_y = data.y
-        # data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
-        if len(data.train_mask.shape) > 1 and data.train_mask.size(-1) > 9:
+
+        if data_y.dtype.is_floating_point:
+            data_y = data_y.to(torch.long)
+        if not hasattr(data, 'train_mask'):
+            data = random_planetoid_splits(data, data_y, train_ratio=0.48, val_ratio=0.1, num_splits=10, Flag=0)
+            data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
+        elif args.Dataset in ['ogbn-arxiv/', 'arxiv_year', 'fb100/penn94'] or (len(data.train_mask.shape) > 1 and data.train_mask.size(-1) > args.num_split - 1):
             data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
         else:
             data = random_planetoid_splits(data, data_y, percls_trn=20, val_lb=30, Flag=1)
@@ -502,3 +514,48 @@ def count_homophilic_nodes(edge_index, y):
     # print(f"{percent_no_in:.1f}% & {percent_in_homo:.1f}% & {percent_no_out:.1f}% & {percent_out_homo:.1f}%")
 
     return no_in_neighbors, in_homophilic_count, no_out_neighbors, out_homophilic_count
+
+
+def get_dataset(name, path, split_type='public'):
+    import torch_geometric.transforms as T
+    from torch_geometric.datasets import Coauthor
+
+    if name == "Cora" or name == "CiteSeer" or name == "PubMed":
+        from torch_geometric.datasets import Planetoid
+        dataset = Planetoid(path, name, transform=T.NormalizeFeatures(), split=split_type)
+    elif name == 'Amazon-Computers':
+        from torch_geometric.datasets import Amazon
+        return Amazon(root=path, name='computers', transform=T.NormalizeFeatures())
+    elif name == 'Amazon-Photo':
+        from torch_geometric.datasets import Amazon
+        return Amazon(root=path, name='photo', transform=T.NormalizeFeatures())
+    elif name == 'Coauthor-CS':
+
+        return Coauthor(root=path, name='cs', transform=T.NormalizeFeatures())
+    elif name == 'Coauthor-physics':
+
+        return Coauthor(root=path, name='physics', transform=T.NormalizeFeatures())
+    # elif name == 'ppi':     #
+    #     path = '../data/ppi_data'
+    #     G = json_graph.node_link_graph(json.load(open(path + "/toy-ppi-G.json")))
+    #     labels = json.load(open(path + "/toy-ppi-class_map.json"))
+    #     labels = {int(i): l for i, l in labels.iteritems()}
+    #
+    #     train_ids = [n for n in G.nodes() if not G.node[n]['val'] and not G.node[n]['test']]
+    #     test_ids = [n for n in G.nodes() if G.node[n][setting]]
+    #     train_labels = np.array([labels[i] for i in train_ids])
+    #     if train_labels.ndim == 1:
+    #         train_labels = np.expand_dims(train_labels, 1)
+    #     test_labels = np.array([labels[i] for i in test_ids])
+    #
+    #     embeds = np.load(data_dir + "/val.npy")
+    #     id_map = {}
+    #     with open(data_dir + "/val.txt") as fp:
+    #         for i, line in enumerate(fp):
+    #             id_map[int(line.strip())] = i
+    #     train_embeds = embeds[[id_map[id] for id in train_ids]]
+    #     test_embeds = embeds[[id_map[id] for id in test_ids]]
+    else:
+        raise NotImplementedError("Not Implemented Dataset!")
+
+    return dataset

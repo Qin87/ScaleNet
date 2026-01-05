@@ -1379,7 +1379,6 @@ def get_norm_adj(adj, norm, rm_gen_sLoop=0):
 
         return directed_norm(adj, rm_gen_sLoop=rm_gen_sLoop)
     elif norm is None or norm=="0":
-        # return adj
         return adj.set_value(torch.ones(adj.nnz(), device=adj.device()))
     else:
         raise ValueError(f"{norm} normalization is not supported")
