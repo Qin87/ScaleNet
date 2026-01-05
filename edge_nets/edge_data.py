@@ -551,16 +551,16 @@ def Qin_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
     edge_index = torch.unique(edge_index, dim=1).to(device)
 
     # type 1: conside different inci-norm
-    if norm == 'dir':
+    if norm in ['dir', 'row', '0', 'sym']:
         row, col = edge_index
         adj_norm = get_norm_adj(SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
-        # all_hop_edge_index.append(torch.stack(adj_norm.coo()[:2]))
         edge_weight = adj_norm.storage.value()
-    elif norm == 'sym':
-        # type 2: only GCN_norm
-        edge_weight = normalize_row_edges(edge_index, num_nodes).to(device)
+    # elif norm == 'sym':
+    #     # type 2: only GCN_norm
+    #     edge_weight = normalize_row_edges(edge_index, num_nodes).to(device)
 
-
+    if edge_weight is None:
+        edge_weight = torch.ones((edge_index.size(1),), dtype=torch.float, device=device)
     return edge_index,  edge_weight
 
 def WCJ_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
@@ -661,7 +661,7 @@ def WCJ_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
         deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0
 
         edge_weight = deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
-    else:
+    elif norm == 'dir':
         # type 1: conside different inci-norm
         row, col = edge_index
         adj_norm = get_norm_adj(SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()

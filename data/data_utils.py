@@ -78,7 +78,7 @@ def load_directedData(args):
         dataset = load_func(root=args.data_path)        # get undirected
     elif load_func == 'cora_ml':
         dataset = citation_datasets(root='./cora_ml.npz')
-    elif load_func == 'citeseer_npz':
+    elif load_func == 'citeseer':
         dataset = citation_datasets(root='./citeseer_npz.npz')
     elif load_func in ['film']:
         dataset = Actor(root='../data/film', transform=T.NormalizeFeatures())
