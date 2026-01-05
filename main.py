@@ -515,6 +515,7 @@ try:
         else:
             result_str = f"{test_acc * 100:.2f}"
 
+
         # Rename log file
         old_path = os.path.join(log_directory, log_file_name_with_timestamp)
         new_file_name = f"{result_str}_{log_file_name_with_timestamp}"
