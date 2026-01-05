@@ -78,13 +78,13 @@ dgl/pubmed:
   conv_type: "dir-gcn"   # sage
   jk_inner: 'cat'   #cat(76.1±1.6), 0(75.9)
   nonlinear: 1
-  layer: 4
-  lr: 0.01
+#  layer: 4
+#  lr: 0.01
   normalize: 0
-  BN_model: 0  #
-  First_self_loop : 'add'
+  BN_model: 1  #
+#  First_self_loop : 'add'
   jk: 'max'
-  dropout: 0.0  #0.5(39), 0.0(77.5)
+#  dropout: 0.0  #0.5(39), 0.0(77.5)
   alphaDir: 0.5   # 0.5(72.2), 0(73.2)
   betaDir: 0.5    #
   gamaDir: -1

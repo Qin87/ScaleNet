@@ -3,11 +3,11 @@
 net_values="RiG  "
 layer_values=" 2 3 4  "
 incinorm="dir sym row 0 "
-lr0="0.1 0.05 0.01 0.005"
+lr0="0.05 0.01 0.005"
 
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'   'WikiCS/' 'WikipediaNetwork/squirrel'
 # 'WikipediaNetwork/chameleon'   'telegram/'   'dgl/pubmed'  'citeseer/'   #"$inci"
-Direct_dataset=(   'Cora'   )
+Direct_dataset=(   'dgl/pubmed'   )
 Direct_dataset_filename=$(echo $Direct_dataset | sed 's/\//_/g')
 generate_timestamp() {
   date +"%d%H%Ms%S"
