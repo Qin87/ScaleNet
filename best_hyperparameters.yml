@@ -147,18 +147,58 @@ directed-roman-empire/:
   gamaDir: -1
 
 Cora:
+  BN_model: 0
   dropout: 0.5   # >0
-  layer: 2
+#  layer: 2
   First_self_loop: 'add'
-  lr: 0.005
+#  lr: 0.005
+  feat_dim: 64
+  NotImproved: 810
+  has_scheduler: 1
+  patience: 80
 
 CiteSeer:
   First_self_loop: 'add'
-  lr: 0.005
+#  lr: 0.005
   BN_model: 0  # Sure!
-  layer: 2
+#  layer: 2
   feat_dim: 64
   dropout: 0.5
 
+  NotImproved: 810
+  has_scheduler: 1
+  patience: 80
+
+PubMed:
+  BN_model: 0
+  First_self_loop: 'add'
+  lr: 0.005
+  layer: 2
+  NotImproved: 810
+  has_scheduler: 1
+  patience: 80
+
+Coauthor-CS:
+  BN_model: 0
+  layer: 2
+  First_self_loop: 'add'
+  lr: 0.0005
+
+Coauthor-physics:
+  BN_model: 0
+#  layer: 1 # or 2
+  First_self_loop: 'add'
+  lr: 0.005
 
 
+Amazon-Photo:
+  BN_model: 0
+#  layer: 3 # or 1
+  First_self_loop: 'add'
+  lr: 0.005
+
+Amazon-Computers:
+  BN_model: 0
+#  layer: 2 # or 1
+#  First_self_loop: 'add'
+  lr: 0.005
