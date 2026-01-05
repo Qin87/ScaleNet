@@ -989,56 +989,6 @@ class DiG_Simple2BN_nhid(nn.Module):
 
         return x
 
-# class DiSAGE_2BN_nhid0(nn.Module):
-#     def __init__(self, m, input_dim, nhid, ncls, dropout, layer=2, head=8):
-#         super(DiSAGE_2BN_nhid0, self).__init__()
-#         self.dropout = dropout
-#
-#         self.Conv = nn.Conv1d(nhid, ncls, kernel_size=1)
-#
-#         self.batch_norm1 = nn.BatchNorm1d(nhid)
-#         self.batch_norm2 = nn.BatchNorm1d(nhid)
-#
-#         if m == 'S':
-#             self.conv1 = DiSAGEConv(input_dim, nhid)
-#             self.conv2 = DiSAGEConv(nhid, nhid)
-#             self.convx = nn.ModuleList([DiSAGEConv(nhid, nhid) for _ in range(layer - 2)])
-#         elif m == 'G':
-#             self.conv1 = DIGCNConv(input_dim, nhid)
-#             self.conv2 = DIGCNConv(nhid, nhid)
-#             self.convx = nn.ModuleList([DIGCNConv(nhid, nhid) for _ in range(layer - 2)])
-#         elif m == 'A':
-#             num_head = 1
-#             head_dim = nhid // num_head
-#
-#             self.conv1 = GATConv_Qin(input_dim, head_dim, heads=head)
-#             self.conv2 = GATConv_Qin(nhid, head_dim, heads=head)
-#             self.batch_norm1 = nn.BatchNorm1d(head_dim)
-#             self.batch_norm2 = nn.BatchNorm1d(head_dim)
-#         elif m == 'C':
-#             self.conv1 = DIChebConv(input_dim, nhid)
-#             self.conv2 = DIChebConv(nhid, nhid)
-#             self.convx = nn.ModuleList([DIChebConv(nhid, nhid) for _ in range(layer - 2)])
-#         else:
-#             raise ValueError(f"Model '{m}' not implemented")
-#
-#         self.reg_params = list(self.conv1.parameters())
-#         self.non_reg_params = self.conv2.parameters()
-#
-#     def forward(self, x, edge_index, edge_weight):
-#         # x = F.dropout(x, self.dropout, training=self.training)
-#         x = F.relu(self.conv1(x, edge_index, edge_weight))  # no BN here is better
-#         # x = F.relu(self.batch_norm1(self.conv1(x, edge_index, edge_weight)))
-#         # x = F.dropout(x, self.dropout, training=self.training)
-#         x = self.batch_norm2(self.conv2(x, edge_index, edge_weight))
-#
-#         x = F.dropout(x, self.dropout, training=self.training)
-#         x = x.unsqueeze(0)
-#         x = x.permute((0, 2, 1))
-#         x = self.Conv(x)
-#         x = x.permute((0, 2, 1)).squeeze()
-#
-#         return x
 
 class DiSAGE_2BN_nhid(nn.Module):
     def __init__(self, m, input_dim,  ncls, args):
