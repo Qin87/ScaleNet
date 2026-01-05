@@ -364,7 +364,7 @@ try:
                 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.l2)
 
             if args.has_scheduler:
-                scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience, verbose=False)
+                scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience)
 
             if splits == 1:
                 data_train_mask, data_val_mask, data_test_mask = (data_train_maskOrigin.clone(),data_val_maskOrigin.clone(),data_test_maskOrigin.clone())
@@ -511,6 +511,17 @@ try:
             print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print+"_acc"+f"{average_acc:.1f}±{std_dev_acc:.1f}"+"_bacc"+f"{average_bacc:.1f}±{std_dev_bacc:.1f}"+'_Macro F1:'+f"{average:.1f}±{std_dev:.1f}")
             print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print+"_acc"+f"{average_acc:.1f}±{std_dev_acc:.1f}"+"_bacc"+f"{average_bacc:.1f}±{std_dev_bacc:.1f}"+'_Macro F1:'+f"{average:.1f}±{std_dev:.1f}", file=log_file)
 
+            result_str = f"{average_acc:.2f}±{std_dev_acc:.2f}"
+        else:
+            result_str = f"{test_acc * 100:.2f}"
+
+        # Rename log file
+        old_path = os.path.join(log_directory, log_file_name_with_timestamp)
+        new_file_name = f"{result_str}_{log_file_name_with_timestamp}"
+        new_path = os.path.join(log_directory, new_file_name)
+
+        os.rename(old_path, new_path)
+        print(f"Log file renamed to: {new_path}", file=sys.__stdout__)
 
 
 except KeyboardInterrupt:
