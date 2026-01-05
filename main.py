@@ -511,9 +511,9 @@ try:
             print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print+"_acc"+f"{average_acc:.1f}±{std_dev_acc:.1f}"+"_bacc"+f"{average_bacc:.1f}±{std_dev_bacc:.1f}"+'_Macro F1:'+f"{average:.1f}±{std_dev:.1f}")
             print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print+"_acc"+f"{average_acc:.1f}±{std_dev_acc:.1f}"+"_bacc"+f"{average_bacc:.1f}±{std_dev_bacc:.1f}"+'_Macro F1:'+f"{average:.1f}±{std_dev:.1f}", file=log_file)
 
-            result_str = f"{average_acc:.2f}±{std_dev_acc:.2f}"
+            result_str = f"{average_acc:.1f}±{std_dev_acc:.1f}"
         else:
-            result_str = f"{test_acc * 100:.2f}"
+            result_str = f"{test_acc * 100:.1f}"
 
 
         # Rename log file

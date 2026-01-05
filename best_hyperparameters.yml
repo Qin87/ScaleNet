@@ -3,7 +3,7 @@ telegram/:
 #  net: ScaleNet         # QiGi3
   conv_type: "dir-gcn"
   nonlinear: 1
-  layer: 4
+#  layer: 4
   lr: 0.01
   normalize: 1
   BN_model: 1    # sure
