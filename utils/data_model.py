@@ -444,16 +444,13 @@ def load_dataset(args):
     else:
         edges = data.edge_index  # for torch_geometric librar
         data_y = data.y
-        # if isinstance(data_y[0], float):
-        #     data_y = int(data_y)
         if data_y.dtype.is_floating_point:
             data_y = data_y.to(torch.long)
-            # data_y = data_y.long()
         if not hasattr(data, 'train_mask'):
             data = random_planetoid_splits(data, data_y, train_ratio=0.48, val_ratio=0.1, num_splits=10, Flag=0)
             data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
 
-        elif args.Dataset in ['ogbn-arxiv/', 'arxiv_year', 'fb100/penn94'] or (len(data.train_mask.shape) > 1 and data.train_mask.size(-1) > args.num_split-1):
+        elif args.Dataset in ['ogbn-arxiv/', 'arxiv_year', 'fb100/penn94'] or (len(data.train_mask.shape) > 1 and data.train_mask.size(-1) > 1):
             data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
         else:
             data = random_planetoid_splits(data, data_y, percls_trn=20, val_lb=30, Flag=1)
