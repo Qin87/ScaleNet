@@ -1,13 +1,14 @@
 #!/bin/bash
 
-net_values="RiG  "
-layer_values=" 2 3 4  "
-incinorm="dir sym row 0 "
-lr0="0.05 0.01 0.005"
+net_values="1iG  "
+layer_values="  2    "
+incinorm=" sym  "   # dir   row 0
+lr0="0.01 0.005"
+
 
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'   'WikiCS/' 'WikipediaNetwork/squirrel'
 # 'WikipediaNetwork/chameleon'   'telegram/'   'dgl/pubmed'  'citeseer/'   #"$inci"
-Direct_dataset=(   'dgl/pubmed'   )
+Direct_dataset=(   'WikiCS/'   )
 Direct_dataset_filename=$(echo $Direct_dataset | sed 's/\//_/g')
 generate_timestamp() {
   date +"%d%H%Ms%S"
@@ -24,7 +25,7 @@ for Didataset in "${Direct_dataset[@]}"; do
         for net in $net_values; do
             log_output="${Didataset//\//_}_${timestamp}_${net}_layer${layer}.log"
 
-            python main.py   --net="$net"  --layer="$layer"  --use_best_hyperparams=0 --num_split=10   --inci_norm="$inci"  --lr="$lr" \
+            python3 main.py   --net="$net"  --layer="$layer"  --use_best_hyperparams=1 --num_split=10   --inci_norm="$inci"  --lr="$lr" --BN_model=0  \
             --Dataset="$Didataset" > "$log_output"
              2>&1
             wait $pid
