@@ -1,9 +1,9 @@
 #!/bin/bash
 
-net_values="1iGib"   #  1iG RiG RiGib
-layer_values="3  "
-incinorm=" dir sym  "
-lr0=" 0.1 "
+net_values="1iG  "
+layer_values="  2    "
+incinorm=" sym  "   # dir   row 0
+lr0="0.01 0.005"
 
 
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'   'WikiCS/' 'WikipediaNetwork/squirrel'
@@ -25,8 +25,7 @@ for Didataset in "${Direct_dataset[@]}"; do
         for net in $net_values; do
             log_output="${Didataset//\//_}_${timestamp}_${net}_layer${layer}.log"
 
-            python main.py   --net="$net"  --layer="$layer"  --use_best_hyperparams=1 --num_split=20   --inci_norm="$inci" \
-             --lr="$lr"  --First_self_loop='add'  \
+            python3 main.py   --net="$net"  --layer="$layer"  --use_best_hyperparams=1 --num_split=10   --inci_norm="$inci"  --lr="$lr" --BN_model=0  \
             --Dataset="$Didataset" > "$log_output"
              2>&1
             wait $pid
