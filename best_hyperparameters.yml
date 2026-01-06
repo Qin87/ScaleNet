@@ -3,8 +3,9 @@ telegram/:
 #  net: ScaleNet         # QiGi3
   conv_type: "dir-gcn"
   nonlinear: 1
-#  layer: 4
-  lr: 0.01
+  feat_dim: 128
+  layer: 4
+#  lr: 0.01
   normalize: 1
   BN_model: 1    # sure
   First_self_loop: 'add'
@@ -14,6 +15,7 @@ telegram/:
   alphaDir: 0.5     # 0.5, 0.2(94.8)
   betaDir: -1
   gamaDir: -1
+  NotImproved: 410
 
 
 
@@ -60,8 +62,8 @@ WikiCS/:
 #  net: ScaleNet
   conv_type: "dir-gcn"
   nonlinear: 1
-  layer: 2
-  lr: 0.01
+#  layer: 2
+#  lr: 0.01
   normalize: 1
   BN_model: 0  # 0(23), 1(73.5)
   First_self_loop : 'add'  # add(79.1±0.8),0(77.3±0.8), remove(77.4)
@@ -81,7 +83,7 @@ dgl/pubmed:
 #  layer: 4
 #  lr: 0.01
   normalize: 0
-  BN_model: 1  #
+  BN_model: 0  #
 #  First_self_loop : 'add'
   jk: 'max'
 #  dropout: 0.0  #0.5(39), 0.0(77.5)
