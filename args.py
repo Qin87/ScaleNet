@@ -38,7 +38,7 @@ def parse_args():
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG)'
                         'Sym, 1ym')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='Coauthor-CS', help='citeseer/ , cora_ml/, dgl/pubmed, telegram/,  WikiCS/, dgl/cora ,'
+    parser.add_argument('--Dataset', type=str, default='telegram/', help='citeseer/ , cora_ml/, dgl/pubmed, telegram/,  WikiCS/, dgl/cora ,'
                                                                                 'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, '
                 'Cora, CiteSeer, PubMed, Coauthor-physics, Coauthor-CS, Amazon-Computers, Amazon-Photo ')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout prob')

@@ -1,30 +1,22 @@
-import sys
-
-from torch.utils.checkpoint import checkpoint
 from torch_geometric.utils import softmax, add_self_loops, remove_self_loops, get_laplacian
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from torch_sparse import SparseTensor, set_diag
 from torch.nn import Parameter, Linear
-from torch_scatter import scatter_add
-from torch_geometric.nn import MessagePassing, JumpingKnowledge
-from torch_geometric.utils import to_undirected, is_undirected
+from torch_geometric.nn import MessagePassing, JumpingKnowledge, GATConv
 from torch_geometric.nn.inits import glorot, zeros
-from torch_geometric.nn import GCNConv, GATConv, SAGEConv, ChebConv, GINConv, APPNP
 
-from edge_nets.edge_data import normalize_row_edges
+# from nets.edge_data import normalize_row_edges
 from nets.Sym_Reg import DGCNConv
 from typing import Union, Tuple, Optional
-from torch_geometric.typing import (OptPairTensor, Adj, Size, NoneType,
-                                    OptTensor)
+from torch_geometric.typing import (OptPairTensor, Adj, Size, OptTensor)
 from torch import Tensor
-from nets.geometric_baselines import DirGCNConv, DirGCNConv_Qin
 
 
 class InceptionBlock_Qinlist(torch.nn.Module):
     def __init__(self, in_dim, out_dim):
-        super(InceptionBlock_Qinlist, self).__init__()
+        super().__init__()
         self.ln = Linear(in_dim, out_dim)
         # self.conv1 = DIGCNConv(in_dim, out_dim)
         # self.conv2 = DIGCNConv(in_dim, out_dim)
@@ -42,9 +34,10 @@ class InceptionBlock_Qinlist(torch.nn.Module):
             x_list.append(self.convx[i](x, edge_index_tuple[i], edge_weight_tuple[i]))
         return x_list
 
+
 class InceptionBlock_Di_list(torch.nn.Module):
-    def __init__(self, m, in_dim, out_dim,args):
-        super(InceptionBlock_Di_list, self).__init__()
+    def __init__(self, m, in_dim, out_dim, args):
+        super().__init__()
         self.ln = Linear(in_dim, out_dim)
         head = args.heads
         K = args.K
@@ -58,7 +51,7 @@ class InceptionBlock_Di_list(torch.nn.Module):
         elif m == 'A':
             num_head = 1
             head_dim = out_dim // num_head
-            self.convx = nn.ModuleList([GATConv_Qin(in_dim, head_dim, heads=head) for _ in range(20)])
+            self.convx = nn.ModuleList([GATConv(in_dim, head_dim, heads=head) for _ in range(20)])
         else:
             raise ValueError(f"Model '{m}' not implemented")
         self.convx = nn.ModuleList([DIGCNConv(in_dim, out_dim) for _ in range(20)])
@@ -74,9 +67,10 @@ class InceptionBlock_Di_list(torch.nn.Module):
             x_list.append(self.convx[i](x, edge_index_tuple[i], edge_weight_tuple[i]))
         return x_list
 
+
 class InceptionBlock_Di(torch.nn.Module):
     def __init__(self, m, in_dim, out_dim, args):
-        super(InceptionBlock_Di, self).__init__()
+        super().__init__()
         head = args.heads
         K = args.K
         self.dropout = args.dropout
@@ -96,7 +90,7 @@ class InceptionBlock_Di(torch.nn.Module):
         elif m == 'A':
             num_head = 1
             head_dim = out_dim // num_head
-            self.convx = nn.ModuleList([GATConv_Qin(in_dim, head_dim,  heads=head) for _ in range(20)])
+            self.convx = nn.ModuleList([GATConv(in_dim, head_dim, heads=head) for _ in range(20)])
         else:
             raise ValueError(f"Model '{m}' not implemented")
 
@@ -122,75 +116,9 @@ def union_edges(num_node, edge_index_tuple, device, mode):
         edges = torch.tensor(edges_tuples).T
     else:
         edges = edge_index_tuple[-1]
-    weights = normalize_row_edges(edge_index=edges, num_nodes= num_node)
+    weights = normalize_row_edges(edge_index=edges, num_nodes=num_node)
 
     return edges.to(device), weights.to(device)
-
-
-
-class InceptionBlock_Si(torch.nn.Module):
-    def __init__(self, m, in_dim, out_dim, args):
-        super(InceptionBlock_Si, self).__init__()
-        head = args.heads
-        K = args.K
-
-        self.ln = Linear(in_dim, out_dim)
-        if m == 'S':
-            self.convx = DiSAGEConv(in_dim, out_dim)
-        elif m == 'G':
-            self.convx = DIGCNConv(in_dim, out_dim)
-        elif m == 'C':
-            self.convx = DIChebConv(in_dim, out_dim, K)
-        elif m == 'A':
-            num_head = 1
-            head_dim = out_dim // num_head
-            self.convx = GATConv_Qin(in_dim, head_dim,  heads=head)
-        else:
-            raise ValueError(f"Model '{m}' not implemented")
-
-    def reset_parameters(self):
-        self.ln.reset_parameters()
-        self.convx.reset_parameters()
-
-    def forward(self, x, edge_index_tuple, edge_weight_tuple):
-        device = x.device
-        # print(device)
-        x0 = self.ln(x)
-
-        x0 += F.dropout(self.convx(x, edge_index_tuple, edge_weight_tuple), p=0.6, training=self.training)
-        torch.cuda.empty_cache()
-        return x0
-
-
-class InceptionBlock_Di0(torch.nn.Module):
-    def __init__(self, m, in_dim, out_dim, head=8):
-        super(InceptionBlock_Di0, self).__init__()
-
-        self.ln = Linear(in_dim, out_dim)
-        if m == 'S':
-            self.convx = nn.ModuleList([DiSAGEConv(in_dim, out_dim) for _ in range(20)])
-        elif m == 'G':
-            self.convx = nn.ModuleList([DIGCNConv(in_dim, out_dim) for _ in range(20)])
-        # elif m == 'C':
-        #     self.convx = nn.ModuleList([DIChebConv(in_dim, out_dim, K) for _ in range(20)])
-        elif m == 'A':
-            num_head = 1
-            head_dim = out_dim // num_head
-            self.convx = nn.ModuleList([GATConv_Qin(in_dim, head_dim, heads=head) for _ in range(20)])
-        else:
-            raise ValueError(f"Model '{m}' not implemented")
-
-    def reset_parameters(self):
-        self.ln.reset_parameters()
-        self.convx.reset_parameters()
-
-    def forward(self, x, edge_index_tuple, edge_weight_tuple):
-
-        x0 = self.ln(x)
-        for i in range(len(edge_index_tuple)):
-            x0 += self.convx[i](x, edge_index_tuple[i], edge_weight_tuple[i])
-            # torch.cuda.empty_cache()
-        return x0
 
 
 class DIChebConv(MessagePassing):
@@ -207,9 +135,10 @@ class DIChebConv(MessagePassing):
         **kwargs (optional): Additional arguments of
             :class:`torch_geometric.nn.conv.MessagePassing`.
     """
+
     def __init__(self, in_channels, out_channels, K, normalization: Optional[str] = 'sym',
                  bias=True, **kwargs):
-        super(DIChebConv, self).__init__(aggr='add', **kwargs)
+        super().__init__(aggr='add', **kwargs)
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -271,6 +200,7 @@ class DIChebConv(MessagePassing):
         edge_weight[loop_mask] -= 1
 
         return edge_index, edge_weight
+
     def forward(self, x, edge_index, edge_weight=None):
         """"""
         edge_index, norm = self.__norm__(
@@ -314,6 +244,7 @@ class DIChebConv(MessagePassing):
     #     return '{}({}, {}, K={})'.format(self.__class__.__name__, self.in_channels,
     #                                      self.out_channels, self.K)
 
+
 class DIGCNConv(MessagePassing):
     r"""The graph convolutional operator takes from Pytorch Geometric.
     The spectral operation is the same with Kipf's GCN.
@@ -336,7 +267,7 @@ class DIGCNConv(MessagePassing):
 
     def __init__(self, in_channels, out_channels, improved=False, cached=False,
                  bias=True, **kwargs):
-        super(DIGCNConv, self).__init__(aggr='add', **kwargs)
+        super().__init__(aggr='add', **kwargs)
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -396,81 +327,7 @@ class DIGCNConv(MessagePassing):
                                    self.out_channels)
 
 
-class DiGATConv(MessagePassing):
-    def __init__(self, in_channels, out_channels, heads=8, concat=False,
-                 negative_slope=0.2, dropout=0.6, bias=True, **kwargs):
-        super(DiGATConv, self).__init__(node_dim=0, **kwargs)
-
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.heads = heads
-        self.concat = concat
-        self.negative_slope = negative_slope
-        self.dropout = dropout
-        # self.lin = nn.Linear(heads, heads*out_channels)
-
-        self.lin = Linear(in_channels,  out_channels, bias=False)
-        self.att_src = Parameter(torch.Tensor(1, heads,  out_channels))
-        self.att_dst = Parameter(torch.Tensor(1, heads,  out_channels))
-
-        if bias and concat:
-            self.bias = Parameter(torch.Tensor(out_channels))
-        elif bias and not concat:
-            self.bias = Parameter(torch.Tensor(out_channels))
-        else:
-            self.register_parameter('bias', None)
-
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        glorot(self.lin.weight)
-        glorot(self.att_src)
-        glorot(self.att_dst)
-        zeros(self.bias)
-
-    def forward(self, x, edge_index, edge_weight=None):
-        num_nodes = x.size(0)
-
-        if edge_weight is None:
-            edge_weight = torch.ones((edge_index.size(1),), device=edge_index.device)
-
-        x = self.lin(x)     # Shape: [N, out_channels]
-        x = x.unsqueeze(1)
-        x = x.expand(-1, self.heads, -1)  # Now x has shape (N, H, 64)
-        # x= x.view(-1, self.heads, self.out_channels)  # Shape: [N, heads, out_channels]
-        return self.propagate(edge_index, x=x, edge_weight=edge_weight)
-
-    def message(self, edge_index_i, x_i, x_j, edge_weight, size):
-        alpha_i = (x_i * self.att_src).sum(dim=-1)
-        alpha_j = (x_j * self.att_dst).sum(dim=-1)
-        alpha = alpha_i + alpha_j
-        alpha = F.leaky_relu(alpha, self.negative_slope)
-        alpha = softmax(alpha, edge_index_i, num_nodes=size[0])
-
-        if self.training and self.dropout > 0:
-            alpha = F.dropout(alpha, p=self.dropout, training=True)
-
-        alpha = alpha * edge_weight.view(-1, 1)
-
-        return x_j * alpha.unsqueeze(-1)
-
-    def update(self, aggr_out):
-        if self.concat:
-            aggr_out = aggr_out.view(-1, self.out_channels)
-        else:
-            aggr_out = aggr_out.mean(dim=1)
-
-        if self.bias is not None:
-            aggr_out = aggr_out + self.bias
-
-        return aggr_out
-
-    def __repr__(self):
-        return '{}({}, {}, heads={})'.format(self.__class__.__name__,
-                                             self.in_channels,
-                                             self.out_channels, self.heads)
-
-class DiSAGEConv(MessagePassing):      #    Qin from Claude
+class DiSAGEConv(MessagePassing):  # Qin from Claude
     r"""The Directed GraphSAGE operator.
     Args:
         in_channels (int): Size of each input sample.
@@ -483,8 +340,8 @@ class DiSAGEConv(MessagePassing):      #    Qin from Claude
             :class:`torch_geometric.nn.conv.MessagePassing`.
     """
 
-    def __init__(self, in_channels, out_channels, normalize=False,  cached=True, bias=True, **kwargs):
-        super(DiSAGEConv, self).__init__(aggr='mean', **kwargs)
+    def __init__(self, in_channels, out_channels, normalize=False, cached=True, bias=True, **kwargs):
+        super().__init__(aggr='mean', **kwargs)
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -548,145 +405,6 @@ class DiSAGEConv(MessagePassing):      #    Qin from Claude
         return '{}({}, {})'.format(self.__class__.__name__, self.in_channels,
                                    self.out_channels)
 
-class DiG_Simple1(nn.Module):
-    def __init__(self, input_dim, nhid, out_dim,  dropout, layer=1):
-        super(DiG_Simple1, self).__init__()
-        self.dropout = dropout
-
-        self.conv1 = DIGCNConv(input_dim, out_dim)
-        # self.Conv = nn.Conv1d(hid_dim, out_dim, kernel_size=1)
-
-        # type1
-        self.reg_params = []
-        self.non_reg_params = self.conv1.parameters()
-
-        # # # type2
-        # self.reg_params = list(self.conv1.parameters())
-        # self.non_reg_params = self.Conv.parameters()
-
-    def forward(self, x, edge_index, edge_weight):
-        x = F.relu(self.conv1(x, edge_index, edge_weight))
-        # x = F.dropout(x, self.dropout, training=self.training)
-        # x = F.relu(x)
-
-        # x = x.unsqueeze(0)
-        # x = x.permute((0, 2, 1))
-        # x = self.Conv(x)
-        # x = x.permute((0, 2, 1)).squeeze()
-
-        return x
-
-class DiG_Simple2(nn.Module):
-    def __init__(self, input_dim, nhid, out_dim, dropout, layer=2):
-        super(DiG_Simple2, self).__init__()
-        self.dropout = dropout
-
-        self.conv1 = DIGCNConv(input_dim, nhid)
-        self.conv2 = DIGCNConv(nhid, out_dim)
-        # self.Conv = nn.Conv1d(hid_dim, out_dim, kernel_size=1)
-
-        # type1
-        self.reg_params = list(self.conv1.parameters())
-        self.non_reg_params = self.conv2.parameters()
-
-        # # type2
-        # self.reg_params = list(self.conv1.parameters()) + list(self.conv2.parameters())
-        # self.non_reg_params = self.Conv.parameters()
-
-    def forward(self, x, edge_index, edge_weight):
-        x = F.relu(self.conv1(x, edge_index, edge_weight))
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = self.conv2(x, edge_index, edge_weight)
-        # x = F.relu(x)
-
-        # x = x.unsqueeze(0)
-        # x = x.permute((0, 2, 1))
-        # x = self.Conv(x)
-        # x = x.permute((0, 2, 1)).squeeze()
-
-        return x
-
-class DiG_SimpleX(torch.nn.Module):
-    def __init__(self, input_dim,  nhid, out_dim, dropout, layer=3):
-        super(DiG_SimpleX, self).__init__()
-        self.dropout = dropout
-        self.conv1 = DIGCNConv(input_dim, nhid)
-        self.conv2 = DIGCNConv(nhid, out_dim)
-        self.convx = nn.ModuleList([DIGCNConv(nhid, nhid) for _ in range(layer-2)])
-        # self.Conv = nn.Conv1d(hid_dim, out_dim, kernel_size=1)
-
-        # type1
-        self.reg_params = list(self.conv1.parameters()) + list(self.convx.parameters())
-        self.non_reg_params = self.conv2.parameters()
-
-        # type2
-        # self.reg_params = list(self.conv1.parameters()) + list(self.convx.parameters()) + list(self.conv2.parameters())
-        # self.non_reg_params = self.Conv.parameters()
-
-    def forward(self, x, edge_index, edge_weight):
-        x = F.relu(self.conv1(x, edge_index, edge_weight))
-
-        for iter_layer in self.convx:
-            x = F.dropout(x, self.dropout, training=self.training)
-            x = F.relu(iter_layer(x, edge_index, edge_weight))
-
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = self.conv2(x, edge_index, edge_weight)
-        # x = F.relu(x)
-        # x = F.relu(self.conv2(x, edge_index))      # I should desert this line
-        # x = x.unsqueeze(0)
-        # x = x.permute((0, 2, 1))
-        # x = self.Conv(x)
-        # x = x.permute((0, 2, 1)).squeeze()
-
-        return x
-
-class DiG_Simple1BN(nn.Module):
-    def __init__(self, input_dim, nhid, out_dim,  dropout, layer=1):
-        super(DiG_Simple1BN, self).__init__()
-        self.dropout = dropout
-
-        self.conv1 = DIGCNConv(input_dim, out_dim)
-        # self.Conv = nn.Conv1d(hid_dim, out_dim, kernel_size=1)
-        self.batch_norm1 = nn.BatchNorm1d(out_dim)
-
-        # type1
-        self.reg_params = []
-        self.non_reg_params = self.conv1.parameters()
-
-    def forward(self, x, edge_index, edge_weight):
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = self.batch_norm1(self.conv1(x, edge_index, edge_weight))
-        # x = self.conv1(x, edge_index, edge_weight)
-        x = F.dropout(x, self.dropout, training=self.training)
-
-        return x
-
-class DiG_Simple1BN_nhid(nn.Module):
-    def __init__(self, input_dim, nhid, out_dim,  dropout, layer=1):
-        super(DiG_Simple1BN_nhid, self).__init__()
-        self.dropout = dropout
-
-        self.conv1 = DIGCNConv(input_dim, nhid)
-        self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-
-        # type1
-        self.reg_params = []
-        self.non_reg_params = self.conv1.parameters()
-
-    def forward(self, x, edge_index, edge_weight):
-        # x = F.dropout(x, self.dropout, training=self.training)
-        # x = self.batch_norm1(self.conv1(x, edge_index, edge_weight))
-        x = self.conv1(x, edge_index, edge_weight)
-
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        return x
 
 def Conv_Out(x, Conv):
     x = x.unsqueeze(0)
@@ -696,278 +414,12 @@ def Conv_Out(x, Conv):
 
     return x
 
-class DiSAGE_1_nhid(nn.Module):
-    def __init__(self, m, in_dim, out_dim,  args):
-        super(DiSAGE_1_nhid, self).__init__()
-        self.dropout = args.dropout
-        nhid = args.feat_dim
-        layer = args.layer
-        head = args.heads
-
-        if m == 'S':
-            self.conv1 = DiSAGEConv(in_dim, out_dim)
-        elif m == 'G':
-            self.conv1 = DIGCNConv(in_dim, out_dim)
-        elif m == 'A':
-            num_head = 1
-            head_dim = out_dim // num_head
-
-            self.conv1 = GATConv_Qin(in_dim, head_dim, heads=head)
-            # self.conv1 = DiGATConv(in_dim, nhid, nhid)     # little difference from GATConv_Qin
-        elif m == 'C':
-            self.conv1 = DIChebConv(in_dim, out_dim, args.K)
-        else:
-            raise ValueError(f"Model '{m}' not implemented")
-
-        self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-
-        # type1
-        self.reg_params = []
-        self.non_reg_params = self.conv1.parameters()
-
-    def forward(self, x, edge_index, edge_weight):
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = self.conv1(x, edge_index, edge_weight)
-        x = F.dropout(x, self.dropout, training=self.training)
-
-
-        return x
-
-class DiSAGE_1BN_nhid0(nn.Module):
-    def __init__(self, m, in_dim, nhid, out_dim,  args, layer=1,  head=8):
-        super(DiSAGE_1BN_nhid0, self).__init__()
-        self.dropout = args.dropout
-        if m == 'S':
-            self.conv1 = DiSAGEConv(in_dim, nhid)
-        elif m == 'G':
-            self.conv1 = DIGCNConv(in_dim, nhid)
-        elif m == 'A':
-            num_head = 1
-            head_dim = nhid // num_head
-
-            self.conv1 = GATConv_Qin(in_dim, head_dim, heads=head)
-
-            # self.conv1 = DiGATConv(in_dim, nhid, nhid)     # little difference from GATConv_Qin
-        else:
-            raise ValueError(f"Model '{m}' not implemented")
-
-        self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-
-        # type1
-        self.reg_params = []
-        self.non_reg_params = self.conv1.parameters()
-
-    def forward(self, x, edge_index, edge_weight):
-        # x = F.dropout(x, self.dropout, training=self.training)
-        # x = self.batch_norm1(self.conv1(x, edge_index, edge_weight))
-        x = self.conv1(x, edge_index, edge_weight)
-
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        return x
-
-class DiG_Simple2BN_nhid(nn.Module):
-    def __init__(self, input_dim, nhid, ncls, dropout, layer=2):
-        super(DiG_Simple2BN_nhid, self).__init__()
-        self.dropout = dropout
-        self.conv1 = DIGCNConv(input_dim, nhid)
-        self.conv2 = DIGCNConv(nhid, nhid)
-        self.Conv = nn.Conv1d(nhid, ncls, kernel_size=1)
-
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-
-        self.reg_params = list(self.conv1.parameters())
-        self.non_reg_params = self.conv2.parameters()
-
-    def forward(self, x, edge_index, edge_weight):
-        # x = F.dropout(x, self.dropout, training=self.training)
-        x = F.relu(self.conv1(x, edge_index, edge_weight))      # no BN here is better
-        # x = F.relu(self.batch_norm1(self.conv1(x, edge_index, edge_weight)))
-        # x = F.dropout(x, self.dropout, training=self.training)
-        x = self.batch_norm2(self.conv2(x, edge_index, edge_weight))
-
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-
-        return x
-
-
-class DiSAGE_2BN_nhid(nn.Module):
-    def __init__(self, m, input_dim,  ncls, args):
-        super(DiSAGE_2BN_nhid, self).__init__()
-        self.dropout = args.dropout
-        nhid = args.feat_dim
-        layer = args.layer
-        head = args.heads
-        K = args.K
-
-        self.Conv = nn.Conv1d(nhid, ncls, kernel_size=1)
-
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-
-        if m == 'S':
-            self.conv1 = DiSAGEConv(input_dim, nhid)
-            self.conv2 = DiSAGEConv(nhid, nhid)
-            self.convx = nn.ModuleList([DiSAGEConv(nhid, nhid) for _ in range(layer - 2)])
-        elif m == 'G':
-            self.conv1 = DIGCNConv(input_dim, nhid)
-            self.conv2 = DIGCNConv(nhid, nhid)
-            self.convx = nn.ModuleList([DIGCNConv(nhid, nhid) for _ in range(layer - 2)])
-        elif m == 'A':
-            num_head = 1
-            head_dim = nhid // num_head
-
-            self.conv1 = GATConv_Qin(input_dim, head_dim, heads=head)
-            self.conv2 = GATConv_Qin(nhid, head_dim, heads=head)
-            self.batch_norm1 = nn.BatchNorm1d(head_dim)
-            self.batch_norm2 = nn.BatchNorm1d(head_dim)
-        elif m == 'C':
-            self.conv1 = DIChebConv(input_dim, nhid, K)
-            self.conv2 = DIChebConv(nhid, nhid, K)
-            self.convx = nn.ModuleList([DIChebConv(nhid, nhid, K) for _ in range(layer - 2)])
-        else:
-            raise ValueError(f"Model '{m}' not implemented")
-
-        self.reg_params = list(self.conv1.parameters())
-        self.non_reg_params = self.conv2.parameters()
-
-    def forward(self, x, edge_index, edge_weight):
-        # x = F.dropout(x, self.dropout, training=self.training)
-        x = F.relu(self.conv1(x, edge_index, edge_weight))  # no BN here is better
-        # x = F.relu(self.batch_norm1(self.conv1(x, edge_index, edge_weight)))
-        # x = F.dropout(x, self.dropout, training=self.training)
-        x = self.batch_norm2(self.conv2(x, edge_index, edge_weight))
-
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        return x
-
-class DiSAGE_2_nhid(nn.Module):
-    def __init__(self, m, input_dim,  ncls, args):
-        super(DiSAGE_2_nhid, self).__init__()
-        self.dropout = args.dropout
-        nhid = args.feat_dim
-        layer = args.layer
-        head = args.heads
-        K = args.K
-
-        self.Conv = nn.Conv1d(nhid, ncls, kernel_size=1)
-
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-
-        if m == 'S':
-            self.conv1 = DiSAGEConv(input_dim, nhid)
-            self.conv2 = DiSAGEConv(nhid, ncls)
-            self.convx = nn.ModuleList([DiSAGEConv(nhid, nhid) for _ in range(layer - 2)])
-        elif m == 'G':
-            self.conv1 = DIGCNConv(input_dim, nhid)
-            self.conv2 = DIGCNConv(nhid, ncls)
-            self.convx = nn.ModuleList([DIGCNConv(nhid, nhid) for _ in range(layer - 2)])
-        elif m == 'A':
-            num_head = 1
-            head_dim = nhid // num_head
-
-            self.conv1 = GATConv_Qin(input_dim, head_dim, heads=head)
-            self.conv2 = GATConv_Qin(nhid, ncls//num_head, heads=head)
-            self.batch_norm1 = nn.BatchNorm1d(head_dim)
-            self.batch_norm2 = nn.BatchNorm1d(head_dim)
-        elif m == 'C':
-            self.conv1 = DIChebConv(input_dim, nhid, K)
-            self.conv2 = DIChebConv(nhid, ncls, K)
-            self.convx = nn.ModuleList([DIChebConv(nhid, nhid, K) for _ in range(layer - 2)])
-        else:
-            raise ValueError(f"Model '{m}' not implemented")
-
-        self.reg_params = list(self.conv1.parameters())
-        self.non_reg_params = self.conv2.parameters()
-
-    def forward(self, x, edge_index, edge_weight):  # this is original DiGCN
-        x = F.relu(self.conv1(x, edge_index, edge_weight))   # no BN here is better
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = self.conv2(x, edge_index, edge_weight)
-
-        return x
-
-class DiSAGE_xBN_nhid0(torch.nn.Module):
-    def __init__(self, m, input_dim,  out_dim, args, layer=3, head=8):
-        super(DiSAGE_xBN_nhid0, self).__init__()
-        self.dropout = args.dropout
-        nhid = args.feat_dim
-        layer = args.layer
-        head = args.heads
-        K = args.K
-
-        if m == 'S':
-            self.conv1 = DiSAGEConv(input_dim, nhid)
-            self.conv2 = DiSAGEConv(nhid, nhid)
-            self.convx = nn.ModuleList([DiSAGEConv(nhid, nhid) for _ in range(layer - 2)])
-        elif m == 'G':
-            self.conv1 = DIGCNConv(input_dim, nhid)
-            self.conv2 = DIGCNConv(nhid, nhid)
-            self.convx = nn.ModuleList([DIGCNConv(nhid, nhid) for _ in range(layer - 2)])
-        elif m == 'A':
-            num_head = 1
-            head_dim = nhid // num_head
-
-            self.conv1 = GATConv_Qin(input_dim, head_dim,  heads=head)
-            self.conv2 = GATConv_Qin(nhid, head_dim,  heads=head)
-            self.convx = nn.ModuleList([GATConv_Qin(nhid, head_dim,  heads=head) for _ in range(layer - 2)])
-        else:
-            raise ValueError(f"Model '{m}' not implemented")
-
-        self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
-
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-        self.batch_norm3 = nn.BatchNorm1d(nhid)
-
-        self.reg_params = list(self.conv1.parameters()) + list(self.convx.parameters())
-        self.non_reg_params = self.conv2.parameters()
-
-    def forward(self, x, edge_index, edge_weight):
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = F.relu(self.conv1(x, edge_index, edge_weight))
-        # x = F.relu(self.batch_norm1(self.conv1(x, edge_index, edge_weight)))
-
-        for iter_layer in self.convx:
-            x = F.dropout(x, self.dropout, training=self.training)
-            # x = F.relu(self.batch_norm3(iter_layer(x, edge_index, edge_weight)))
-            x = F.relu(iter_layer(x, edge_index, edge_weight))
-
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = self.batch_norm2(self.conv2(x, edge_index, edge_weight))
-
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        x = F.dropout(x, self.dropout, training=self.training)
-
-        return x
 
 class DiSAGE_xBN_nhid(torch.nn.Module):
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiSAGE_xBN_nhid, self).__init__()
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
         self.dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         self.layer = args.layer
         head = args.heads
@@ -998,9 +450,9 @@ class DiSAGE_xBN_nhid(torch.nn.Module):
             num_head = 1
             head_dim = nhid // num_head
 
-            self.conv1 = GATConv(input_dim, head_dim, heads=head, concat=False)
-            self.conv2 = GATConv(nhid, head_dim,  heads=head, concat=False)
-            self.convx = nn.ModuleList([GATConv(nhid, head_dim,  heads=head, concat=False) for _ in range(layer - 2)])
+            self.conv1 = GATConv(input_dim, head_dim, heads=head)
+            self.conv2 = GATConv(nhid, head_dim, heads=head)
+            self.convx = nn.ModuleList([GATConv(nhid, head_dim, heads=head) for _ in range(layer - 2)])
         else:
             raise ValueError(f"Model '{m}' not implemented")
 
@@ -1054,66 +506,24 @@ class DiSAGE_xBN_nhid(torch.nn.Module):
 
         return x
 
-class DiSAGE_1BN_nhid(nn.Module):
-    def __init__(self, m, in_dim, out_dim,  args):
-        super(DiSAGE_1BN_nhid, self).__init__()
-        self.dropout = args.dropout
-        nhid = args.feat_dim
-        layer = args.layer
-        head = args.heads
-
-        if m == 'S':
-            self.conv1 = DiSAGEConv(in_dim, nhid)
-        elif m == 'G':
-            self.conv1 = DIGCNConv(in_dim, nhid)
-        elif m == 'A':
-            num_head = 1
-            head_dim = nhid // num_head
-
-            self.conv1 = GATConv(in_dim, head_dim, heads=head)
-        elif m == 'C':
-            self.conv1 = DIChebConv(in_dim, nhid, args.K)
-        else:
-            raise ValueError(f"Model '{m}' not implemented")
-
-        self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-
-        # type1
-        self.reg_params = []
-        self.non_reg_params = self.conv1.parameters()
-
-    def forward(self, x, edge_index, edge_weight):
-        # x = F.dropout(x, self.dropout, training=self.training)
-        # x = self.batch_norm1(self.conv1(x, edge_index, edge_weight))
-        x = self.conv1(x, edge_index, edge_weight)
-
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        return x
-
 
 class DiSAGE_x_nhid(torch.nn.Module):
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiSAGE_x_nhid, self).__init__()
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
         self.dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         self.layer = args.layer
         head = args.heads
         K = args.K
-        if self.layer >1 :
+        if self.layer > 1:
             n_change = nhid
         else:
             n_change = out_dim
         self.jk = args.jk
-        out1 = out_dim  if layer == 1 else nhid
+        out1 = out_dim if layer == 1 else nhid
 
-        if self.jk is not None:
+        if self.jk not in (0, None):
             in_dim_jk = nhid * self.layer if self.jk == "cat" else nhid
             # self.lin = Linear(input_dim, out_dim)
             self.lin = Linear(in_dim_jk, nhid)
@@ -1124,8 +534,18 @@ class DiSAGE_x_nhid(torch.nn.Module):
             self.conv2 = DiSAGEConv(nhid, out1)
             self.convx = nn.ModuleList([DiSAGEConv(nhid, nhid) for _ in range(layer - 2)])
         elif m == 'G':
-            self.conv1 = DIGCNConv(input_dim, n_change)
+            # self.conv1 = DIGCNConv(input_dim, n_change)
+            self.conv1 = DIGCNConv(input_dim, nhid)  # Qin temp
+            self.mlp1 = Linear(nhid, nhid)  # Qin temp
+            self.mlp12 = Linear(nhid, nhid)  # Qin temp
+            self.mlp13 = Linear(nhid, nhid)  # Qin temp
+            self.mlp11 = Linear(nhid, out1)  # Qin temp
             self.conv2 = DIGCNConv(nhid, out1)
+            self.mlp21 = Linear(out1, out1)
+            self.mlp23 = Linear(out1, out1)
+            self.mlp2 = Linear(out1, out1)
+            self.mlp22 = Linear(out1, out1)
+            # self.conv2 = Linear(nhid, out1)     # Qin temp
             self.convx = nn.ModuleList([DIGCNConv(nhid, nhid) for _ in range(layer - 2)])
         elif m == 'C':
             self.conv1 = DIChebConv(input_dim, n_change, K)
@@ -1135,20 +555,19 @@ class DiSAGE_x_nhid(torch.nn.Module):
             num_head = 1
             head_dim = nhid // num_head
 
-            self.conv1 = GATConv_Qin(input_dim, n_change // num_head,  heads=head)
-            self.conv2 = GATConv_Qin(nhid, out1//num_head,  heads=head)
-            self.convx = nn.ModuleList([GATConv_Qin(nhid, head_dim,  heads=head) for _ in range(layer - 2)])
+            self.conv1 = GATConv(input_dim, n_change // num_head, heads=head)
+            self.conv2 = GATConv(nhid, out1 // num_head, heads=head)
+            self.convx = nn.ModuleList([GATConv(nhid, head_dim, heads=head) for _ in range(layer - 2)])
         else:
             raise ValueError(f"Model '{m}' not implemented")
 
-        if self.jk is not None:
+        if self.jk not in (0, None):
             in_dim_jk = nhid * self.layer if self.jk == "cat" else nhid
             self.lin = Linear(in_dim_jk, out_dim)
             # self.lin = Linear(in_dim_jk, nhid)
             self.jump = JumpingKnowledge(mode=self.jk, channels=nhid, num_layers=out_dim)
 
         # self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
-
 
         self.reg_params = list(self.conv1.parameters()) + list(self.convx.parameters())
         self.non_reg_params = self.conv2.parameters()
@@ -1157,6 +576,11 @@ class DiSAGE_x_nhid(torch.nn.Module):
         xs = []
         x = F.dropout(x, self.dropout, training=self.training)
         x = self.conv1(x, edge_index, edge_weight)
+        # x = self.mlp1(x)    # Qin temp
+        # x = self.mlp12(x)    # Qin temp
+        # x = self.mlp13(x)    # Qin temp
+        # x = self.mlp11(x)    # Qin temp  # ######  using this
+        # x = F.relu(x)  # Qin temp
         xs += [x]
         if self.layer == 1:
             x = F.dropout(x, self.dropout, training=self.training)
@@ -1168,119 +592,35 @@ class DiSAGE_x_nhid(torch.nn.Module):
             for iter_layer in self.convx:
                 x = F.dropout(x, self.dropout, training=self.training)
                 x = F.relu(iter_layer(x, edge_index, edge_weight))
+                # x = self.mlp23(x)  # Qin temp
+                # x = self.mlp21(x)  # Qin temp
+                # x = self.mlp2(x)  # Qin temp
                 xs += [x]
 
         x = F.dropout(x, self.dropout, training=self.training)
         x = self.conv2(x, edge_index, edge_weight)
+        # x = self.mlp2(x)  # Qin temp
+        # x = self.mlp23(x)  # Qin temp
+        # x = self.mlp21(x)  # Qin temp
+        # x = self.mlp22(x)  # Qin temp
+        # x = F.relu(x)  # Qin temp
+        # x = self.conv2(x)       # Qin temp
         xs += [x]
 
-        if self.jk is not None:
+        if self.jk is not None and bool(self.jk):
             x = self.jump(xs)
             x = self.lin(x)
 
-        return x   # log softmax operation, has the same dimension
+        return x  # log softmax operation, has the same dimension
 
-
-class DiSAGE_xBN_nhid_BN(torch.nn.Module):
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiSAGE_xBN_nhid_BN, self).__init__()
-        self.dropout = args.dropout
-        nhid = args.feat_dim
-        layer = args.layer
-        head = args.heads
-        K = args.K
-
-        if m == 'S':
-            self.conv1 = DiSAGEConv(input_dim, nhid)
-            self.conv2 = DiSAGEConv(nhid, out_dim)
-            self.convx = nn.ModuleList([DiSAGEConv(nhid, nhid) for _ in range(layer - 2)])
-        elif m == 'G':
-            self.conv1 = DIGCNConv(input_dim, nhid)
-            self.conv2 = DIGCNConv(nhid, out_dim)
-            self.convx = nn.ModuleList([DIGCNConv(nhid, nhid) for _ in range(layer - 2)])
-        elif m == 'C':
-            self.conv1 = DIChebConv(input_dim, nhid, K)
-            self.conv2 = DIChebConv(nhid, out_dim, K)
-            self.convx = nn.ModuleList([DIChebConv(nhid, nhid, K) for _ in range(layer - 2)])
-        elif m == 'A':
-            num_head = 1
-            head_dim = nhid // num_head
-
-            self.conv1 = GATConv_Qin(input_dim, head_dim,  heads=head)
-            self.conv2 = GATConv_Qin(nhid, out_dim//num_head,  heads=head)
-            self.convx = nn.ModuleList([GATConv_Qin(nhid, head_dim,  heads=head) for _ in range(layer - 2)])
-        else:
-            raise ValueError(f"Model '{m}' not implemented")
-
-        self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
-
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(out_dim)
-        self.batch_norm3 = nn.BatchNorm1d(nhid)
-
-        self.reg_params = list(self.conv1.parameters()) + list(self.convx.parameters())
-        self.non_reg_params = self.conv2.parameters()
-
-    def forward(self, x, edge_index, edge_weight):
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = F.relu(self.conv1(x, edge_index, edge_weight))
-        # x = F.relu(self.batch_norm1(self.conv1(x, edge_index, edge_weight)))
-
-        for iter_layer in self.convx:
-            x = F.dropout(x, self.dropout, training=self.training)
-            # x = F.relu(iter_layer(x, edge_index, edge_weight))
-            x = F.relu(self.batch_norm3(iter_layer(x, edge_index, edge_weight)))
-
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = self.batch_norm2(self.conv2(x, edge_index, edge_weight))      # good for telegram
-        # x = self.conv2(x, edge_index, edge_weight)
-        return x   # log softmax operation, has the same dimension
-
-class DiG_SimpleXBN_nhid(torch.nn.Module):
-    def __init__(self, input_dim,  nhid, out_dim, dropout, layer=3):
-        super(DiG_SimpleXBN_nhid, self).__init__()
-        self.dropout = dropout
-        self.conv1 = DIGCNConv(input_dim, nhid)
-        self.conv2 = DIGCNConv(nhid, nhid)
-        self.convx = nn.ModuleList([DIGCNConv(nhid, nhid) for _ in range(layer-2)])
-        self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
-
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-        self.batch_norm3 = nn.BatchNorm1d(nhid)
-
-        self.reg_params = list(self.conv1.parameters()) + list(self.convx.parameters())
-        self.non_reg_params = self.conv2.parameters()
-
-    def forward(self, x, edge_index, edge_weight):
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = F.relu(self.conv1(x, edge_index, edge_weight))
-        # x = F.relu(self.batch_norm1(self.conv1(x, edge_index, edge_weight)))
-
-        for iter_layer in self.convx:
-            x = F.dropout(x, self.dropout, training=self.training)
-            # x = F.relu(self.batch_norm3(iter_layer(x, edge_index, edge_weight)))
-            x = F.relu(iter_layer(x, edge_index, edge_weight))
-
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = self.batch_norm2(self.conv2(x, edge_index, edge_weight))
-
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        x = F.dropout(x, self.dropout, training=self.training)
-
-        return x
 
 class DiG_SimpleXBN_nhid_Pan(torch.nn.Module):
-    def __init__(self, input_dim,  nhid, out_dim, dropout, layer=3):
-        super(DiG_SimpleXBN_nhid_Pan, self).__init__()
+    def __init__(self, input_dim, nhid, out_dim, dropout, layer=3):
+        super().__init__()
         self.dropout = dropout
         self.conv1 = DIGCNConv(input_dim, nhid)
         self.conv2 = DIGCNConv(nhid, nhid)
-        self.convx = nn.ModuleList([DIGCNConv(nhid, nhid) for _ in range(layer-2)])
+        self.convx = nn.ModuleList([DIGCNConv(nhid, nhid) for _ in range(layer - 2)])
         self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
 
         self.batch_norm1 = nn.BatchNorm1d(nhid)
@@ -1319,148 +659,12 @@ class DiG_SimpleXBN_nhid_Pan(torch.nn.Module):
 
         return x
 
-    #     for iter_layer in self.convx:
-    #         x = F.dropout(x, self.dropout, training=self.training)
-    #         x = iter_layer(x, edge_index, edge_weight)
-    #         x = F.relu(x)
-    #
-    #     x = F.dropout(x, self.dropout, training=self.training)
-    #     x = self.conv2(x, edge_index, edge_weight)
-    #     x = self.batch_norm2(x)
-    #
-    #     x = x.unsqueeze(0)
-    #     x = x.permute((0, 2, 1))
-    #     x = self.Conv(x)
-    #     x = x.permute((0, 2, 1)).squeeze()
-    #
-    #     x = F.dropout(x, self.dropout, training=self.training)
-    #
-    #     return x
-    # def forward(self, x, edge_index):
-    #     out_list = []
-    #     for i in range(self.num_layers):
-    #         x = self.convs[i](x, edge_index)
-    #         if i < self.num_layers - 1:
-    #             x = F.relu(x)
-    #         out_list.append(F.log_softmax(x, dim=1))
-    #     return out_list
-
-class DiG_Simple2BN(nn.Module):
-    def __init__(self, input_dim, nhid, out_dim, dropout, layer=2):
-        super(DiG_Simple2BN, self).__init__()
-        self.dropout = dropout
-
-        self.conv1 = DIGCNConv(input_dim, nhid)
-        self.conv2 = DIGCNConv(nhid, out_dim)
-        # self.Conv = nn.Conv1d(hid_dim, out_dim, kernel_size=1)
-
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(out_dim)
-
-        # type1
-        self.reg_params = list(self.conv1.parameters())
-        self.non_reg_params = self.conv2.parameters()
-
-
-    def forward(self, x, edge_index, edge_weight):
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = F.relu(self.conv1(x, edge_index, edge_weight))      # no BN here is better
-        # x = F.relu(self.batch_norm1(self.conv1(x, edge_index, edge_weight)))
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = self.batch_norm2(self.conv2(x, edge_index, edge_weight))
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = F.relu(x)
-
-
-        return x
-class DiG_SimpleXBN(torch.nn.Module):
-    def __init__(self, input_dim,  nhid, out_dim, dropout, layer=3):
-        super(DiG_SimpleXBN, self).__init__()
-        self.dropout = dropout
-        self.conv1 = DIGCNConv(input_dim, nhid)
-        self.conv2 = DIGCNConv(nhid, out_dim)
-        self.convx = nn.ModuleList([DIGCNConv(nhid, nhid) for _ in range(layer-2)])
-        # self.Conv = nn.Conv1d(hid_dim, out_dim, kernel_size=1)
-
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(out_dim)
-        self.batch_norm3 = nn.BatchNorm1d(nhid)
-
-        # type1
-        self.reg_params = list(self.conv1.parameters()) + list(self.convx.parameters())
-        self.non_reg_params = self.conv2.parameters()
-
-        # type2
-        # self.reg_params = list(self.conv1.parameters()) + list(self.convx.parameters()) + list(self.conv2.parameters())
-        # self.non_reg_params = self.Conv.parameters()
-
-    def forward(self, x, edge_index, edge_weight):
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = F.relu(self.conv1(x, edge_index, edge_weight))
-        # x = F.relu(self.batch_norm1(self.conv1(x, edge_index, edge_weight)))
-
-        for iter_layer in self.convx:
-            x = F.dropout(x, self.dropout, training=self.training)
-            # x = F.relu(self.batch_norm3(iter_layer(x, edge_index, edge_weight)))
-            x = F.relu(iter_layer(x, edge_index, edge_weight))
-
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = self.batch_norm2(self.conv2(x, edge_index, edge_weight))
-        x = F.dropout(x, self.dropout, training=self.training)
-
-        return x
-
-def create_DiGSimple(m, nfeat, nclass, args):
-    if args.layer == 1:
-        model = DiG_Simple1BN(m, nfeat, nclass, args)
-    elif args.layer == 2:
-        model = DiG_Simple2BN(m, nfeat, nclass, args)
-    else:
-        model = DiG_SimpleXBN(m, nfeat, nclass, args)
-    return model
-
-def create_DiGSimple_nhid(m, nfeat, nclass, args):
-    if args.layer == 1:
-        model = DiG_Simple1BN_nhid(m, nfeat, nclass, args)
-    elif args.layer == 2:
-        model = DiG_Simple2BN_nhid(m, nfeat, nclass, args)
-    else:
-        model = DiG_SimpleXBN_nhid(m, nfeat, nclass, args)
-    return model
-
-def create_DiSAGESimple_nhid0(m, nfeat, nclass, args):
-    if args.layer == 1:
-        model = DiSAGE_1BN_nhid(m, nfeat, nclass, args)
-    elif args.layer == 2:
-        model = DiSAGE_2BN_nhid(m, nfeat, nclass, args)
-    else:
-        model = DiSAGE_xBN_nhid(m, nfeat, nclass, args)
-    return model
-
-def create_DiSAGESimple_nhid(m, nfeat, n_cls, args):
-    # if args.layer == 1:
-    #     model = DiSAGE_1_nhid(m, nfeat,  n_cls, args)
-    # elif args.layer == 2:
-    #     model = DiSAGE_2_nhid(m, nfeat,  n_cls, args)
-    # else:
-    model = DiSAGE_x_nhid(m, nfeat,  n_cls, args)
-    return model
-
-def create_DiGSimple_batch_nhid(m, nfeat, nclass, args):
-
-    if args.layer == 1:
-        model = DiG_Simple1BN_batch_nhid(m, nfeat, nclass, args)
-    elif args.layer == 2:
-        model = DiG_Simple2BN_batch_nhid(m, nfeat, nclass, args)
-    else:
-        model = DiG_SimpleXBN_batch_nhid(m, nfeat, nclass, args)
-    return model
 
 class Di_IB_1_nhid(torch.nn.Module):
     def __init__(self, m, input_dim, n_cls, args):
-        super(Di_IB_1_nhid, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Di(m, input_dim, n_cls, args)
         self.Conv = nn.Conv1d(nhid, n_cls, kernel_size=1)
         self.batch_norm1 = nn.BatchNorm1d(n_cls)
@@ -1475,599 +679,41 @@ class Di_IB_1_nhid(torch.nn.Module):
         x = F.dropout(x, p=self._dropout, training=self.training)
         return x
 
-class Di_IB_1BN_nhid0(torch.nn.Module):
-    def __init__(self, m, input_dim,  n_cls, args):
-        super(Di_IB_1BN_nhid0, self).__init__()
-        self._dropout = args.dropout
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
-        self.Conv = nn.Conv1d(nhid, n_cls, kernel_size=1)
-        self.batch_norm1 = nn.BatchNorm1d(n_cls)
-
-        self.reg_params = []
-        self.non_reg_params = self.ib1.parameters()
-
-    def forward(self, features, edge_index_tuple, edge_weight_tuple):
-        x = features
-        x = self.ib1(x, edge_index_tuple, edge_weight_tuple)
-
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1))
-        x = x.squeeze(0)
-        x = self.batch_norm1(x)
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
-
-class DiGCN_IB_1BN_nhid(torch.nn.Module):
-    def __init__(self, m, input_dim,  n_cls, args):
-        super(DiGCN_IB_1BN_nhid, self).__init__()
-        self._dropout = args.dropout
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
-        self.batch_norm1 = nn.BatchNorm1d(n_cls)
-        self.Conv = nn.Conv1d(nhid, n_cls, kernel_size=1)
-
-        self.reg_params = []
-        self.non_reg_params = self.ib1.parameters()
-
-    def forward(self, features, edge_index_tuple, edge_weight_tuple):
-        x = features
-        x = self.ib1(x, edge_index_tuple, edge_weight_tuple)
-
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1))
-        x = x.squeeze(0)
-        x = self.batch_norm1(x)
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
-
-class DiGCN_IB_1BN_nhid_para(torch.nn.Module):
-    def __init__(self, input_dim, nhid, n_cls, dropout=0.5, layer=1):
-        super(DiGCN_IB_1BN_nhid_para, self).__init__()
-        self.ib1 = InceptionBlock_Qinlist(input_dim, nhid)
-        self.coef1 = nn.ParameterList([nn.Parameter(torch.tensor(1.0)) for _ in range(20)])  # coef for ib1
-        self._dropout = dropout
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.Conv = nn.Conv1d(nhid, n_cls, kernel_size=1)
-
-        self.reg_params = []
-        self.non_reg_params = self.ib1.parameters()
-        self.coefs = self.coef1
-
-    def forward(self, features, edge_index_tuple, edge_weight_tuple):   # TODO BN and dropout change position and dimension
-        x = features
-        x_list = self.ib1(x, edge_index_tuple, edge_weight_tuple)
-        x = x_list[0]
-        for i in range(1, len(x_list)):
-            x += self.coef1[i] * x_list[i]
-
-        x = self.batch_norm1(x)     # better
-        # x = F.dropout(x, p=self._dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1))
-        x = x.squeeze(0)
-        # x = self.batch_norm1(x)
-        x = F.dropout(x, p=self._dropout, training=self.training)
-
-        return x
-
-class DiGCN_IB_1BN_batch(torch.nn.Module):
-    '''
-    for large dataset, using small batches not the whole graph
-    '''
-    def __init__(self,m,  input_dim, out_dim, args):
-        super(DiGCN_IB_1BN_batch, self).__init__()
-        self.ib1 = InceptionBlock_Di(m, input_dim, out_dim, args)
-        self._dropout = args.dropout
-        self.batch_size = args.batch_size
-        self.batch_norm1 = nn.BatchNorm1d( out_dim)
-
-        self.reg_params = []
-        self.non_reg_params = self.ib1.parameters()
-
-    def forward(self, features, edge_index_tuple, edge_weight_tuple):
-        x = features
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = features.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            # Forward pass for the current batch
-            x_batch = self.ib1(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            
-            x_batch = self.batch_norm1(x_batch)
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-
-        x = torch.cat(outputs, dim=0)
-        return x
-
-
-class DiGCN_IB_1BN_batch_nhid(torch.nn.Module):
-    '''
-    for large dataset, using small batches not the whole graph
-    '''
-
-    def __init__(self, m, input_dim,   out_dim, args):
-        super(DiGCN_IB_1BN_batch_nhid, self).__init__()
-
-        self._dropout = args.dropout
-        self.batch_size = args.batch_size
-        nhid = args.feat_dim
-
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm = nn.BatchNorm1d(nhid)
-        self.Conv1 = nn.Conv1d(nhid,  out_dim, kernel_size=1)
-
-        self.reg_params = []
-        self.non_reg_params = self.ib1.parameters()
-
-    def forward(self, features, edge_index_tuple, edge_weight_tuple):
-        x = features
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = features.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            # Forward pass for the current batch
-            x_batch = self.ib1(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            x_batch = self.batch_norm(x_batch)
-
-            x_batch = x_batch.unsqueeze(0)
-            x_batch = x_batch.permute((0, 2, 1))
-            x_batch = self.Conv1(x_batch)
-            x_batch = x_batch.permute((0, 2, 1)).squeeze()
-
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-
-        x = torch.cat(outputs, dim=0)
-        return x
-
-
-class DiGCN_IB_2BN_nhid(torch.nn.Module):
-    def __init__(self,m,  input_dim, out_dim, args):
-        super(DiGCN_IB_2BN_nhid, self).__init__()
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self._dropout = args.dropout
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-        self.Conv = nn.Conv1d(nhid,  out_dim, kernel_size=1)
-
-        self.reg_params = list(self.ib1.parameters())+list(self.ib2.parameters())
-        self.non_reg_params = []
-
-    def forward(self, features, edge_index_tuple, edge_weight_tuple):
-        x = features
-        x = self.ib1(x, edge_index_tuple, edge_weight_tuple)
-        x = self.batch_norm1(x)
-        x = self.ib2(x, edge_index_tuple, edge_weight_tuple)
-        x = self.batch_norm2(x)
-
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1))
-        x = x.squeeze(0)
-
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
 
 class Di_IB_2_nhid(torch.nn.Module):
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(Di_IB_2_nhid, self).__init__()
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
 
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
+        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, out_dim, args)
         self.batch_norm1 = nn.BatchNorm1d(nhid)
         self.batch_norm2 = nn.BatchNorm1d(nhid)
-        self.Conv = nn.Conv1d(nhid,  out_dim, kernel_size=1)
-
-        self.reg_params = list(self.ib1.parameters())+list(self.ib2.parameters())
-        self.non_reg_params = []
-
-    def forward(self, features, edge_index_tuple, edge_weight_tuple):
-        x = features
-        x = self.ib1(x, edge_index_tuple, edge_weight_tuple)
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        x = self.ib2(x, edge_index_tuple, edge_weight_tuple)
-        return x
-
-class Di_IB_2BN_nhid0(torch.nn.Module):
-    def __init__(self, m, input_dim, out_dim, args):
-        super(Di_IB_2BN_nhid0, self).__init__()
-        self._dropout = args.dropout
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-        self.Conv = nn.Conv1d(nhid,  out_dim, kernel_size=1)
-
-        self.reg_params = list(self.ib1.parameters())+list(self.ib2.parameters())
-        self.non_reg_params = []
-
-    def forward(self, features, edge_index_tuple, edge_weight_tuple):
-        x = features
-        x = self.ib1(x, edge_index_tuple, edge_weight_tuple)
-        x = self.batch_norm1(x)
-        x = self.ib2(x, edge_index_tuple, edge_weight_tuple)
-        x = self.batch_norm2(x)
-
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1))
-        x = x.squeeze(0)
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
-
-class DiGCN_IB_2BN_nhid_para(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, args):
-        super(DiGCN_IB_2BN_nhid_para, self).__init__()
-        self.ib1 = InceptionBlock_Qinlist(input_dim, nhid)
-        self.ib2 = InceptionBlock_Qinlist(nhid, nhid)
-        self.coef1 = nn.ParameterList([nn.Parameter(torch.tensor(1.0)) for _ in range(20)])  # coef for ib1
-        self.coef2 = nn.ParameterList([nn.Parameter(torch.tensor(1.0)) for _ in range(20)])  # coef for ib2
-        self._dropout = args.dropout
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-        self.Conv = nn.Conv1d(nhid,  out_dim, kernel_size=1)
-
-        self.reg_params = list(self.ib1.parameters())+list(self.ib2.parameters())
-        self.non_reg_params = []
-        # self.coefs = [self.coef1, self.coef2] + self.coefx
-        # self.coefs = self.coef1+ self.coef2       # wrong
-        self.coefs = list(self.coef1) + list(self.coef2)
-        # self.coefs = nn.ParameterList()       # this is OK too, but above list is simpler
-        # self.coefs.extend(self.coef1)
-        # self.coefs.extend(self.coef2)
-
-    def forward(self, features, edge_index_tuple, edge_weight_tuple):
-        x = features
-        x_list = self.ib1(x, edge_index_tuple, edge_weight_tuple)
-        x = x_list[0]
-        for i in range(1, len(x_list)):
-            x += self.coef1[i] * x_list[i]
-        x = self.batch_norm1(x)
-
-        x_list = self.ib2(x, edge_index_tuple, edge_weight_tuple)
-        x = x_list[0]
-        for i in range(1, len(x_list)):
-            x += self.coef2[i] * x_list[i]
-
-        x = self.batch_norm2(x)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1))
-        x = x.squeeze(0)
-
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
-
-class DiGCN_IB_2BN_batch(torch.nn.Module):
-    def __init__(self, m, input_dim, out_dim, args):
-        super(DiGCN_IB_2BN_batch, self).__init__()
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
-        self.ib2 = InceptionBlock_Di(m, nhid,  out_dim)
-        self._dropout = args.dropout
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d( out_dim)
-        self.batch_size = args.batch_size
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, features, edge_index_tuple, edge_weight_tuple):
-        x = features
-        edge_index, edge_index2 = edge_index_tuple
-        edge_weight, edge_weight2 = edge_weight_tuple
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = features.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            # Forward pass for the current batch
-            x_batch = self.ib1(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            
-            x_batch = self.batch_norm1(x_batch)
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-        x = torch.cat(outputs, dim=0)
-
-        # batch_size = 1000  # Define your batch size
-        num_samples = features.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            # Forward pass for the current batch
-            x_batch = self.ib2(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            
-            x_batch = self.batch_norm2(x_batch)
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-        x = torch.cat(outputs, dim=0)
-        return x
-
-
-class DiGCN_IB_2BN_batch_nhid(torch.nn.Module):
-    def __init__(self,m,  input_dim, out_dim, args):
-        super(DiGCN_IB_2BN_batch_nhid, self).__init__()
-        self._dropout = args.dropout
-        self.batch_size = args.batch_size
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self.Conv = nn.Conv1d(nhid,  out_dim, kernel_size=1)
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, features, edge_index_tuple, edge_weight_tuple):
-        x = features
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = features.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            # Forward pass for the current batch
-            x_batch = self.ib1(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-
-            x_batch = self.batch_norm1(x_batch)
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-        x = torch.cat(outputs, dim=0)
-
-        # batch_size = 1000  # Define your batch size
-        num_samples = features.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            # Forward pass for the current batch
-            x_batch = self.ib2(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            x_batch = self.batch_norm2(x_batch)
-
-            x_batch = x_batch.unsqueeze(0)  # ?
-            x_batch = x_batch.permute((0, 2, 1))
-            x_batch = self.Conv(x_batch)
-            x_batch = x_batch.permute((0, 2, 1))
-            x_batch = x_batch.squeeze(0)
-
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-        x = torch.cat(outputs, dim=0)
-        return x
-
-class DiGCN_IB_2BN_samebatch(torch.nn.Module):
-    def __init__(self,m,  input_dim, out_dim, args):
-        super(DiGCN_IB_2BN_samebatch, self).__init__()
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
-        self.ib2 = InceptionBlock_Di(m, nhid,  out_dim)
-        self._dropout = args.dropout
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d( out_dim)
-        self.batch_size = args.batch_size
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, features, edge_index_tuple, edge_weight_tuple):
-        x = features
-        edge_index, edge_index2 = edge_index_tuple
-        edge_weight, edge_weight2 = edge_weight_tuple
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = features.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            # Forward pass for the current batch
-            x_batch = self.ib1(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batatch)
-            
-            x_batch = self.batch_norm1(x_batch)
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-        x = torch.cat(outputs, dim=0)
-
-        outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            # Forward pass for the current batch
-            x_batch = self.ib2(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batatch)
-            
-            x_batch = self.batch_norm2(x_batch)
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-        x = torch.cat(outputs, dim=0)
-        return x
-
-class DiGCN_IB_1BN_Sym(torch.nn.Module):
-    '''
-    revised for edge_index confusion
-    '''
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_1BN_Sym, self).__init__()
-        self._dropout = args.dropout
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, out_dim, args)
-        self.batch_norm1 = nn.BatchNorm1d(out_dim)
-
-        self.gconv = DGCNConv()
         self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
 
-        self.lin1 = torch.nn.Linear(input_dim, out_dim, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, out_dim, bias=False)
+        self.reg_params = list(self.ib1.parameters()) + list(self.ib2.parameters())
+        self.non_reg_params = []
 
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-        symx = self.lin1(x)
-        symx1 = self.gconv(symx, edge_index)
-        symx2 = self.gconv(symx, edge_in, in_w)
-        symx3 = self.gconv(symx, edge_out, out_w)
-        symx = symx1 + symx2 + symx3
-
+    def forward(self, features, edge_index_tuple, edge_weight_tuple):
+        x = features
         x = self.ib1(x, edge_index_tuple, edge_weight_tuple)
-        x = x + symx
-        # x= x.unsqueeze(0)
-        # x = x.permute((0, 2, 1))
-        # x = self.Conv(x)
-        # x = x.permute((0, 2, 1))
-        # x = x.squeeze(0)
-        x = self.batch_norm1(x)     # keep it is better performance
-
-        x = F.dropout(x, p=self._dropout, training=self.training)   # only dropout during training   keep this is better
+        x = F.dropout(x, p=self._dropout, training=self.training)
+        x = self.ib2(x, edge_index_tuple, edge_weight_tuple)
         return x
+
+
 class DiGCN_IB_1BN_Sym_nhid(torch.nn.Module):
     '''
     revised for edge_index confusion
     '''
+
     def __init__(self, m, input_dim, out_dim, args):
-        super(DiGCN_IB_1BN_Sym_nhid, self).__init__()
-        nhid = args.feat_dim
+        super().__init__()
+        nhid = args.hid_dim
         dropout = args.dropout
         layer = args.layer
-        
+
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self._dropout = args.dropout
@@ -2093,28 +739,30 @@ class DiGCN_IB_1BN_Sym_nhid(torch.nn.Module):
         x = self.ib1(x, edge_index_tuple, edge_weight_tuple)
         x = x + symx
 
-        x = self.batch_norm1(x)     # keep it is better performance
+        x = self.batch_norm1(x)  # keep it is better performance
 
-        x= x.unsqueeze(0)
+        x = x.unsqueeze(0)
         x = x.permute((0, 2, 1))
         x = self.Conv(x)
         x = x.permute((0, 2, 1))
         x = x.squeeze(0)
 
-        x = F.dropout(x, p=self._dropout, training=self.training)   # only dropout during training   keep this is better
+        x = F.dropout(x, p=self._dropout, training=self.training)  # only dropout during training   keep this is better
         return x
+
 
 class DiGIB_1BN_Sym_nhid_para(torch.nn.Module):
     '''
     revised for edge_index confusion
     '''
-    def __init__(self, input_dim,  out_dim, args):
-        super(DiGIB_1BN_Sym_nhid_para, self).__init__()
-        nhid = args.feat_dim
+
+    def __init__(self, input_dim, out_dim, args):
+        super().__init__()
+        nhid = args.hid_dim
         self._dropout = args.dropout
         self.ib1 = InceptionBlock_Qinlist(input_dim, nhid)
         self.ib2 = InceptionBlock_Qinlist(nhid, nhid)
-        self.coef1 = nn.ParameterList([nn.Parameter(torch.tensor(1.0, requires_grad=True)) for _ in range(20)])        # coef for ib1
+        self.coef1 = nn.ParameterList([nn.Parameter(torch.tensor(1.0, requires_grad=True)) for _ in range(20)])  # coef for ib1
         self.batch_norm1 = nn.BatchNorm1d(nhid)
 
         self.gconv = DGCNConv()
@@ -2125,7 +773,7 @@ class DiGIB_1BN_Sym_nhid_para(torch.nn.Module):
 
         self.reg_params = list(self.ib1.parameters())
         self.non_reg_params = self.ib2.parameters()
-        self.coefs =  self.coef1
+        self.coefs = self.coef1
 
     def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
         symx = self.lin1(x)
@@ -2137,9 +785,9 @@ class DiGIB_1BN_Sym_nhid_para(torch.nn.Module):
         x_list = self.ib1(x, edge_index_tuple, edge_weight_tuple)
         DiGx = x_list[0]
         for i in range(1, len(x_list)):
-            DiGx += self.coef1[i-1] * x_list[i]
+            DiGx += self.coef1[i - 1] * x_list[i]
         x = DiGx + symx
-        x = self.batch_norm1(x)     # keep it is better performance
+        x = self.batch_norm1(x)  # keep it is better performance
 
         x = x.unsqueeze(0)
         x = x.permute((0, 2, 1))
@@ -2147,389 +795,18 @@ class DiGIB_1BN_Sym_nhid_para(torch.nn.Module):
         x = x.permute((0, 2, 1))
         x = x.squeeze(0)
 
-        x = F.dropout(x, p=self._dropout, training=self.training)   # only dropout during training   keep this is better
-        return x
-
-class DiGCN_IB_1BN_Sym_batch_nhid(torch.nn.Module):
-    '''
-    revised for edge_index confusion
-
-    '''
-    def __init__(self,m,  input_dim,  out_dim, args, batch_size=1024):
-        super(DiGCN_IB_1BN_Sym_batch_nhid, self).__init__()
-        nhid = args.feat_dim
-        self.batch_size = args.batch_size
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self._dropout = args.dropout
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-
-        self.gconv = DGCNConv()
-        self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = x.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-        sym_outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                    (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                       (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            # Forward pass for the current batch
-            symx = self.lin1(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            sym_outputs.append(symx_batch)
-
-            x_batch = self.ib1(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-
-
-
-            # x_batch = self.batch_norm1(x_batch)
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-
-        DiGx = torch.cat(outputs, dim=0)
-        symx = torch.cat(sym_outputs, dim=0)
-        x_batch = DiGx + symx
-        x_batch = x_batch.unsqueeze(0)  # ?
-        x_batch = x_batch.permute((0, 2, 1))
-        x_batch = self.Conv(x_batch)
-        x_batch = x_batch.permute((0, 2, 1))
-        x_batch = x_batch.squeeze(0)
-        x = self.batch_norm2(x_batch)
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
+        x = F.dropout(x, p=self._dropout, training=self.training)  # only dropout during training   keep this is better
         return x
 
 
-class DiGCN_IB_1BN_Sym_batchConvOut(torch.nn.Module):
-    '''
-    revised for edge_index confusion
-    '''
-
-    def __init__(self,m,  input_dim,  out_dim, args):
-        super(DiGCN_IB_1BN_Sym_batchConvOut, self).__init__()
-        self.batch_size = args.batch_size
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self._dropout = args.dropout
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-
-        self.gconv = DGCNConv()
-        self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        # self.lin2 = torch.nn.Linear(nhid, out_dim, bias=False)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = x.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-        sym_outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            # Forward pass for the current batch
-            symx = self.lin1(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            sym_outputs.append(symx_batch)
-
-            x_batch = self.ib1(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-
-            # x_batch = self.batch_norm1(x_batch)
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-
-        DiGx = torch.cat(outputs, dim=0)
-        symx = torch.cat(sym_outputs, dim=0)
-
-        x = DiGx + symx
-        # x = self.batch_norm1(x)        # without this is better performance
-        x = x.unsqueeze(0)  # ?
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1))
-        x = x.squeeze(0)
-        x = self.batch_norm2(x)  # ?
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
-
-
-class DiGCN_IB_2BN_Sym_batch_nhid(torch.nn.Module):
-    '''
-    revised for edge_index1 confusion
-
-    '''
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_2BN_Sym_batch_nhid, self).__init__()
-        nhid = args.feat_dim
-        self.batch_size = args.batch_size
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self._dropout = args.dropout
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-
-        self.gconv = DGCNConv()
-        self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, nhid, bias=False)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = x.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        DiGoutputs = []
-        sym_outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            # Forward pass for the current batch
-            symx = self.lin1(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            sym_outputs.append(symx_batch)
-
-            DiGx_batch = self.ib1(batch_x,DiGedge_indexi_batch, DiGedge_weighti_batch)
-            # x_batch = self.batch_norm1(x_batch)       # without is better
-            DiGx_batch = F.dropout(DiGx_batch, p=self._dropout, training=self.training)
-            DiGoutputs.append(DiGx_batch)
-
-        DiGx = torch.cat(DiGoutputs, dim=0)
-        symx = torch.cat(sym_outputs, dim=0)
-
-        x = DiGx + symx
-        # x = self.batch_norm1(x)
-        x = F.relu(x)
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)
-
-
-        DiGoutputs = []
-        sym_outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            # Forward pass for the current batch
-            symx = self.lin2(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            sym_outputs.append(symx_batch)
-
-            x_batch = self.ib2(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            DiGoutputs.append(x_batch)
-
-        DiGx = torch.cat(DiGoutputs, dim=0)
-        symx = torch.cat(sym_outputs, dim=0)
-
-        x = DiGx + symx
-        x = self.batch_norm2(x)
-        x = x.unsqueeze(0)  # ?
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1))
-        x = x.squeeze(0)
-        x = F.dropout(x, p=self._dropout, training=self.training)       # keep is better performance
-        return x
-class DiGCN_IB_2BN_Sym(torch.nn.Module):
-    def __init__(self,m,  input_dim,  out_dim, args):
-        super(DiGCN_IB_2BN_Sym, self).__init__()
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self._dropout = args.dropout
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(out_dim)
-
-        self.gconv = DGCNConv()
-        self.Conv = nn.Conv1d(out_dim, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, out_dim, bias=False)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-        symx = self.lin1(x)
-        symx1 = self.gconv(symx, edge_index)
-        symx2 = self.gconv(symx, edge_in, in_w)
-        symx3 = self.gconv(symx, edge_out, out_w)
-        symx = symx1 + symx2 + symx3
-        # symx = self.batch_norm1(symx)
-        # symx = F.relu(symx)
-
-        x = self.ib1(x, edge_index_tuple, edge_weight_tuple)
-        x = x + symx
-        # x = self.batch_norm1(x)
-        x = F.relu(x)
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)
-
-        symx = self.lin2(x)
-        symx1 = self.gconv(symx, edge_index)
-        symx2 = self.gconv(symx, edge_in, in_w)
-        symx3 = self.gconv(symx, edge_out, out_w)
-
-        symx = symx1 + symx2 + symx3
-
-        x = self.ib2(x, edge_index_tuple, edge_weight_tuple)
-        x = x + symx
-        x = self.batch_norm2(x)
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
 class DiGIB_2BN_Sym_nhid_para(torch.nn.Module):
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGIB_2BN_Sym_nhid_para, self).__init__()
-        nhid = args.feat_dim
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Qinlist(input_dim, nhid)
         self.ib2 = InceptionBlock_Qinlist(nhid, nhid)
-        self.coef1 = nn.ParameterList([nn.Parameter(torch.tensor(1.0, requires_grad=True)) for _ in range(20)])        # coef for ib1
-        self.coef2 = nn.ParameterList([nn.Parameter(torch.tensor(1.0, requires_grad=True)) for _ in range(20)])        # coef for ib1
+        self.coef1 = nn.ParameterList([nn.Parameter(torch.tensor(1.0, requires_grad=True)) for _ in range(20)])  # coef for ib1
+        self.coef2 = nn.ParameterList([nn.Parameter(torch.tensor(1.0, requires_grad=True)) for _ in range(20)])  # coef for ib1
 
         self._dropout = args.dropout
         self.batch_norm1 = nn.BatchNorm1d(nhid)
@@ -2586,13 +863,14 @@ class DiGIB_2BN_Sym_nhid_para(torch.nn.Module):
 
         x = F.dropout(x, p=self._dropout, training=self.training)
         return x
+
+
 class DiGCN_IB_2BN_Sym_nhid(torch.nn.Module):
-    def __init__(self,m, input_dim, out_dim,args):
-        super(DiGCN_IB_2BN_Sym_nhid, self).__init__()
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
-        
-        
+        nhid = args.hid_dim
+
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self.batch_norm1 = nn.BatchNorm1d(nhid)
@@ -2640,84 +918,19 @@ class DiGCN_IB_2BN_Sym_nhid(torch.nn.Module):
         x = x.permute((0, 2, 1))
         x = x.squeeze(0)
 
-
         x = F.dropout(x, p=self._dropout, training=self.training)
         return x
 
-class DiGCN_IB_XBN_Sym(torch.nn.Module):
-    '''
-    revised for edge_index confusion
-    '''
-    def __init__(self,m,  input_dim,  out_dim, args):
-        super(DiGCN_IB_XBN_Sym, self).__init__()
-        nhid = args.feat_dim
-        self._dropout = args.dropout
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self.ibx = InceptionBlock_Di(m, nhid, nhid, args)
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(out_dim)
-        self.batch_normx = nn.BatchNorm1d(nhid)
-
-        self.gconv = DGCNConv()
-        self.Conv = nn.Conv1d(out_dim, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, out_dim, bias=False)
-        self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(layer - 2)])
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-        symx = self.lin1(x)
-        symx1 = self.gconv(symx, edge_index)
-        symx2 = self.gconv(symx, edge_in, in_w)
-        symx3 = self.gconv(symx, edge_out, out_w)
-        symx = symx1 + symx2 + symx3
-
-        x = self.ib1(x, edge_index_tuple, edge_weight_tuple)
-        x = x + symx
-        # x = self.batch_norm1(x)
-        x = F.relu(x)
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)
-
-        for iter_layer in self.linx:
-            symx = iter_layer(x)
-            symx1 = self.gconv(symx, edge_index)
-            symx2 = self.gconv(symx, edge_in, in_w)
-            symx3 = self.gconv(symx, edge_out, out_w)
-            symx = symx1 + symx2 + symx3
-
-            x = self.ibx(x, edge_index_tuple, edge_weight_tuple)
-            x = x + symx
-            # x = self.batch_normx(x)
-            x = F.relu(x)
-            if self._dropout > 0:
-                x = F.dropout(x, self._dropout, training=self.training)
-
-        symx = self.lin2(x)
-        symx1 = self.gconv(symx, edge_index)
-        symx2 = self.gconv(symx, edge_in, in_w)
-        symx3 = self.gconv(symx, edge_out, out_w)
-        symx = symx1 + symx2 + symx3
-
-        x = self.ib2(x, edge_index_tuple, edge_weight_tuple)
-        x = x + symx
-        x = self.batch_norm2(x)
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
 
 class DiGCN_IB_XBN_Sym_nhid(torch.nn.Module):
     '''
     revised for edge_index confusion
     '''
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_XBN_Sym_nhid, self).__init__()
+
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
@@ -2780,16 +993,18 @@ class DiGCN_IB_XBN_Sym_nhid(torch.nn.Module):
         x = x.permute((0, 2, 1))
         x = x.squeeze(0)
 
-
         x = F.dropout(x, p=self._dropout, training=self.training)
         return x
+
+
 class DiGIB_XBN_Sym_nhid_para(torch.nn.Module):
     '''
     revised for edge_index confusion
     '''
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGIB_XBN_Sym_nhid_para, self).__init__()
-        nhid = args.feat_dim
+
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
+        nhid = args.hid_dim
         self.ib1 = InceptionBlock_Qinlist(input_dim, nhid)
         self.ib2 = InceptionBlock_Qinlist(nhid, nhid)
         self.ibx = InceptionBlock_Qinlist(nhid, nhid)
@@ -2807,11 +1022,11 @@ class DiGIB_XBN_Sym_nhid_para(torch.nn.Module):
 
         self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
         self.lin2 = torch.nn.Linear(nhid, nhid, bias=False)
-        self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(layer - 2)])
+        self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(args.layer - 2)])
 
         self.reg_params = list(self.ib1.parameters())
         self.non_reg_params = self.ib2.parameters()
-        self.coefs = list(self.coef1) + list(self.coef2)+ list(self.coef3)
+        self.coefs = list(self.coef1) + list(self.coef2) + list(self.coef3)
 
     def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
         symx = self.lin1(x)
@@ -2866,230 +1081,29 @@ class DiGIB_XBN_Sym_nhid_para(torch.nn.Module):
         x = x.permute((0, 2, 1))
         x = x.squeeze(0)
 
-
         x = F.dropout(x, p=self._dropout, training=self.training)
         return x
 
-class DiGCN_IB_XBN_Sym_batch_nhid(torch.nn.Module):
-    '''
-    revised for edge_index confusion
-
-    '''
-    def __init__(self, m,  input_dim, out_dim, args):
-        super(DiGCN_IB_XBN_Sym_batch_nhid, self).__init__()
-        self._dropout = args.dropout
-        nhid = args.feat_dim
-        layer = args.layer
-        self.batch_size = args.batch_size
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self.ibx = nn.ModuleList([InceptionBlock_Di(m, nhid, nhid, args) for _ in range(layer-2)])
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-        self.batch_normx = nn.BatchNorm1d(nhid)
-
-        self.gconv = DGCNConv()
-        self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, nhid, bias=False)
-        self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(layer - 2)])
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = x.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-        sym_outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            # Forward pass for the current batch
-            symx = self.lin1(batch_x)
-            # symx1 = self.gconv(symx, edge_index)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            sym_outputs.append(symx_batch)
-
-            x_batch = self.ib1(batch_x,DiGedge_indexi_batch, DiGedge_weighti_batch)
-            
-            # x_batch = self.batch_norm1(x_batch)       # without is better
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-        DiGx = torch.cat(outputs, dim=0)
-        symx = torch.cat(sym_outputs, dim=0)
-        x = DiGx + symx
-        x = self.batch_norm1(x)
-        x = F.relu(x)
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)
-
-        for iter_layerlinx,  iter_layeribx in zip(self.linx, self.ibx):
-            outputs = []
-            sym_outputs = []
-            for batch_idx in range(num_batches):
-                start_idx = batch_idx * batch_size
-                end_idx = min((batch_idx + 1) * batch_size, num_samples)
-                batch_x = x[start_idx:end_idx]
-
-                mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                        (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-                edge_index_batch = edge_index[:, mask] - start_idx
-
-                DiGedge_indexi_batch = ()
-                DiGedge_weighti_batch = ()
-                for i in range(len(edge_index_tuple)):
-                    mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                              (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                    edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                    edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                    DiGedge_indexi_batch += (edge_indexi_batch,)
-                    DiGedge_weighti_batch += (edge_weighti_batch,)
-
-                mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                           (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-                edge_in_batch = edge_in[:, mask_in]
-                edge_in_batch = edge_in_batch - start_idx
-                in_w_batch = in_w[mask_in]
-                mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                            (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-                edge_out_batch = edge_out[:, mask_out]
-                edge_out_batch = edge_out_batch - start_idx
-                out_w_batch = out_w[mask_out]
-
-                # Forward pass for the current batch
-                symx = iter_layerlinx(batch_x)
-                # symx1 = self.gconv(symx, edge_index)
-                symx1 = self.gconv(symx, edge_index_batch)
-                symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-                symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-                symx_batch = symx1 + symx2 + symx3
-                sym_outputs.append(symx_batch)
-
-                x_batch = iter_layeribx(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-                
-                # x_batch = self.batch_norm1(x_batch)       # without is better
-                x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-                outputs.append(x_batch)
-            DiGx = torch.cat(outputs, dim=0)
-            symx = torch.cat(sym_outputs, dim=0)
-            x = DiGx + symx
-            # x = self.batch_normx(x)
-            x = F.relu(x)
-            if self._dropout > 0:
-                x = F.dropout(x, self._dropout, training=self.training)
-
-        outputs = []
-        sym_outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            # Forward pass for the current batch
-            symx = self.lin2(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            sym_outputs.append(symx_batch)
-
-            x_batch = self.ib2(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-        DiGx = torch.cat(outputs, dim=0)
-        symx = torch.cat(sym_outputs, dim=0)
-        x = self.batch_norm2(x)
-
-        x = DiGx + symx
-        x = x.unsqueeze(0)  # ?
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1))
-        x = x.squeeze(0)
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
 
 class DiGCN_IB_2BN_SymCat_nhid(torch.nn.Module):
     '''
     revised for edge_index confusion
     all ib ends with nhid
     '''
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_2BN_SymCat_nhid, self).__init__()
+
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(2*nhid)
+        self.batch_norm2 = nn.BatchNorm1d(2 * nhid)
 
         self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2*nhid, nhid, kernel_size=1)
-        self.Conv2 = nn.Conv1d(2*nhid, out_dim, kernel_size=1)
+        self.Conv1 = nn.Conv1d(2 * nhid, nhid, kernel_size=1)
+        self.Conv2 = nn.Conv1d(2 * nhid, out_dim, kernel_size=1)
 
         self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
         self.lin2 = torch.nn.Linear(nhid, nhid, bias=False)
@@ -3149,184 +1163,27 @@ class DiGCN_IB_2BN_SymCat_nhid(torch.nn.Module):
         x = x.permute((0, 2, 1)).squeeze()
         return x
 
-class DiGCN_IB_2BN_SymCat_batch_nhid(torch.nn.Module):
-    '''
-    revised for edge_index confusion
-    only has nhid version
-    '''
-    def __init__(self, m, input_dim, nhid, out_dim, args):
-        super(DiGCN_IB_2BN_SymCat_batch_nhid, self).__init__()
-        self._dropout = args.dropout
-        nhid = args.feat_dim
-        layer = args.layer
-        self.batch_size = args.batch_size  # Define your batch size
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-
-        self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2*nhid, nhid, kernel_size=1)
-        self.Conv2 = nn.Conv1d(2*nhid, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, nhid, bias=False)
-
-        self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
-        self.bias2 = nn.Parameter(torch.Tensor(1, nhid))
-
-        nn.init.zeros_(self.bias1)
-        nn.init.zeros_(self.bias2)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = x.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            symx = self.lin1(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            symx_batch = self.batch_norm1(symx_batch)
-
-            DiGx_batch = self.ib1(batch_x,DiGedge_indexi_batch, DiGedge_weighti_batch)
-            DiGx_batch = self.batch_norm1(DiGx_batch)
-            x_batch = torch.cat((DiGx_batch, symx_batch), dim=-1)
-            # x_batch = self.batch_norm1(x_batch)
-            x_batch = x_batch.unsqueeze(0)
-            x_batch = x_batch.permute((0, 2, 1))
-            x_batch = self.Conv1(x_batch)
-            x_batch = x_batch.permute((0, 2, 1)).squeeze()
-            # x_batch = self.batch_norm1(x_batch)
-            x_batch = F.relu(x_batch)
-            if self._dropout > 0:
-                x_batch = F.dropout(x_batch, self._dropout, training=self.training)
-            outputs.append(x_batch)
-        x = torch.cat(outputs, dim=0)
-
-        x = F.relu(x)
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)
-
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = x.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            symx = self.lin2(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            symx_batch = self.batch_norm2(symx_batch)
-
-            DiGx_batch = self.ib2(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            DiGx_batch = self.batch_norm2(DiGx_batch)
-            x_batch = torch.cat((DiGx_batch, symx_batch), dim=-1)
-            # x_batch = self.batch_norm1(x_batch)
-            x_batch = x_batch.unsqueeze(0)
-            x_batch = x_batch.permute((0, 2, 1))
-            x_batch = self.Conv2(x_batch)
-            x_batch = x_batch.permute((0, 2, 1)).squeeze()
-            # x_batch = self.batch_norm1(x_batch)
-            x_batch = F.relu(x_batch)
-            if self._dropout > 0:
-                x_batch = F.dropout(x_batch, self._dropout, training=self.training)
-            outputs.append(x_batch)
-        x = torch.cat(outputs, dim=0)
-        # x = self.batch_norm2(x)
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
-
 
 class DiGCN_IB_XBN_SymCat_nhid(torch.nn.Module):
     '''
     revised for edge_index confusion
     '''
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_XBN_SymCat_nhid, self).__init__()
+
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
-        self.layer= args.layer
+        nhid = args.hid_dim
+        self.layer = args.layer
         layer = args.layer
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self.ibx = nn.ModuleList([InceptionBlock_Di(m, nhid, nhid, args) for _ in range(layer - 2)])
-        self.batch_norm2 = nn.BatchNorm1d(2*nhid)
+        self.batch_norm2 = nn.BatchNorm1d(2 * nhid)
 
         self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2*nhid, nhid, kernel_size=1)
-        self.Convx = nn.Conv1d(2*nhid, nhid, kernel_size=1)
-        self.Conv2 = nn.Conv1d(2*nhid, out_dim, kernel_size=1)
+        self.Conv1 = nn.Conv1d(2 * nhid, nhid, kernel_size=1)
+        self.Convx = nn.Conv1d(2 * nhid, nhid, kernel_size=1)
+        self.Conv2 = nn.Conv1d(2 * nhid, out_dim, kernel_size=1)
 
         self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
         self.lin2 = torch.nn.Linear(nhid, nhid, bias=False)
@@ -3383,7 +1240,7 @@ class DiGCN_IB_XBN_SymCat_nhid(torch.nn.Module):
         DiGx = self.ib2(x, edge_index_tuple, edge_weight_tuple)
         x = torch.cat((DiGx, symx), dim=-1)
 
-        x = self.batch_norm2(x)     # keep this is better
+        x = self.batch_norm2(x)  # keep this is better
         x = x.unsqueeze(0)
         x = x.permute((0, 2, 1))
         x = self.Conv2(x)  # with this block or without, almost the same result
@@ -3397,25 +1254,26 @@ class DiGCN_IB_XBN_SymCat_1ibx_nhid(torch.nn.Module):
     '''
     revised for edge_index confusionx
     '''
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_XBN_SymCat_1ibx_nhid, self).__init__()
-        self.layer= args.layer
+
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
+        self.layer = args.layer
         self._dropout = args.dropout
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
+        nhid = args.hid_dim
+        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self.ibx = InceptionBlock_Di(m, nhid, nhid, args)
         # self.batch_norm1 = nn.BatchNorm1d(nhid)
         self.batch_norm2 = nn.BatchNorm1d(nhid)
 
         self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2*nhid, nhid, kernel_size=1)
-        self.Convx = nn.Conv1d(2*nhid, nhid, kernel_size=1)
-        self.Conv2 = nn.Conv1d(2*nhid, out_dim, kernel_size=1)
+        self.Conv1 = nn.Conv1d(2 * nhid, nhid, kernel_size=1)
+        self.Convx = nn.Conv1d(2 * nhid, nhid, kernel_size=1)
+        self.Conv2 = nn.Conv1d(2 * nhid, out_dim, kernel_size=1)
 
         self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
         self.lin2 = torch.nn.Linear(nhid, out_dim, bias=False)
-        self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(layer - 2)])
+        self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(args.layer - 2)])
         # self.linx = torch.nn.Linear(nhid, nhid, bias=False)
 
         self.reg_params = list(self.ib1.parameters())
@@ -3469,7 +1327,7 @@ class DiGCN_IB_XBN_SymCat_1ibx_nhid(torch.nn.Module):
         x = self.ib2(x, edge_index_tuple, edge_weight_tuple)
         x = torch.cat((x, symx), dim=-1)
 
-        x = self.batch_norm2(x)     # keep this is better
+        x = self.batch_norm2(x)  # keep this is better
         x = x.unsqueeze(0)
         x = x.permute((0, 2, 1))
         x = self.Conv2(x)  # with this block or without, almost the same result
@@ -3479,223 +1337,22 @@ class DiGCN_IB_XBN_SymCat_1ibx_nhid(torch.nn.Module):
         return x
 
 
-class DiGCN_IB_XBN_SymCat_batch_nhid(torch.nn.Module):
-    '''
-    revised for edge_index confusion
-    only has nhid version
-    '''
-    def __init__(self,m, input_dim,  out_dim, args):
-        super(DiGCN_IB_XBN_SymCat_batch_nhid, self).__init__()
-        self.batch_size = args.batch_size  # Define your batch size
-        nhid = args.feat_dim
-        self._dropout = args.dropout
-        
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self.ibx = InceptionBlock_Di(m, nhid, nhid, args)
-        self.batch_norm2 = nn.BatchNorm1d(2*nhid)
-
-        self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2*nhid, nhid, kernel_size=1)
-        self.Convx = nn.Conv1d(2*nhid, nhid, kernel_size=1)
-        self.Conv2 = nn.Conv1d(2*nhid, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, nhid, bias=False)
-        self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(layer - 2)])
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = x.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-
-        DiGx = []
-        Symx =[]
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            symx = self.lin1(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            Symx.append(symx_batch)
-
-            DiGx_batch = self.ib1(batch_x,DiGedge_indexi_batch, DiGedge_weighti_batch)
-            DiGx.append(DiGx_batch)
-
-        Symx = torch.cat(Symx, dim=0)
-        DiGx = torch.cat(DiGx, dim=0)
-        x = torch.cat((DiGx, Symx), dim=-1)
-
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv1(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        x = F.relu(x)
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)
-
-        for iter_lin in self.linx:
-            Symx_x = []
-            DiGx_x = []
-            for batch_idx in range(num_batches):
-                start_idx = batch_idx * batch_size
-                end_idx = min((batch_idx + 1) * batch_size, num_samples)
-                batch_x = x[start_idx:end_idx]
-
-                mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                        (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-                edge_index_batch = edge_index[:, mask] - start_idx
-
-                DiGedge_indexi_batch = ()
-                DiGedge_weighti_batch = ()
-                for i in range(len(edge_index_tuple)):
-                    mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                              (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                    edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                    edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                    DiGedge_indexi_batch += (edge_indexi_batch,)
-                    DiGedge_weighti_batch += (edge_weighti_batch,)
-
-                mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                           (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-                edge_in_batch = edge_in[:, mask_in]
-                edge_in_batch = edge_in_batch - start_idx
-                in_w_batch = in_w[mask_in]
-                mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                            (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-                edge_out_batch = edge_out[:, mask_out]
-                edge_out_batch = edge_out_batch - start_idx
-                out_w_batch = out_w[mask_out]
-
-                symx = iter_lin(batch_x)
-                symx1 = self.gconv(symx, edge_index_batch)
-                symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-                symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-                symx_batch = symx1 + symx2 + symx3
-                Symx_x.append(symx_batch)
-
-                DiGx_batch = self.ibx(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-                DiGx_x.append(DiGx_batch)
-            Symx = torch.cat(Symx_x, dim=0)
-            DiGx = torch.cat(DiGx_x, dim=0)
-            x = torch.cat((DiGx, Symx), dim=-1)
-
-            x = x.unsqueeze(0)
-            x = x.permute((0, 2, 1))
-            x = self.Convx(x)
-            x = x.permute((0, 2, 1)).squeeze()
-
-            x = F.relu(x)
-            if self._dropout > 0:
-                x = F.dropout(x, self._dropout, training=self.training)
-
-        Symx_2 = []
-        DiGx_2 = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            symx = self.lin2(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            Symx_2.append(symx_batch)
-
-            DiGx_batch = self.ib2(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            DiGx_2.append(DiGx_batch)
-
-        Symx = torch.cat(Symx_2, dim=0)
-        DiGx = torch.cat(DiGx_2, dim=0)
-        x = torch.cat((DiGx, Symx), dim=-1)
-        x = self.batch_norm2(x)     # keep this is better
-
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv2(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
-
 class DiGCN_IB_1BN_SymCat_nhid(torch.nn.Module):
     '''
     revised for edge_index comfusion
     '''
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_1BN_SymCat_nhid, self).__init__()
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
+
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
+        nhid = args.hid_dim
+        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self._dropout = args.dropout
         self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2= nn.BatchNorm1d(2*nhid)
+        self.batch_norm2 = nn.BatchNorm1d(2 * nhid)
 
         self.gconv = DGCNConv()
         # self.Conv1 = nn.Conv1d(2*out_dim, out_dim, kernel_size=1)     # very bad
-        self.Conv1 = nn.Conv1d(2*nhid, out_dim, kernel_size=1)
+        self.Conv1 = nn.Conv1d(2 * nhid, out_dim, kernel_size=1)
 
         self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
 
@@ -3713,9 +1370,9 @@ class DiGCN_IB_1BN_SymCat_nhid(torch.nn.Module):
         DiGx = self.ib1(x, edge_index_tuple, edge_weight_tuple)
         DiGx = self.batch_norm1(DiGx)
         x = torch.cat((DiGx, symx), dim=-1)
-        x = self.batch_norm2(x)     # with this and BN1 is better
+        x = self.batch_norm2(x)  # with this and BN1 is better
         if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)     # keep this is better!
+            x = F.dropout(x, self._dropout, training=self.training)  # keep this is better!
 
         x = x.unsqueeze(0)
         x = x.permute((0, 2, 1))
@@ -3725,285 +1382,24 @@ class DiGCN_IB_1BN_SymCat_nhid(torch.nn.Module):
             x = F.dropout(x, self._dropout, training=self.training)
         return x
 
-class DiGCN_IB_1BN_SymCat_batch_nhid(torch.nn.Module):
-    '''
-    revised for edge_index comfusion
-
-    '''
-    def __init__(self, m, input_dim,  out_dim, args,  batch_size=1024):
-        super(DiGCN_IB_1BN_SymCat_batch_nhid, self).__init__()
-        nhid = args.feat_dim
-        self.batch_size = args.batch_size  # Define your batch size
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
-        self._dropout = args.dropout
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2= nn.BatchNorm1d(2*nhid)
-        # self.batch_normx= nn.BatchNorm1d(out_dim)
-
-        self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2*nhid, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-
-        self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
-        self.bias2 = nn.Parameter(torch.Tensor(1, nhid))
-
-        nn.init.zeros_(self.bias1)
-        nn.init.zeros_(self.bias2)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = []
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = x.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            symx = self.lin1(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            symx_batch = self.batch_norm1(symx_batch)
-
-            DiGx_batch = self.ib1(batch_x,DiGedge_indexi_batch, DiGedge_weighti_batch)
-            DiGx_batch = self.batch_norm1(DiGx_batch)
-            x_batch = torch.cat((DiGx_batch, symx_batch), dim=-1)
-            # x_batch = self.batch_norm2(x_batch)
-
-            x_batch = self.batch_norm2(x_batch)
-            if self._dropout > 0:
-                x_batch = F.dropout(x_batch, self._dropout, training=self.training)
-
-            x_batch = x_batch.unsqueeze(0)
-            x_batch = x_batch.permute((0, 2, 1))
-            x_batch = self.Conv1(x_batch)
-            x_batch = x_batch.permute((0, 2, 1)).squeeze()
-            # x_batch = F.relu(x_batch)
-            outputs.append(x_batch)
-        x = torch.cat(outputs, dim=0)
-        # x = self.batch_normx(x)
-
-        # x = x.unsqueeze(0)
-        # x = x.permute((0, 2, 1))
-        # x = self.Conv1(x)  # with this block or without, almost the same result
-        # x = x.permute((0, 2, 1)).squeeze()
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)
-        return x
-
-class DiGCN_IB_1BN_SymCat_batchConvOut(torch.nn.Module):
-    '''
-    revised for edge_index comfusion
-    move all conv outside of batch
-    '''
-    def __init__(self, m, input_dim,  out_dim, args,  batch_size=1024):
-        super(DiGCN_IB_1BN_SymCat_batchConvOut, self).__init__()
-        nhid = args.feat_dim
-        self._dropout = args.dropout
-        self.batch_size = args.batch_size  # Define your batch size
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2= nn.BatchNorm1d(2*nhid)
-
-        self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2*nhid, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-
-        self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
-        self.bias2 = nn.Parameter(torch.Tensor(1, nhid))
-
-        nn.init.zeros_(self.bias1)
-        nn.init.zeros_(self.bias2)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = []
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = x.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            symx = self.lin1(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            symx_batch = self.batch_norm1(symx_batch)
-
-            DiGx_batch = self.ib1(batch_x,DiGedge_indexi_batch, DiGedge_weighti_batch)
-            DiGx_batch = self.batch_norm1(DiGx_batch)
-            x_batch = torch.cat((DiGx_batch, symx_batch), dim=-1)
-            # x_batch = self.batch_norm1(x_batch)
-            # x_batch = x_batch.unsqueeze(0)
-            # x_batch = x_batch.permute((0, 2, 1))
-            # x_batch = self.Conv1(x_batch)
-            # x_batch = x_batch.permute((0, 2, 1)).squeeze()
-            # x_batch = self.batch_norm1(x_batch)
-            # x_batch = F.relu(x_batch)
-            # if self._dropout > 0:
-            #     x_batch = F.dropout(x_batch, self._dropout, training=self.training)
-            outputs.append(x_batch)
-        x = torch.cat(outputs, dim=0)
-
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv1(x)  # with this block or without, almost the same result
-        x = x.permute((0, 2, 1)).squeeze()
-
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)     # is this necessary?
-        return x
 
 class DiGCN_IB_2MixBN_SymCat_nhid(torch.nn.Module):
     '''
     first layer is cat(Sym, DiGib), second layer is DiGib
     '''
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_2MixBN_SymCat_nhid, self).__init__()
-        nhid = args.feat_dim
+
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
+        nhid = args.hid_dim
         self._dropout = args.dropout
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
+        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self.batch_norm1 = nn.BatchNorm1d(nhid)
         self.batch_norm2 = nn.BatchNorm1d(nhid)
 
         self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2*nhid, nhid, kernel_size=1)
-        self.Conv2 = nn.Conv1d(nhid, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, nhid, bias=False)
-
-        self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
-        self.bias2 = nn.Parameter(torch.Tensor(1, out_dim))
-
-        nn.init.zeros_(self.bias1)
-        nn.init.zeros_(self.bias2)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-        symx = self.lin1(x)
-        symx1 = self.gconv(symx, edge_index)
-        symx2 = self.gconv(symx, edge_in, in_w)
-        symx3 = self.gconv(symx, edge_out, out_w)
-        symx = symx1 + symx2 + symx3
-
-        x = self.ib1(x, edge_index_tuple, edge_weight_tuple)
-        
-        x = torch.cat((x, symx), dim=-1)
-        #
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv1(x)  # with this block or without, almost the same result
-        x = x.permute((0, 2, 1)).squeeze()
-        x = self.batch_norm1(x)     # keep both it and the endBN is better
-        x = F.relu(x)
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)
-
-        x = self.ib2(x, edge_index_tuple, edge_weight_tuple)
-        x = self.batch_norm2(x)
-
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv2(x)  # with this block or without, almost the same result
-        x = x.permute((0, 2, 1)).squeeze()
-
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
-
-
-class DiGCN_IB_2MixBN_SymCat(torch.nn.Module):
-    '''
-    first layer is cat(Sym, DiGib), second layer is DiGib
-    '''
-
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_2MixBN_SymCat, self).__init__()
-        nhid = args.feat_dim
-        self._dropout = args.dropout
-        
-        self.ib1 = InceptionBlock_Di(m, input_dim, out_dim, args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(out_dim)
-
-        self.gconv = DGCNConv()
         self.Conv1 = nn.Conv1d(2 * nhid, nhid, kernel_size=1)
-        self.Conv2 = nn.Conv1d(2 * nhid, out_dim, kernel_size=1)
+        self.Conv2 = nn.Conv1d(nhid, out_dim, kernel_size=1)
 
         self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
         self.lin2 = torch.nn.Linear(nhid, nhid, bias=False)
@@ -4038,300 +1434,16 @@ class DiGCN_IB_2MixBN_SymCat(torch.nn.Module):
             x = F.dropout(x, self._dropout, training=self.training)
 
         x = self.ib2(x, edge_index_tuple, edge_weight_tuple)
-
         x = self.batch_norm2(x)
 
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
-
-class DiGCN_IB_2MixBN_SymCat_batch(torch.nn.Module):
-    '''
-    revised for edge_index confusion
-    first layer is cat(Sym, DiGib), second layer is DiGib
-    '''
-    def __init__(self,m,  input_dim,  out_dim, args, batch_size=1024):
-        super(DiGCN_IB_2MixBN_SymCat_batch, self).__init__()
-        nhid = args.feat_dim
-        self._dropout = args.dropout
-        self.batch_size = args.batch_size  # Define your batch size
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
-        self.ib2 = InceptionBlock_Di(m, nhid, out_dim)
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(out_dim)
-
-        self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2*nhid, nhid, kernel_size=1)
-        self.Conv2 = nn.Conv1d(2*out_dim, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, out_dim, bias=False)
-
-        self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
-        self.bias2 = nn.Parameter(torch.Tensor(1, out_dim))
-
-        nn.init.zeros_(self.bias1)
-        nn.init.zeros_(self.bias2)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = x.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask]- start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            symx = self.lin1(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-
-            DiGx_batch = self.ib1(batch_x,DiGedge_indexi_batch, DiGedge_weighti_batch)
-            x_batch = torch.cat((DiGx_batch, symx_batch), dim=-1)
-            # x_batch = self.batch_norm1(x_batch)       # without is better
-            
-            x_batch = F.relu(x_batch)
-            if self._dropout > 0:
-                x_batch = F.dropout(x_batch, self._dropout, training=self.training)
-            outputs.append(x_batch)
-        x = torch.cat(outputs, dim=0)
-        DiGx = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-            
-            DiGx_batch = self.ib2(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            DiGx.append(DiGx_batch)
-        x= torch.cat(DiGx, dim=0)
-        x = self.batch_norm2(x)
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
-
-
-class DiGCN_IB_2MixBN_SymCat_batch_nhid(torch.nn.Module):
-    '''
-    revised for edge_index confusion
-    first layer is cat(Sym, DiGib), second layer is DiGib
-    '''
-
-    def __init__(self, m, input_dim,  out_dim, args, batch_size=1024):
-        super(DiGCN_IB_2MixBN_SymCat_batch_nhid, self).__init__()
-        nhid = args.feat_dim
-        self.batch_size = args.batch_size  # Define your batch size
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
-        self.ib2 = InceptionBlock_Di(m, 2*nhid, 2*nhid)
-        # self.ib2 = InceptionBlock_Qin(nhid, nhid)
-        self._dropout = args.dropout
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-
-        self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2 * nhid, nhid, kernel_size=1)
-        self.Conv2 = nn.Conv1d(2 * out_dim, out_dim, kernel_size=1)
-        self.Conv = nn.Conv1d(2 * nhid, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, nhid, bias=False)
-
-        self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
-        self.bias2 = nn.Parameter(torch.Tensor(1, nhid))
-
-        nn.init.zeros_(self.bias1)
-        nn.init.zeros_(self.bias2)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = x.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            symx = self.lin1(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-
-            DiGx_batch = self.ib1(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            x_batch = torch.cat((DiGx_batch, symx_batch), dim=-1)
-            # x_batch = self.batch_norm1(x_batch)       # without is better
-
-            x_batch = F.relu(x_batch)
-            if self._dropout > 0:
-                x_batch = F.dropout(x_batch, self._dropout, training=self.training)
-            outputs.append(x_batch)
-        x = torch.cat(outputs, dim=0)
-        DiGx = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            x_batch = self.ib2(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            x_batch = self.batch_norm2(x_batch)
-            x_batch = x_batch.unsqueeze(0)  # ?
-            x_batch = x_batch.permute((0, 2, 1))
-            x_batch = self.Conv(x_batch)
-            x_batch = x_batch.permute((0, 2, 1))
-            x_batch = x_batch.squeeze(0)
-
-            DiGx.append(x_batch)
-        x = torch.cat(DiGx, dim=0)
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
-
-class DiGCN_IB_2MixBN_SymCat_Sym(torch.nn.Module):
-    '''
-    revised for edge_index confusion
-    first layer is cat(Sym, DiGib), second layer is addSym
-    '''
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_2MixBN_SymCat_Sym, self).__init__()
-        nhid = args.feat_dim
-        self._dropout = args.dropout
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(out_dim)
-
-        self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2*nhid, nhid, kernel_size=1)
-        self.Conv2 = nn.Conv1d(2*out_dim, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, out_dim, bias=False)
-
-        self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
-        self.bias2 = nn.Parameter(torch.Tensor(1, out_dim))
-
-        nn.init.zeros_(self.bias1)
-        nn.init.zeros_(self.bias2)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-        symx = self.lin1(x)
-        symx1 = self.gconv(symx, edge_index)
-        symx2 = self.gconv(symx, edge_in, in_w)
-        symx3 = self.gconv(symx, edge_out, out_w)
-
-        symx = symx1 + symx2 + symx3
-
-        x = self.ib1(x, edge_index_tuple, edge_weight_tuple)
-        x = torch.cat((x, symx), dim=-1)
-        #
         x = x.unsqueeze(0)
         x = x.permute((0, 2, 1))
-        x = self.Conv1(x)  # with this block or without, almost the same result
+        x = self.Conv2(x)  # with this block or without, almost the same result
         x = x.permute((0, 2, 1)).squeeze()
-        # x = self.Conv1(x)
-        # x = self.batch_norm1(x)
-        x = F.relu(x)
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)
-
-        symx = self.lin2(x)
-        symx1 = self.gconv(symx, edge_index)
-        symx2 = self.gconv(symx, edge_in, in_w)
-        symx3 = self.gconv(symx, edge_out, out_w)
-        x = symx1 + symx2 + symx3
-        x = self.batch_norm2(x)
 
         x = F.dropout(x, p=self._dropout, training=self.training)
         return x
+
 
 class DiGCN_IB_2MixBN_SymCat_Sym_nhid(torch.nn.Module):
     '''
@@ -4339,17 +1451,18 @@ class DiGCN_IB_2MixBN_SymCat_Sym_nhid(torch.nn.Module):
     first layer is cat(Sym, DiGib), second layer is addSym
     nhid
     '''
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_2MixBN_SymCat_Sym_nhid, self).__init__()
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
+
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
+        nhid = args.hid_dim
+        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self._dropout = args.dropout
         self.batch_norm1 = nn.BatchNorm1d(nhid)
         self.batch_norm2 = nn.BatchNorm1d(nhid)
 
         self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2*nhid, nhid, kernel_size=1)
+        self.Conv1 = nn.Conv1d(2 * nhid, nhid, kernel_size=1)
         self.Conv2 = nn.Conv1d(nhid, out_dim, kernel_size=1)
 
         self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
@@ -4400,744 +1513,6 @@ class DiGCN_IB_2MixBN_SymCat_Sym_nhid(torch.nn.Module):
 
         return x
 
-class DiGCN_IB_2MixBN_SymCat_Sym_batch(torch.nn.Module):
-    '''
-    revised for edge_index confusion
-    first layer is cat(Sym, DiGib), second layer is addSym
-    '''
-    def __init__(self, m, input_dim,  out_dim, args, batch_size=1024):
-        super(DiGCN_IB_2MixBN_SymCat_Sym_batch, self).__init__()
-        nhid = args.feat_dim
-        self.batch_size = args.batch_size  # Define your batch size
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self._dropout = args.dropout
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-
-        self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2*nhid, nhid, kernel_size=1)
-        self.Conv2 = nn.Conv1d(2*nhid, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, out_dim, bias=False)
-
-        self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
-        self.bias2 = nn.Parameter(torch.Tensor(1, out_dim))
-
-        nn.init.zeros_(self.bias1)
-        nn.init.zeros_(self.bias2)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = x.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask]- start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            symx = self.lin1(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-
-            DiGx_batch = self.ib1(batch_x,DiGedge_indexi_batch, DiGedge_weighti_batch)
-            x_batch = torch.cat((DiGx_batch, symx_batch), dim=-1)
-            # x_batch = self.batch_norm1(x_batch)       # without is better
-            
-            # x_batch = self.batch_norm1(x_batch)
-            x_batch = F.relu(x_batch)
-            if self._dropout > 0:
-                x_batch = F.dropout(x_batch, self._dropout, training=self.training)
-            outputs.append(x_batch)
-
-        x = torch.cat(outputs, dim=0)
-
-        sym_outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in] - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            # Forward pass for the current batch
-            symx = self.lin2(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            sym_outputs.append(symx_batch)
-
-        x = torch.cat(sym_outputs, dim=0)
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        x = self.batch_norm2(x)
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
-
-class DiGCN_IB_2MixBN_SymCat_Sym_batch_nhid(torch.nn.Module):
-    '''
-    revised for edge_index confusion
-    first layer is cat(Sym, DiGib), second layer is addSym
-    '''
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_2MixBN_SymCat_Sym_batch_nhid, self).__init__()
-        self.batch_size = args.batch_size  # Define your batch size
-        self._dropout = args.dropout
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-
-        self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2*nhid, nhid, kernel_size=1)
-        self.Conv2 = nn.Conv1d(2*nhid, nhid, kernel_size=1)
-        self.Convx = nn.Conv1d(nhid, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, nhid, bias=False)
-
-        self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
-        self.bias2 = nn.Parameter(torch.Tensor(1, nhid))
-
-        nn.init.zeros_(self.bias1)
-        nn.init.zeros_(self.bias2)
-
-        self.reg_params = list(self.ib1.parameters()) + list(self.ib2.parameters())
-        self.non_reg_params = []
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = x.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-
-        DiGoutputs = []
-        sym_outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask]- start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            symx = self.lin1(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            sym_outputs.append(symx_batch)
-
-            DiGx_batch = self.ib1(batch_x,DiGedge_indexi_batch, DiGedge_weighti_batch)
-
-            # x_batch = torch.cat((DiGx_batch, symx_batch), dim=-1)
-            # x_batch = self.batch_norm1(x_batch)       # without is better
-            DiGx_batch = F.dropout(DiGx_batch, p=self._dropout, training=self.training)
-            DiGoutputs.append(DiGx_batch)
-
-        DiGx = torch.cat(DiGoutputs, dim=0)
-        symx = torch.cat(sym_outputs, dim=0)
-
-        x = torch.cat((DiGx, symx), dim=-1)
-        # x = torch.cat(outputs, dim=0)
-
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv1(x)  # with this block or without, almost the same result
-        x = x.permute((0, 2, 1)).squeeze()
-        x = self.batch_norm1(x)  # with this is a bit better
-        x = F.relu(x)
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)
-
-        sym_outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in] - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            # Forward pass for the current batch
-            symx = self.lin2(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            sym_outputs.append(symx_batch)
-
-        x = torch.cat(sym_outputs, dim=0)
-        # x = F.dropout(x, p=self._dropout, training=self.training)
-        x = self.batch_norm2(x)
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Convx(x)  # with this block or without, almost the same result
-        x = x.permute((0, 2, 1)).squeeze()
-
-        return x
-
-
-class DiGCN_IB_3MixBN_SymCat_Sym_batch_nhid(torch.nn.Module):
-    '''
-    revised for edge_index confusion
-    first layer is cat(Sym, DiGib), second layer is addSym
-    '''
-
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_3MixBN_SymCat_Sym_batch_nhid, self).__init__()
-        self.layer = args.layer
-        nhid = args.feat_dim
-        self.batch_size = args.batch_size  # Define your batch size
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self._dropout = args.dropout
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-        # self.batch_norm = nn.BatchNorm1d(out_dim)
-
-        self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2 * nhid, nhid, kernel_size=1)
-        self.Conv2 = nn.Conv1d(2 * nhid, nhid, kernel_size=1)
-        self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, nhid, bias=False)
-        self.lin2_ = torch.nn.Linear(2*nhid, nhid, bias=False)
-        if self.layer > 3:
-            self.ibx = nn.ModuleList([InceptionBlock_Di(m, nhid, nhid, args) for _ in range(layer - 3)])
-            self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(layer - 3)])
-
-        self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
-        self.bias2 = nn.Parameter(torch.Tensor(1, out_dim))
-
-        nn.init.zeros_(self.bias1)
-        nn.init.zeros_(self.bias2)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-        # first layer is cat(Sym, DiGib),
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = x.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            symx = self.lin1(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-
-            DiGx_batch = self.ib1(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            x_batch = torch.cat((DiGx_batch, symx_batch), dim=-1)
-            # x_batch = self.batch_norm1(x_batch)       # without is better
-
-            x_batch = F.relu(x_batch)
-            if self._dropout > 0:
-                x_batch = F.dropout(x_batch, self._dropout, training=self.training)
-            outputs.append(x_batch)
-
-        x = torch.cat(outputs, dim=0)
-
-        # second layer --addSym
-        sym_outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            # Forward pass for the current batch
-            symx = self.lin2_(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            sym_outputs.append(symx_batch)
-
-        x = torch.cat(sym_outputs, dim=0)
-
-        # more than 3 layer
-        DiGx = []
-        if self.layer > 3:
-            for iter_layer in self.ibx:
-                start_idx = batch_idx * batch_size
-                end_idx = min((batch_idx + 1) * batch_size, num_samples)
-                batch_x = x[start_idx:end_idx]
-
-                DiGedge_indexi_batch = ()
-                DiGedge_weighti_batch = ()
-                for i in range(len(edge_index_tuple)):
-                    mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                              (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                    edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                    edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                    DiGedge_indexi_batch += (edge_indexi_batch,)
-                    DiGedge_weighti_batch += (edge_weighti_batch,)
-
-                x_batch = iter_layer(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-
-                x_batch = F.relu(x_batch)
-                if self._dropout > 0:
-                    x_batch = F.dropout(x_batch, self._dropout, training=self.training)
-                DiGx.append(x_batch)
-
-            x = torch.cat(DiGx, dim=0)
-            x = F.dropout(x, p=self._dropout, training=self.training)
-        sym_outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            # Forward pass for the current batch
-            symx = self.lin2(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            sym_outputs.append(symx_batch)
-
-        x = torch.cat(sym_outputs, dim=0)
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        x = self.batch_norm2(x)
-
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)  # with this block or without, almost the same result
-        x = x.permute((0, 2, 1)).squeeze()
-
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
-class DiGCN_IB_3MixBN_SymCat_Sym_batch(torch.nn.Module):
-    '''
-    revised for edge_index confusion
-    first layer is cat(Sym, DiGib), second layer is addSym
-    '''
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_3MixBN_SymCat_Sym_batch, self).__init__()
-        self.layer = args.layer
-        self.batch_size = args.batch_size  # Define your batch size
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self._dropout = args.dropout
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(out_dim)
-
-        self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2*nhid, nhid, kernel_size=1)
-        self.Conv2 = nn.Conv1d(2*out_dim, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, out_dim, bias=False)
-        self.lin2_ = torch.nn.Linear(nhid, nhid, bias=False)
-        if self.layer > 3:
-            self.ibx = nn.ModuleList([InceptionBlock_Di(m, nhid, nhid, args) for _ in range(layer - 3)])
-            self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(layer - 3)])
-
-
-        self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
-        self.bias2 = nn.Parameter(torch.Tensor(1, out_dim))
-
-        nn.init.zeros_(self.bias1)
-        nn.init.zeros_(self.bias2)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = x.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            symx = self.lin1(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-
-            DiGx_batch = self.ib1(batch_x,DiGedge_indexi_batch, DiGedge_weighti_batch)
-            x_batch = torch.cat((DiGx_batch, symx_batch), dim=-1)
-            # x_batch = self.batch_norm1(x_batch)       # without is better
-            
-            x_batch = F.relu(x_batch)
-            if self._dropout > 0:
-                x_batch = F.dropout(x_batch, self._dropout, training=self.training)
-            outputs.append(x_batch)
-
-        x = torch.cat(outputs, dim=0)
-
-        # second layer --addSym
-        sym_outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            # Forward pass for the current batch
-            symx = self.lin2_(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            sym_outputs.append(symx_batch)
-
-        x = torch.cat(sym_outputs, dim=0)
-
-        # more than 3 layer
-        DiGx =[]
-        if self.layer > 3:
-            for iter_layer in self.ibx:
-                start_idx = batch_idx * batch_size
-                end_idx = min((batch_idx + 1) * batch_size, num_samples)
-                batch_x = x[start_idx:end_idx]
-
-                DiGedge_indexi_batch = ()
-                DiGedge_weighti_batch = ()
-                for i in range(len(edge_index_tuple)):
-                    mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                              (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                    edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                    edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                    DiGedge_indexi_batch += (edge_indexi_batch,)
-                    DiGedge_weighti_batch += (edge_weighti_batch,)
-
-                x_batch = iter_layer(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-                
-
-                x_batch = F.relu(x_batch)
-                if self._dropout > 0:
-                    x_batch = F.dropout(x_batch, self._dropout, training=self.training)
-                DiGx.append(x_batch)
-
-        x = torch.cat(DiGx, dim=0)
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        sym_outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            # Forward pass for the current batch
-            symx = self.lin2(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            sym_outputs.append(symx_batch)
-
-        x = torch.cat(sym_outputs, dim=0)
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        x = self.batch_norm2(x)
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
-
-class DiGCN_IB_3MixBN_SymCat(torch.nn.Module):
-        '''
-        revised for edge_index confusion
-        first layer is cat(Sym, DiGib), second layer is DiGib
-        '''
-        def __init__(self, m, input_dim,  out_dim, args):
-            super(DiGCN_IB_3MixBN_SymCat, self).__init__()
-            self.layer = args.layer
-            nhid = args.feat_dim
-            self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
-            self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-            self._dropout = args.dropout
-            self.batch_norm1 = nn.BatchNorm1d(nhid)
-            self.batch_norm2 = nn.BatchNorm1d(nhid)
-            self.batch_norm3 = nn.BatchNorm1d(out_dim)
-
-            self.gconv = DGCNConv()
-            self.Conv1 = nn.Conv1d(2 * nhid, nhid, kernel_size=1)
-            self.Conv2 = nn.Conv1d(2 * out_dim, out_dim, kernel_size=1)
-
-            self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-            self.lin2 = torch.nn.Linear(nhid, out_dim, bias=False)
-            # self.linx = torch.nn.Linear(nhid, nhid,nhid, nhid, bias=False)
-            if self.layer >3:
-                self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(layer - 3)])
-
-            self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
-            self.bias2 = nn.Parameter(torch.Tensor(1, out_dim))
-
-            nn.init.zeros_(self.bias1)
-            nn.init.zeros_(self.bias2)
-
-            self.reg_params = list(self.ib1.parameters())
-            self.non_reg_params = self.ib2.parameters()
-
-        def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-            # first layer---Sym + DiG
-            symx = self.lin1(x)
-            symx1 = self.gconv(symx, edge_index)
-            symx2 = self.gconv(symx, edge_in, in_w)
-            symx3 = self.gconv(symx, edge_out, out_w)
-            symx = symx1 + symx2 + symx3
-
-            x = self.ib1(x, edge_index_tuple, edge_weight_tuple)
-            x = torch.cat((x, symx), dim=-1)
-            #
-            x = x.unsqueeze(0)
-            x = x.permute((0, 2, 1))
-            x = self.Conv1(x)  # with this block or without, almost the same result
-            x = x.permute((0, 2, 1)).squeeze()
-            x = self.batch_norm1(x)     # with this is a bit better
-            x = F.relu(x)
-            if self._dropout > 0:
-                x = F.dropout(x, self._dropout, training=self.training)
-
-            # second layer --DiGib
-            x = self.ib2(x, edge_index_tuple, edge_weight_tuple)
-
-            # x = self.batch_norm2(x)
-            x = F.relu(x)
-            x = F.dropout(x, p=self._dropout, training=self.training)
-
-            # more than 3 layer
-            if self.layer > 3:
-                for iter_layer in self.linx:
-                    symx = iter_layer(x)
-                    symx1 = self.gconv(symx, edge_index)
-                    symx2 = self.gconv(symx, edge_in, in_w)
-                    symx3 = self.gconv(symx, edge_out, out_w)
-                    x = symx1 + symx2 + symx3
-
-                    # x = self.batch_norm2(x)  # without this is better performance
-                    x = F.relu(x)
-                    if self._dropout > 0:
-                        x = F.dropout(x, self._dropout, training=self.training)
-
-            # third layer
-            symx = self.lin2(x)
-            symx1 = self.gconv(symx, edge_index)
-            symx2 = self.gconv(symx, edge_in, in_w)
-            symx3 = self.gconv(symx, edge_out, out_w)
-            x = symx1 + symx2 + symx3
-
-            x = self.batch_norm3(x)       # keep this is better performance
-            # x = F.relu(x)
-            if self._dropout > 0:
-                x = F.dropout(x, self._dropout, training=self.training)
-
-            return x
-
 
 class DiGCN_IB_3MixBN_SymCat_nhid(torch.nn.Module):
     '''
@@ -5145,11 +1520,11 @@ class DiGCN_IB_3MixBN_SymCat_nhid(torch.nn.Module):
     first layer is cat(Sym, DiGib), second layer is DiGib
     '''
 
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_3MixBN_SymCat_nhid, self).__init__()
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
         self.layer = args.layer
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
+        nhid = args.hid_dim
+        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self._dropout = args.dropout
         self.batch_norm1 = nn.BatchNorm1d(nhid)
@@ -5165,7 +1540,7 @@ class DiGCN_IB_3MixBN_SymCat_nhid(torch.nn.Module):
         self.lin2 = torch.nn.Linear(nhid, nhid, bias=False)
         # self.linx = torch.nn.Linear(nhid, nhid,nhid, nhid, bias=False)
         if self.layer > 3:
-            self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(layer - 3)])
+            self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(args.layer - 3)])
 
         self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
         self.bias2 = nn.Parameter(torch.Tensor(1, nhid))
@@ -5230,500 +1605,24 @@ class DiGCN_IB_3MixBN_SymCat_nhid(torch.nn.Module):
         x = self.Convx(x)  # with this block or without, almost the same result
         x = x.permute((0, 2, 1)).squeeze()
 
-
         # x = F.relu(x)
         if self._dropout > 0:
             x = F.dropout(x, self._dropout, training=self.training)
 
         return x
 
-
-class DiGCN_IB_3MixBN_SymCat_batch_nhid(torch.nn.Module):
-    '''
-    revised for edge_index confusion
-    first layer is cat(Sym, DiGib), second layer is DiGib
-    '''
-
-    def __init__(self, m, input_dim,  out_dim, args):
-        super(DiGCN_IB_3MixBN_SymCat_batch_nhid, self).__init__()
-        self.batch_size = args.batch_size
-        self.layer = args.layer
-        layer = args.layer
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self._dropout = args.dropout
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-        self.batch_norm3 = nn.BatchNorm1d(nhid)
-
-        self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2 * nhid, nhid, kernel_size=1)
-        # self.Conv2 = nn.Conv1d(2 * out_dim, out_dim, kernel_size=1)
-        self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, nhid, bias=False)
-        self.lin3 = torch.nn.Linear(nhid, nhid, bias=False)
-        if self.layer > 3:
-            self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(layer - 3)])
-
-        self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
-        self.bias2 = nn.Parameter(torch.Tensor(1, out_dim))
-
-        nn.init.zeros_(self.bias1)
-        nn.init.zeros_(self.bias2)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-        # first layer---cat(Sym DiG)
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = x.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-
-        DiGoutputs = []
-        sym_outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            # Forward pass for the current batch
-            symx = self.lin1(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            sym_outputs.append(symx_batch)
-
-            DiGx_batch = self.ib1(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            # x_batch = self.batch_norm1(x_batch)       # without is better
-            DiGx_batch = F.dropout(DiGx_batch, p=self._dropout, training=self.training)
-            DiGoutputs.append(DiGx_batch)
-
-        DiGx = torch.cat(DiGoutputs, dim=0)
-        symx = torch.cat(sym_outputs, dim=0)
-
-        x = torch.cat((DiGx, symx), dim=-1)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv1(x)  # with this block or without, almost the same result
-        x = x.permute((0, 2, 1)).squeeze()
-        x = self.batch_norm1(x)  # with this is a bit better
-        x = F.relu(x)
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)
-
-        # second layer --DiGib
-        outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            # Forward pass for the current batch
-            x_batch = self.ib2(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-
-            # x_batch = self.batch_norm1(x_batch)       # without is better
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-
-        x = torch.cat(outputs, dim=0)
-
-        # x = self.batch_norm2(x)
-        x = F.relu(x)
-        x = F.dropout(x, p=self._dropout, training=self.training)
-
-        # more than 3 layer
-        if self.layer > 3:
-            for iter_layer in self.linx:
-                sym_outputs = []
-                for batch_idx in range(num_batches):
-                    start_idx = batch_idx * batch_size
-                    end_idx = min((batch_idx + 1) * batch_size, num_samples)
-                    batch_x = x[start_idx:end_idx]
-
-                    mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                            (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-                    edge_index_batch = edge_index[:, mask] - start_idx
-
-                    DiGedge_indexi_batch = ()
-                    DiGedge_weighti_batch = ()
-                    for i in range(len(edge_index_tuple)):
-                        mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                                  (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                        edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                        edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                        DiGedge_indexi_batch += (edge_indexi_batch,)
-                        DiGedge_weighti_batch += (edge_weighti_batch,)
-
-                    mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                               (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-                    edge_in_batch = edge_in[:, mask_in]
-                    edge_in_batch = edge_in_batch - start_idx
-                    in_w_batch = in_w[mask_in]
-                    mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                                (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-                    edge_out_batch = edge_out[:, mask_out]
-                    edge_out_batch = edge_out_batch - start_idx
-                    out_w_batch = out_w[mask_out]
-
-                    # Forward pass for the current batch
-                    symx = iter_layer(batch_x)
-                    symx1 = self.gconv(symx, edge_index_batch)
-                    symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-                    symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-                    symx_batch = symx1 + symx2 + symx3
-                    sym_outputs.append(symx_batch)
-
-                x = torch.cat(sym_outputs, dim=0)
-
-                # x = self.batch_norm2(x)  # without this is better performance
-                x = F.relu(x)
-                if self._dropout > 0:
-                    x = F.dropout(x, self._dropout, training=self.training)
-
-        # third layer
-        sym_outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            # Forward pass for the current batch
-            symx = self.lin3(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            x_batch = symx1 + symx2 + symx3
-            x_batch = self.batch_norm3(x_batch)  # keep this is better performance
-
-            x_batch = x_batch.unsqueeze(0)  # ?
-            x_batch = x_batch.permute((0, 2, 1))
-            x_batch = self.Conv(x_batch)
-            x_batch = x_batch.permute((0, 2, 1))
-            x_batch = x_batch.squeeze(0)
-
-            sym_outputs.append(x_batch)
-
-        x = torch.cat(sym_outputs, dim=0)
-
-        # x = F.relu(x)
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)
-
-        return x
-class DiGCN_IB_3MixBN_SymCat_batch(torch.nn.Module):
-    '''
-    revised for edge_index confusion
-    first layer is cat(Sym, DiGib), second layer is DiGib
-    '''
-    def __init__(self, m, input_dim,  out_dim, args, batch_size=1000):
-        super(DiGCN_IB_3MixBN_SymCat_batch, self).__init__()
-        self.batch_size = args.batch_size
-        self.layer = args.layer
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self._dropout = args.dropout
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-        self.batch_norm3 = nn.BatchNorm1d(out_dim)
-
-        self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2 * nhid, nhid, kernel_size=1)
-        self.Conv2 = nn.Conv1d(2 * out_dim, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, out_dim, bias=False)
-        # self.linx = torch.nn.Linear(nhid, nhid,nhid, nhid, bias=False)
-        if self.layer > 3:
-            self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(layer - 3)])
-
-        self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
-        self.bias2 = nn.Parameter(torch.Tensor(1, out_dim))
-
-        nn.init.zeros_(self.bias1)
-        nn.init.zeros_(self.bias2)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-        # first layer---Sym + DiG
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = x.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            # Forward pass for the current batch
-            x_batch = self.ib1(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            x_batch = self.batch_norm1(x_batch)
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-        x = torch.cat(outputs, dim=0)
-
-        DiGoutputs = []
-        sym_outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            # Forward pass for the current batch
-            symx = self.lin1(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            sym_outputs.append(symx_batch)
-
-            DiGx_batch = self.ib1(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            # x_batch = self.batch_norm1(x_batch)       # without is better
-            DiGx_batch = F.dropout(DiGx_batch, p=self._dropout, training=self.training)
-            DiGoutputs.append(DiGx_batch)
-
-        DiGx = torch.cat(DiGoutputs, dim=0)
-        symx = torch.cat(sym_outputs, dim=0)
-
-        x = torch.cat((DiGx, symx), dim=-1)
-        #
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv1(x)  # with this block or without, almost the same result
-        x = x.permute((0, 2, 1)).squeeze()
-        x = self.batch_norm1(x)  # with this is a bit better
-        x = F.relu(x)
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)
-
-        # second layer --DiGib
-        outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            # Forward pass for the current batch
-            x_batch = self.ib1(batch_x,DiGedge_indexi_batch, DiGedge_weighti_batch)
-            
-            # x_batch = self.batch_norm1(x_batch)       # without is better
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-
-        x = torch.cat(outputs, dim=0)
-
-        # x = self.batch_norm2(x)
-        x = F.relu(x)
-        x = F.dropout(x, p=self._dropout, training=self.training)
-
-        # more than 3 layer
-        if self.layer > 3:
-            for iter_layer in self.linx:
-                sym_outputs = []
-                for batch_idx in range(num_batches):
-                    start_idx = batch_idx * batch_size
-                    end_idx = min((batch_idx + 1) * batch_size, num_samples)
-                    batch_x = x[start_idx:end_idx]
-
-                    mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                            (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-                    edge_index_batch = edge_index[:, mask] - start_idx
-
-                    DiGedge_indexi_batch = ()
-                    DiGedge_weighti_batch = ()
-                    for i in range(len(edge_index_tuple)):
-                        mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                                  (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                        edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                        edge_weighti_batch = edge_weight_tuple[i][mask_i]
-        
-                        DiGedge_indexi_batch += (edge_indexi_batch,)
-                        DiGedge_weighti_batch += (edge_weighti_batch,)
-
-                    mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                               (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-                    edge_in_batch = edge_in[:, mask_in]
-                    edge_in_batch = edge_in_batch - start_idx
-                    in_w_batch = in_w[mask_in]
-                    mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                                (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-                    edge_out_batch = edge_out[:, mask_out]
-                    edge_out_batch = edge_out_batch - start_idx
-                    out_w_batch = out_w[mask_out]
-
-                    # Forward pass for the current batch
-                    symx = iter_layer(batch_x)
-                    symx1 = self.gconv(symx, edge_index_batch)
-                    symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-                    symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-                    symx_batch = symx1 + symx2 + symx3
-                    sym_outputs.append(symx_batch)
-
-                x = torch.cat(sym_outputs, dim=0)
-
-                # x = self.batch_norm2(x)  # without this is better performance
-                x = F.relu(x)
-                if self._dropout > 0:
-                    x = F.dropout(x, self._dropout, training=self.training)
-
-        # third layer
-        sym_outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            mask = ((edge_index[0] >= start_idx) & (edge_index[0] < end_idx) &
-                    (edge_index[1] >= start_idx) & (edge_index[1] < end_idx))
-            edge_index_batch = edge_index[:, mask] - start_idx
-
-            mask_in = ((edge_in[0] >= start_idx) & (edge_in[0] < end_idx) &
-                       (edge_in[1] >= start_idx) & (edge_in[1] < end_idx))
-            edge_in_batch = edge_in[:, mask_in]
-            edge_in_batch = edge_in_batch - start_idx
-            in_w_batch = in_w[mask_in]
-            mask_out = ((edge_out[0] >= start_idx) & (edge_out[0] < end_idx) &
-                        (edge_out[1] >= start_idx) & (edge_out[1] < end_idx))
-            edge_out_batch = edge_out[:, mask_out]
-            edge_out_batch = edge_out_batch - start_idx
-            out_w_batch = out_w[mask_out]
-
-            # Forward pass for the current batch
-            symx = self.lin1(batch_x)
-            symx1 = self.gconv(symx, edge_index_batch)
-            symx2 = self.gconv(symx, edge_in_batch, in_w_batch)
-            symx3 = self.gconv(symx, edge_out_batch, out_w_batch)
-            symx_batch = symx1 + symx2 + symx3
-            sym_outputs.append(symx_batch)
-
-        x = torch.cat(sym_outputs, dim=0)
-
-        x = self.batch_norm3(x)  # keep this is better performance
-        # x = F.relu(x)
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)
-
-        return x
 
 class DiGCN_IB_3MixBN_SymCat_Sym_nhid(torch.nn.Module):
     '''
     revised for edge_index confusion
     first layer is cat(Sym, DiGib), second layer is addSym
     '''
-    def __init__(self,m,  input_dim,  out_dim, args):
-        super(DiGCN_IB_3MixBN_SymCat_Sym_nhid, self).__init__()
+
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
         self.layer = args.layer
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
+        nhid = args.hid_dim
+        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self._dropout = args.dropout
         self.batch_norm1 = nn.BatchNorm1d(nhid)
@@ -5738,8 +1637,8 @@ class DiGCN_IB_3MixBN_SymCat_Sym_nhid(torch.nn.Module):
         self.lin2 = torch.nn.Linear(nhid, nhid, bias=False)
         self.lin2_ = torch.nn.Linear(nhid, nhid, bias=False)
         if self.layer > 3:
-            self.ibx = nn.ModuleList([InceptionBlock_Di(m, nhid, nhid, args) for _ in range(layer - 3)])
-            self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(layer - 3)])
+            self.ibx = nn.ModuleList([InceptionBlock_Di(m, nhid, nhid, args) for _ in range(args.layer - 3)])
+            self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(args.layer - 3)])
 
         self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
         self.bias2 = nn.Parameter(torch.Tensor(1, nhid))
@@ -5776,7 +1675,7 @@ class DiGCN_IB_3MixBN_SymCat_Sym_nhid(torch.nn.Module):
         symx2 = self.gconv(symx, edge_in, in_w)
         symx3 = self.gconv(symx, edge_out, out_w)
         symx = symx1 + symx2 + symx3
-        x=symx
+        x = symx
         # x = self.batch_norm2(x)
         x = F.relu(x)
         x = F.dropout(x, p=self._dropout, training=self.training)
@@ -5798,7 +1697,7 @@ class DiGCN_IB_3MixBN_SymCat_Sym_nhid(torch.nn.Module):
         symx3 = self.gconv(symx, edge_out, out_w)
         x = symx1 + symx2 + symx3
 
-        x = self.batch_norm3(x)     # with this, much better than without
+        x = self.batch_norm3(x)  # with this, much better than without
         # x = F.relu(x)
         if self._dropout > 0:
             x = F.dropout(x, self._dropout, training=self.training)
@@ -5809,142 +1708,13 @@ class DiGCN_IB_3MixBN_SymCat_Sym_nhid(torch.nn.Module):
         x = x.permute((0, 2, 1)).squeeze()
 
         return x
-class DiGCN_IB_3MixBN_SymCat_Sym(torch.nn.Module):
-    '''
-    revised for edge_index confusion
-    first layer is cat(Sym, DiGib), second layer is addSym
-    '''
-    def __init__(self,m,  input_dim,  out_dim, args):
-        super(DiGCN_IB_3MixBN_SymCat_Sym, self).__init__()
-        self.layer = args.layer
-        nhid = args.feat_dim
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid,args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self._dropout = args.dropout
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-        self.batch_norm3 = nn.BatchNorm1d(out_dim)
 
-        self.gconv = DGCNConv()
-        self.Conv1 = nn.Conv1d(2 * nhid, nhid, kernel_size=1)
-        self.Conv2 = nn.Conv1d(2 * out_dim, out_dim, kernel_size=1)
-
-        self.lin1 = torch.nn.Linear(input_dim, nhid, bias=False)
-        self.lin2 = torch.nn.Linear(nhid, out_dim, bias=False)
-        self.lin2_ = torch.nn.Linear(nhid, nhid, bias=False)
-        if self.layer > 3:
-            self.ibx = nn.ModuleList([InceptionBlock_Di(m, nhid, nhid, args) for _ in range(layer - 3)])
-            self.linx = nn.ModuleList([torch.nn.Linear(nhid, nhid, bias=False) for _ in range(layer - 3)])
-
-        self.bias1 = nn.Parameter(torch.Tensor(1, nhid))
-        self.bias2 = nn.Parameter(torch.Tensor(1, out_dim))
-
-        nn.init.zeros_(self.bias1)
-        nn.init.zeros_(self.bias2)
-
-        self.reg_params = list(self.ib1.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, edge_index_tuple, edge_weight_tuple):
-        # first layer---Sym + DiG
-        symx = self.lin1(x)
-        symx1 = self.gconv(symx, edge_index)
-        symx2 = self.gconv(symx, edge_in, in_w)
-        symx3 = self.gconv(symx, edge_out, out_w)
-        symx = symx1 + symx2 + symx3
-
-        DiGx = self.ib1(x, edge_index_tuple, edge_weight_tuple)
-        x = torch.cat((DiGx, symx), dim=-1)
-        #
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv1(x)  # with this block or without, almost the same result
-        x = x.permute((0, 2, 1)).squeeze()
-        # x = self.batch_norm1(x)
-        x = F.relu(x)
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)
-
-        # second layer --addSym
-        symx = self.lin2_(x)
-        symx1 = self.gconv(symx, edge_index)
-        symx2 = self.gconv(symx, edge_in, in_w)
-        symx3 = self.gconv(symx, edge_out, out_w)
-        symx = symx1 + symx2 + symx3
-        x=symx
-        # x = self.batch_norm2(x)
-        x = F.relu(x)
-        x = F.dropout(x, p=self._dropout, training=self.training)
-
-        # more than 3 layer
-        if self.layer > 3:
-            for iter_layer in self.ibx:
-                x = iter_layer(x, edge_index_tuple, edge_weight_tuple)
-                # x = self.batch_norm2(x)
-                x = F.relu(x)
-                if self._dropout > 0:
-                    x = F.dropout(x, self._dropout, training=self.training)
-
-        # third layer
-        symx = self.lin2(x)
-        symx1 = self.gconv(symx, edge_index)
-        symx2 = self.gconv(symx, edge_in, in_w)
-        symx3 = self.gconv(symx, edge_out, out_w)
-        x = symx1 + symx2 + symx3
-
-        x = self.batch_norm3(x)     # with this, much better than without
-        # x = F.relu(x)
-        if self._dropout > 0:
-            x = F.dropout(x, self._dropout, training=self.training)
-
-        return x
-
-
-class DiGCN_IB_XBN_nhid(torch.nn.Module):
-    def __init__(self, m, input_dim, out_dim, args):
-        super(DiGCN_IB_XBN_nhid, self).__init__()
-        self._dropout = args.dropout
-        nhid = args.feat_dim
-        self.layer = args.layer
-        layer = args.layer
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self.ibx = nn.ModuleList([InceptionBlock_Di(m, nhid,nhid) for _ in range(layer-2)])
-
-        self.Conv = nn.Conv1d(nhid,  out_dim, kernel_size=1)
-
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-        self.batch_norm3 = nn.BatchNorm1d(nhid)
-
-        self.reg_params = list(self.ib1.parameters()) + list(self.ibx.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, features, edge_index_tuple, edge_weight_tuple):
-        x = features
-        x = self.ib1(x, edge_index_tuple, edge_weight_tuple)
-        x = self.batch_norm1(x)
-
-        for iter_layer in self.ibx:
-            x = iter_layer(x,  edge_index_tuple, edge_weight_tuple)
-            x = self.batch_norm3(x)
-
-        x = self.ib2(x,  edge_index_tuple, edge_weight_tuple)
-        x = self.batch_norm2(x)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1))
-        x = x.squeeze(0)
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
 
 class Di_IB_XBN_nhid_ConV(torch.nn.Module):
-    def __init__(self, m, input_dim,   out_dim, args):
-        super(Di_IB_XBN_nhid_ConV, self).__init__()
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
         self.layer = args.layer
         self.BN_model = args.BN_model
@@ -5953,7 +1723,7 @@ class Di_IB_XBN_nhid_ConV(torch.nn.Module):
         self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
         self.ibx = nn.ModuleList([InceptionBlock_Di(m, nhid, nhid, args) for _ in range(layer - 2)])
 
-        self.Conv = nn.Conv1d(nhid,  out_dim, kernel_size=1)
+        self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
 
         self.batch_norm1 = nn.BatchNorm1d(nhid)
         self.batch_norm2 = nn.BatchNorm1d(nhid)
@@ -5987,12 +1757,13 @@ class Di_IB_XBN_nhid_ConV(torch.nn.Module):
 
         return x
 
+
 class Di_IB_XBN_nhid_ConV_JK(torch.nn.Module):
-    def __init__(self, m, input_dim,   out_dim, args):
-        super(Di_IB_XBN_nhid_ConV_JK, self).__init__()
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
-        self.jk= args.jk
+        nhid = args.hid_dim
+        self.jk = args.jk
         self.BNorm = args.BN_model
 
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
@@ -6000,7 +1771,7 @@ class Di_IB_XBN_nhid_ConV_JK(torch.nn.Module):
         self.layer = args.layer
         self.ibx = nn.ModuleList([InceptionBlock_Di(m, nhid, nhid, args) for _ in range(self.layer - 2)])
 
-        self.Conv = nn.Conv1d(nhid,  out_dim, kernel_size=1)
+        self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
 
         self.batch_norm1 = nn.BatchNorm1d(nhid)
         self.batch_norm2 = nn.BatchNorm1d(nhid)
@@ -6014,8 +1785,6 @@ class Di_IB_XBN_nhid_ConV_JK(torch.nn.Module):
 
         self.reg_params = list(self.ib1.parameters()) + list(self.ibx.parameters())
         self.non_reg_params = self.ib2.parameters()
-
-
 
     def forward(self, x, edge_index_tuple, edge_weight_tuple):
         xs = []
@@ -6044,22 +1813,21 @@ class Di_IB_XBN_nhid_ConV_JK(torch.nn.Module):
             x = self.batch_norm2(x)
         xs += [x]
 
-
         if self.jk is not None:
             x = self.jump(xs)
             x = self.lin(x)
         # x = Conv_Out(x, self.Conv)
         # x = F.dropout(x, p=self._dropout, training=self.training)
 
-
-        return x        #
+        return x  #
         # return torch.nn.functional.log_softmax(x, dim=1)
 
+
 class Di_IB_X_nhid(torch.nn.Module):
-    def __init__(self, m, input_dim,   out_dim, args):
-        super(Di_IB_X_nhid, self).__init__()
+    def __init__(self, m, input_dim, out_dim, args):
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         layer = args.layer
 
         self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
@@ -6067,7 +1835,7 @@ class Di_IB_X_nhid(torch.nn.Module):
         self.layer = args.layer
         self.ibx = nn.ModuleList([InceptionBlock_Di(m, nhid, nhid, args) for _ in range(layer - 2)])
 
-        self.Conv = nn.Conv1d(nhid,  out_dim, kernel_size=1)
+        self.Conv = nn.Conv1d(nhid, out_dim, kernel_size=1)
 
         self.reg_params = list(self.ib1.parameters()) + list(self.ibx.parameters())
         self.non_reg_params = self.ib2.parameters()
@@ -6086,46 +1854,12 @@ class Di_IB_X_nhid(torch.nn.Module):
         x = F.dropout(x, p=self._dropout, training=self.training)
         return x
 
-class Si_IB_X_nhid(torch.nn.Module):
-    def __init__(self, m, input_dim, out_dim, args):
-        super(Si_IB_X_nhid, self).__init__()
-        self._dropout = args.dropout
-        nhid = args.feat_dim
-        self.layer = args.layer
-
-        if self.layer == 1:
-            self.ib1 = InceptionBlock_Si(m, input_dim, out_dim, args)
-        else:
-            self.ib1 = InceptionBlock_Si(m, input_dim, nhid, args)
-        self.ib2 = InceptionBlock_Si(m, nhid, out_dim, args)
-        if self.layer > 2:
-            self.ibx = nn.ModuleList([InceptionBlock_Si(m, nhid, nhid, args) for _ in range(self.layer - 2)])
-
-        # self.reg_params = list(self.ib1.parameters()) + list(self.ibx.parameters())
-        # self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, features, edge_index, edge_weight):
-        x = features
-        x = self.ib1(x, edge_index, edge_weight)
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        if self.layer == 1:
-            return x
-
-        if self.layer > 2:
-            for iter_layer in self.ibx:
-                x = F.dropout(x, p=self._dropout, training=self.training)
-                x = iter_layer(x, edge_index, edge_weight)
-
-        x = self.ib2(x, edge_index, edge_weight)
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
 
 class DiGCN_IB_XBN_nhid_para(torch.nn.Module):
     def __init__(self, m, num_features, out_dim, args):
-        super(DiGCN_IB_XBN_nhid_para, self).__init__()
-        nhid = args.feat_dim
-        if args.layer==1:
+        super().__init__()
+        nhid = args.hid_dim
+        if args.layer == 1:
             self.ib1 = InceptionBlock_Di_list(m, num_features, out_dim, args)
         else:
             self.ib1 = InceptionBlock_Di_list(m, num_features, nhid, args)
@@ -6137,12 +1871,12 @@ class DiGCN_IB_XBN_nhid_para(torch.nn.Module):
 
         self.layer = args.layer
         layer = args.layer
-        self.ibx=nn.ModuleList([InceptionBlock_Di_list(m, nhid,nhid, args) for _ in range(layer-2)])
+        self.ibx = nn.ModuleList([InceptionBlock_Di_list(m, nhid, nhid, args) for _ in range(layer - 2)])
         self.coefx = nn.ModuleList([nn.ParameterList([nn.Parameter(torch.tensor(1.0)) for _ in range(20)]) for _ in range(layer - 2)])
 
         self.reg_params = list(self.ib1.parameters()) + list(self.ibx.parameters())
         self.non_reg_params = self.ib2.parameters()
-        self.coefs = list(self.coef1)+list(self.coef2)+list(self.coefx.parameters())
+        self.coefs = list(self.coef1) + list(self.coef2) + list(self.coefx.parameters())
         # self.coefs = [self.coef1, self.coef2, self.coefx]     # wrong
 
         self.batch_norm1 = nn.BatchNorm1d(nhid)
@@ -6163,13 +1897,13 @@ class DiGCN_IB_XBN_nhid_para(torch.nn.Module):
 
         if self.layer > 2:
             for iter_layer, iter_coef in zip(self.ibx, self.coefx):
-                x_list = iter_layer(x,  edge_index_tuple, edge_weight_tuple)
+                x_list = iter_layer(x, edge_index_tuple, edge_weight_tuple)
                 x = x_list[0]
                 for i in range(1, len(x_list)):
                     x += iter_coef[i] * x_list[i]
                 x = F.dropout(x, p=self._dropout, training=self.training)
 
-        x_list = self.ib2(x,  edge_index_tuple, edge_weight_tuple)
+        x_list = self.ib2(x, edge_index_tuple, edge_weight_tuple)
         if self.BN_model:
             x = self.batch_norm2(x)
         x = x_list[0]
@@ -6179,16 +1913,17 @@ class DiGCN_IB_XBN_nhid_para(torch.nn.Module):
         x = F.dropout(x, p=self._dropout, training=self.training)
         return x
 
+
 class DiGCN_IB_X_nhid_para_Jk(torch.nn.Module):
     def __init__(self, m, input_dim, out_dim, args):
-        super(DiGCN_IB_X_nhid_para_Jk, self).__init__()
+        super().__init__()
         self._dropout = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         self.jumping_knowledge = args.jk
         num_layers = args.layer
         output_dim = nhid if self.jumping_knowledge else out_dim
         self.BNorm = args.BN_model
-        if args.layer==1:
+        if args.layer == 1:
             self.ib1 = InceptionBlock_Di_list(m, input_dim, output_dim, args)
         else:
             self.ib1 = InceptionBlock_Di_list(m, input_dim, nhid, args)
@@ -6207,12 +1942,12 @@ class DiGCN_IB_X_nhid_para_Jk(torch.nn.Module):
 
         self.layer = args.layer
         layer = args.layer
-        self.ibx=nn.ModuleList([InceptionBlock_Di_list(m, nhid, nhid, args) for _ in range(layer-2)])
+        self.ibx = nn.ModuleList([InceptionBlock_Di_list(m, nhid, nhid, args) for _ in range(layer - 2)])
         self.coefx = nn.ModuleList([nn.ParameterList([nn.Parameter(torch.tensor(1.0)) for _ in range(20)]) for _ in range(layer - 2)])
 
         self.reg_params = list(self.ib1.parameters()) + list(self.ibx.parameters())
         self.non_reg_params = self.ib2.parameters()
-        self.coefs = list(self.coef1)+list(self.coef2)+list(self.coefx.parameters())
+        self.coefs = list(self.coef1) + list(self.coef2) + list(self.coefx.parameters())
 
     def forward(self, features, edge_index_tuple, edge_weight_tuple):
         xs = []
@@ -6228,14 +1963,14 @@ class DiGCN_IB_X_nhid_para_Jk(torch.nn.Module):
 
         if self.layer > 2:
             for iter_layer, iter_coef in zip(self.ibx, self.coefx):
-                x_list = iter_layer(x,  edge_index_tuple, edge_weight_tuple)
+                x_list = iter_layer(x, edge_index_tuple, edge_weight_tuple)
                 x = x_list[0]
                 for i in range(1, len(x_list)):
                     x += iter_coef[i] * x_list[i]
                 x = F.dropout(x, p=self._dropout, training=self.training)
                 xs += [x]
 
-        x_list = self.ib2(x,  edge_index_tuple, edge_weight_tuple)
+        x_list = self.ib2(x, edge_index_tuple, edge_weight_tuple)
         x = x_list[0]
         for i in range(1, len(x_list)):
             x += self.coef2[i] * x_list[i]
@@ -6250,419 +1985,31 @@ class DiGCN_IB_X_nhid_para_Jk(torch.nn.Module):
         x = F.dropout(x, p=self._dropout, training=self.training)
         return x
 
-class DiGCN_IB_X_nhid_para(torch.nn.Module):
-    def __init__(self, m, input_dim, out_dim, args):
-        super(DiGCN_IB_X_nhid_para, self).__init__()
-        self._dropout = args.dropout
-        nhid = args.feat_dim
-        if args.layer==1:
-            self.ib1 = InceptionBlock_Di_list(m, input_dim, out_dim, args)
-        else:
-            self.ib1 = InceptionBlock_Di_list(m, input_dim, nhid, args)
-
-        self.ib2 = InceptionBlock_Di_list(m, nhid, out_dim, args)
-        self.coef1 = nn.ParameterList([nn.Parameter(torch.tensor(1.0)) for _ in range(20)])  # coef for ib1
-        self.coef2 = nn.ParameterList([nn.Parameter(torch.tensor(1.0)) for _ in range(20)])  # coef for ib2
-        self._dropout = args.dropout
-
-        self.layer = args.layer
-        layer = args.layer
-        self.ibx=nn.ModuleList([InceptionBlock_Di_list(m, nhid, nhid, args) for _ in range(layer-2)])
-        self.coefx = nn.ModuleList([nn.ParameterList([nn.Parameter(torch.tensor(1.0)) for _ in range(20)]) for _ in range(layer - 2)])
-
-        self.reg_params = list(self.ib1.parameters()) + list(self.ibx.parameters())
-        self.non_reg_params = self.ib2.parameters()
-        self.coefs = list(self.coef1)+list(self.coef2)+list(self.coefx.parameters())
-        # self.coefs = [self.coef1, self.coef2, self.coefx]     # wrong
-
-    def forward(self, features, edge_index_tuple, edge_weight_tuple):
-        x = features
-        x_list = self.ib1(x, edge_index_tuple, edge_weight_tuple)
-        x = x_list[0]
-        for i in range(1, len(x_list)):
-            x += self.coef1[i] * x_list[i]
-        # x = self.batch_norm1(x)
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        # x = F.relu(x)
-        if self.layer == 1:
-            return x
-
-        if self.layer > 2:
-            for iter_layer, iter_coef in zip(self.ibx, self.coefx):
-                x_list = iter_layer(x,  edge_index_tuple, edge_weight_tuple)
-                x = x_list[0]
-                for i in range(1, len(x_list)):
-                    x += iter_coef[i] * x_list[i]
-                x = F.dropout(x, p=self._dropout, training=self.training)
-
-        x_list = self.ib2(x,  edge_index_tuple, edge_weight_tuple)
-        x = x_list[0]
-        for i in range(1, len(x_list)):
-            x += self.coef2[i] * x_list[i]
-
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
-
-# class DiGCN_IB_XBN_nhid_para(torch.nn.Module):
-#     def __init__(self, num_features, hidden,  out_dim, dropout=0.5, layer=2):
-#         super(DiGCN_IB_XBN_nhid_para, self).__init__()
-        self.ib1 = InceptionBlock_Qinlist(num_features, hidden)
-#         self.ib2 = InceptionBlock_Qinlist(hidden, hidden)
-#         self.coef1 = nn.ParameterList([nn.Parameter(torch.tensor(1.0)) for _ in range(5)])  # coef for ib1
-#         self.coef2 = nn.ParameterList([nn.Parameter(torch.tensor(1.0)) for _ in range(5)])  # coef for ib2
-#         self._dropout = dropout
-#         self.Conv = nn.Conv1d(hidden,  out_dim, kernel_size=1)
-#
-#         self.batch_norm1 = nn.BatchNorm1d(hidden)
-#         self.batch_norm2 = nn.BatchNorm1d(hidden)
-#         self.batch_norm3 = nn.BatchNorm1d(hidden)
-#
-#         self.layer = layer
-#         self.ibx=nn.ModuleList([InceptionBlock_Qinlist(hidden,hidden) for _ in range(layer-2)])
-#         self.coefx = nn.ModuleList([nn.ParameterList([nn.Parameter(torch.tensor(1.0)) for _ in range(5)]) for _ in range(layer - 2)])
-#
-#         self.reg_params = list(self.ib1.parameters()) + list(self.ibx.parameters())
-#         self.non_reg_params = self.ib2.parameters()
-#         self.coefs = list(self.coef1)+list(self.coef2)+list(self.coefx.parameters())
-#         # self.coefs = [self.coef1, self.coef2, self.coefx]     # wrong
-#
-#     def forward(self, features, edge_index_tuple, edge_weight_tuple):
-#         x = features
-#         x_list = self.ib1(x, edge_index_tuple, edge_weight_tuple)
-#         x = x_list[0]
-#         for i in range(1, len(x_list)):
-#             x += self.coef1[i] * x_list[i]
-#         # x = self.batch_norm1(x)
-#
-#         for iter_layer, iter_coef in zip(self.ibx, self.coefx):
-#             x_list = iter_layer(x,  edge_index_tuple, edge_weight_tuple)
-#             x = x_list[0]
-#             for i in range(1, len(x_list)):
-#                 x += iter_coef[i] * x_list[i]
-#             # x = self.batch_norm3(x)
-#
-#         x_list = self.ib2(x,  edge_index_tuple, edge_weight_tuple)
-#         x = x_list[0]
-#         for i in range(1, len(x_list)):
-#             x += self.coef2[i] * x_list[i]
-#
-#         x = self.batch_norm2(x)
-#         x = x.unsqueeze(0)
-#         x = x.permute((0, 2, 1))
-#         x = self.Conv(x)
-#         x = x.permute((0, 2, 1))
-#         x = x.squeeze(0)
-#
-#         x = F.dropout(x, p=self._dropout, training=self.training)
-#         return x
-
-
-class DiGCN_IB_XBN_batch_nhid(torch.nn.Module):
-    def __init__(self,m,  input_dim, out_dim, args):
-        super(DiGCN_IB_XBN_batch_nhid, self).__init__()
-        nhid = args.feat_dim
-        layer = args.layer
-        self._dropout = args.dropout
-        self.batch_size = args.batch_size
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
-        self.ib2 = InceptionBlock_Di(m, nhid, nhid, args)
-        self.Conv = nn.Conv1d(nhid,  out_dim, kernel_size=1)
-
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d(nhid)
-        self.batch_norm3 = nn.BatchNorm1d(nhid)
-
-        self.layer = args.layer
-        self.ibx = nn.ModuleList([InceptionBlock_Di(m, nhid, nhid, args) for _ in range(layer - 2)])
-
-        self.reg_params = list(self.ib1.parameters()) + list(self.ibx.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, features, edge_index_tuple, edge_weight_tuple):
-        x = features
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = features.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            # Forward pass for the current batch
-            DiGx_batch = self.ib1(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-
-            x_batch = self.batch_norm1(DiGx_batch)
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-        x = torch.cat(outputs, dim=0)
-
-        for iter_layer in self.ibx:
-            num_samples = features.size(0)
-            num_batches = (num_samples + batch_size - 1) // batch_size
-            outputs = []
-            for batch_idx in range(num_batches):
-                start_idx = batch_idx * batch_size
-                end_idx = min((batch_idx + 1) * batch_size, num_samples)
-                batch_x = x[start_idx:end_idx]
-
-                DiGedge_indexi_batch = ()
-                DiGedge_weighti_batch = ()
-                for i in range(len(edge_index_tuple)):
-                    mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                              (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                    edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                    edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                    DiGedge_indexi_batch += (edge_indexi_batch,)
-                    DiGedge_weighti_batch += (edge_weighti_batch,)
-
-                # Forward pass for the current batch
-                DiGx_batch = iter_layer(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-
-                x_batch = self.batch_norm3(DiGx_batch)
-                x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-                outputs.append(x_batch)
-            x = torch.cat(outputs, dim=0)
-
-        num_samples = features.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            # Forward pass for the current batch
-            x_batch = self.ib2(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            x_batch = self.batch_norm2(x_batch)
-
-            x_batch = x_batch.unsqueeze(0)  # ?
-            x_batch = x_batch.permute((0, 2, 1))
-            x_batch = self.Conv(x_batch)
-            x_batch = x_batch.permute((0, 2, 1))
-            x_batch = x_batch.squeeze(0)
-
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-        x = torch.cat(outputs, dim=0)
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
-
-class DiGCN_IB_XBN_batch(torch.nn.Module):
-    def __init__(self,m,  input_dim, out_dim, args):
-        super(DiGCN_IB_XBN_batch, self).__init__()
-        self._dropout = args.dropout
-        self.batch_size = args.batch_size
-        nhid = args.feat_dim
-        layer = args.layer
-        self.ib1 = InceptionBlock_Di(m, input_dim, nhid, args)
-        self.ib2 = InceptionBlock_Di(m, nhid,  out_dim)
-        # self.Conv = nn.Conv1d(hidden, num_classes, kernel_size=1)
-
-        self.batch_norm1 = nn.BatchNorm1d(nhid)
-        self.batch_norm2 = nn.BatchNorm1d( out_dim)
-        self.batch_norm3 = nn.BatchNorm1d(nhid)
-
-        self.layer = args.layer
-        self.ibx=nn.ModuleList([InceptionBlock_Di(m, nhid,nhid) for _ in range(layer-2)])
-
-        self.reg_params = list(self.ib1.parameters()) + list(self.ibx.parameters())
-        self.non_reg_params = self.ib2.parameters()
-
-    def forward(self, features, edge_index_tuple, edge_weight_tuple):
-        x = features
-
-        batch_size = self.batch_size  # Define your batch size
-        num_samples = features.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-
-            # Forward pass for the current batch
-            x_batch = self.ib1(batch_x,DiGedge_indexi_batch, DiGedge_weighti_batch)
-            
-            x_batch = self.batch_norm1(x_batch)
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-        x = torch.cat(outputs, dim=0)
-
-        for iter_layer in self.ibx:
-            num_samples = features.size(0)
-            num_batches = (num_samples + batch_size - 1) // batch_size
-            outputs = []
-            for batch_idx in range(num_batches):
-                start_idx = batch_idx * batch_size
-                end_idx = min((batch_idx + 1) * batch_size, num_samples)
-                batch_x = x[start_idx:end_idx]
-
-                DiGedge_indexi_batch = ()
-                DiGedge_weighti_batch = ()
-                for i in range(len(edge_index_tuple)):
-                    mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                              (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                    edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                    edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                    DiGedge_indexi_batch += (edge_indexi_batch,)
-                    DiGedge_weighti_batch += (edge_weighti_batch,)
-
-                # Forward pass for the current batch
-                x_batch = iter_layer(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-                
-                x_batch = self.batch_norm3(x_batch)
-                x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-                outputs.append(x_batch)
-            x = torch.cat(outputs, dim=0)
-
-        num_samples = features.size(0)
-        num_batches = (num_samples + batch_size - 1) // batch_size
-        outputs = []
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_samples)
-            batch_x = x[start_idx:end_idx]
-
-            DiGedge_indexi_batch = ()
-            DiGedge_weighti_batch = ()
-            for i in range(len(edge_index_tuple)):
-                mask_i = ((edge_index_tuple[i][0] >= start_idx) & (edge_index_tuple[i][0] < end_idx) &
-                          (edge_index_tuple[i][1] >= start_idx) & (edge_index_tuple[i][1] < end_idx))
-                edge_indexi_batch = edge_index_tuple[i][:, mask_i] - start_idx
-                edge_weighti_batch = edge_weight_tuple[i][mask_i]
-
-                DiGedge_indexi_batch += (edge_indexi_batch,)
-                DiGedge_weighti_batch += (edge_weighti_batch,)
-
-            # Forward pass for the current batch
-            x_batch = self.ib2(batch_x, DiGedge_indexi_batch, DiGedge_weighti_batch)
-            
-            x_batch = self.batch_norm2(x_batch)
-            x_batch = F.dropout(x_batch, p=self._dropout, training=self.training)
-            outputs.append(x_batch)
-        x = torch.cat(outputs, dim=0)
-        x = F.dropout(x, p=self._dropout, training=self.training)
-        return x
-
-def create_DiG_IB_nhid(m, nfeat, nclass, args):
-
-    if args.layer == 1:
-        model = DiGCN_IB_1BN_nhid(m, nfeat, nclass, args)
-    elif args.layer == 2:
-        model = DiGCN_IB_2BN_nhid(m, nfeat, nclass, args)
-    else:
-        model = DiGCN_IB_XBN_nhid(m, nfeat, nclass, args)
-    return model
-
-
-def create_Di_IB_nhid0(m, nfeat, nclass, args):
-
-    if args.layer == 1:
-        model = Di_IB_1BN_nhid0(m, nfeat, nclass, args)
-    elif args.layer == 2:
-        model = Di_IB_2BN_nhid0(m, nfeat, nclass, args)
-    else:
-        model = Di_IB_XBN_nhid0(m, nfeat, nclass, args)
-    return model
 
 def create_Di_IB_nhid(m, nfeat, nclass, args):
     if args.layer == 1:
-        model = Di_IB_1_nhid(m, nfeat,  nclass, args)
+        model = Di_IB_1_nhid(m, nfeat, nclass, args)
     elif args.layer == 2:
-        model = Di_IB_2_nhid(m, nfeat,  nclass, args)
+        model = Di_IB_2_nhid(m, nfeat, nclass, args)
     else:
-        model = Di_IB_X_nhid(m, nfeat,  nclass, args)
-    return model
-
-def create_Si_IB_nhid(m, nfeat, nclass, args):
-    nlayer = args.layer
-    if args.layer == 1:
-        model = Di_IB_1BN_nhid(m, nfeat,  nclass, args)
-    elif args.layer == 2:
-        model = Si_IB_2BN_nhid(m, nfeat,  nclass, args)
-    else:
-        model = Di_IB_XBN_nhid(m, nfeat,  nclass, args)
-    return model
-
-def create_DiG_IB_nhid_para(m, nfeat, nclass, args):
-
-    if args.layer == 1:
-        model = DiGCN_IB_1BN_nhid_para(m, nfeat, nclass, args)
-    elif args.layer == 2:
-        model = DiGCN_IB_2BN_nhid_para(m, nfeat, nclass, args)
-    else:
-        model = DiGCN_IB_XBN_nhid_para(m, nfeat, nclass, args)
+        model = Di_IB_X_nhid(m, nfeat, nclass, args)
     return model
 
 
-def create_DiG_IB_batch(m, nfeat, nclass, args, batchSize):
-    if args.layer == 1:
-        model = DiGCN_IB_1BN_batch(m, nfeat, nclass, args, batchSize)
-    elif args.layer == 2:
-        model = DiGCN_IB_2BN_batch(m, nfeat, nclass, args, batchSize)
-    else:
-        model = DiGCN_IB_XBN_batch(m, nfeat, nclass, args, batchSize)
-    return model
-
-def create_DiG_IB_batch_nhid(m, nfeat, nclass, args, batchSize):
-    if args.layer == 1:
-        model = DiGCN_IB_1BN_batch_nhid(m, nfeat, nclass, args, batchSize)
-    elif args.layer == 2:
-        model = DiGCN_IB_2BN_batch_nhid(m, nfeat, nclass, args, batchSize)
-    else:
-        model = DiGCN_IB_XBN_batch_nhid(m, nfeat, nclass, args, batchSize)
-    return model
-
-def create_DiG_IB_Sym_nhid(m, nfeat,  nclass, args):
+def create_DiG_IB_Sym_nhid(m, nfeat, nclass, args):
     '''
     revised for edge_index confusion
     '''
     nlayer = args.layer
     if args.layer == 1:
-        model = DiGCN_IB_1BN_Sym_nhid(m, nfeat,  nclass, args)
+        model = DiGCN_IB_1BN_Sym_nhid(m, nfeat, nclass, args)
     elif args.layer == 2:
         model = DiGCN_IB_2BN_Sym_nhid(m, nfeat, nclass, args)
     else:
         model = DiGCN_IB_XBN_Sym_nhid(m, nfeat, nclass, args)
     return model
+
+
 def create_DiG_IB_Sym_nhid_para(m, nfeat, nclass, args):
     '''
     revised for edge_index confusion
@@ -6675,48 +2022,6 @@ def create_DiG_IB_Sym_nhid_para(m, nfeat, nclass, args):
         model = DiGIB_XBN_Sym_nhid_para(m, nfeat, nclass, args)
     return model
 
-def create_DiG_IB_Sym(m, nfeat, nclass, args):
-    '''
-    revised for edge_index confusion
-    Args:
-        nfeat:
-        nhid:
-        nclass:
-        dropout:
-        nlayer:
-
-    Returns:
-
-    '''
-    if args.layer == 1:
-        model = DiGCN_IB_1BN_Sym(m, nfeat, nclass, args)
-    elif args.layer == 2:
-        model = DiGCN_IB_2BN_Sym(m, nfeat, nclass, args)
-    else:
-        model = DiGCN_IB_XBN_Sym(m, nfeat, nclass, args)
-    return model
-
-def create_DiG_IB_Sym_batch_nhid(m, nfeat, nclass, args, batchSize):
-    '''
-    revised for edge_index confusion
-    Args:
-        nfeat:
-        nhid:
-        nclass:
-        dropout:
-        nlayer:
-        batchSize:
-
-    Returns:
-
-    '''
-    if args.layer == 1:
-        model = DiGCN_IB_1BN_Sym_batch_nhid(m, nfeat, nclass, args, batchSize)
-    elif args.layer == 2:
-        model = DiGCN_IB_2BN_Sym_batch_nhid(m, nfeat, nclass, args, batchSize)
-    else:
-        model = DiGCN_IB_XBN_Sym_batch_nhid(m, nfeat, nclass, args, batchSize)
-    return model
 
 def create_DiG_IB_SymCat_nhid(m, nfeat, nclass, args, ibx1):
     '''
@@ -6743,68 +2048,6 @@ def create_DiG_IB_SymCat_nhid(m, nfeat, nclass, args, ibx1):
             model = DiGCN_IB_XBN_SymCat_nhid(m, nfeat, nclass, args)
     return model
 
-def create_DiG_IB_SymCat_batch_nhid(m, nfeat, nclass, args):
-    '''
-    revised for edge_index confusion
-    Args:
-        nfeat:
-        nhid:
-        nclass:
-        dropout:
-        nlayer:
-
-    Returns:
-
-    '''
-    if args.layer == 1:
-        model = DiGCN_IB_1BN_SymCat_batch_nhid(m, nfeat, nclass, args)
-    elif args.layer == 2:
-        model = DiGCN_IB_2BN_SymCat_batch_nhid(m, nfeat, nclass, args)
-    else:
-        model = DiGCN_IB_XBN_SymCat_batch_nhid(m, nfeat, nclass, args)
-    return model
-
-def create_DiG_IB_SymCat_batchConvOut(m, nfeat, nclass, args):
-    '''
-    revised for edge_index confusion
-    Args:
-        nfeat:
-        nhid:
-        nclass:
-        dropout:
-        nlayer:
-
-    Returns:
-
-    '''
-    if args.layer == 1:
-        model = DiGCN_IB_1BN_SymCat_batchConvOut(m, nfeat, nclass, args)
-    elif args.layer == 2:
-        model = DiGCN_IB_2BN_SymCat_batchConvOut(m, nfeat, nclass, args)
-    else:
-        model = DiGCN_IB_XBN_SymCat_batchConvOut(m, nfeat, nclass, args)
-    return model
-
-def create_DiG_MixIB_SymCat(m, nfeat, nclass, args):
-    '''
-    revised for edge_index confusion
-    Args:
-        nfeat:
-        nhid:
-        nclass:
-        dropout:
-        nlayer:
-
-    Returns:
-
-    '''
-    if args.layer == 1:
-         raise NotImplementedError('mixed can not be from one layer!')
-    elif args.layer == 2:
-        model = DiGCN_IB_2MixBN_SymCat(m, nfeat, nclass, args)
-    else:
-        model = DiGCN_IB_3MixBN_SymCat(m, nfeat, nclass, args)
-    return model
 
 def create_DiG_MixIB_SymCat_nhid(m, nfeat, nclass, args):
     '''
@@ -6820,79 +2063,13 @@ def create_DiG_MixIB_SymCat_nhid(m, nfeat, nclass, args):
 
     '''
     if args.layer == 1:
-         raise NotImplementedError('mixed can not be from one layer!')
+        raise NotImplementedError('mixed can not be from one layer!')
     elif args.layer == 2:
         model = DiGCN_IB_2MixBN_SymCat_nhid(m, nfeat, nclass, args)
     else:
         model = DiGCN_IB_3MixBN_SymCat_nhid(m, nfeat, nclass, args)
     return model
 
-def create_DiG_MixIB_SymCat_batch(m, nfeat, nclass, args):
-    '''
-    revised for edge_index confusion
-    Args:
-        nfeat:
-        nhid:
-        nclass:
-        dropout:
-        nlayer:
-        batch_size:
-
-    Returns:
-
-    '''
-    if args.layer == 1:
-         raise NotImplementedError('mixed can not be from one layer!')
-    elif args.layer == 2:
-        model = DiGCN_IB_2MixBN_SymCat_batch(m, nfeat, nclass, args)
-    else:
-        model = DiGCN_IB_3MixBN_SymCat_batch(m, nfeat, nclass, args)
-    return model
-
-def create_DiG_MixIB_SymCat_batch_nhid(m, nfeat, nclass, args):
-    '''
-    revised for edge_index confusion
-    Args:
-        nfeat:
-        nhid:
-        nclass:
-        dropout:
-        nlayer:
-        batch_size:
-
-    Returns:
-
-    '''
-    nlayer = args.layer
-    if args.layer == 1:
-         raise NotImplementedError('mixed can not be from one layer!')
-    elif args.layer == 2:
-        model = DiGCN_IB_2MixBN_SymCat_batch_nhid(m, nfeat, nclass, args)
-    else:
-        model = DiGCN_IB_3MixBN_SymCat_batch_nhid(m, nfeat, nclass, args)
-    return model
-
-def create_DiG_MixIB_SymCat_Sym(m, nfeat, nclass, args):
-    '''
-    revised for edge_index confusion
-    Args:
-        nfeat:
-        nhid:
-        nclass:
-        dropout:
-        nlayer:
-
-    Returns:
-
-    '''
-    nlayer = args.layer
-    if args.layer == 1:
-         raise NotImplementedError('mixed can not be from one layer!')
-    elif args.layer == 2:
-        model = DiGCN_IB_2MixBN_SymCat_Sym(m, nfeat, nclass, args)
-    else:
-        model = DiGCN_IB_3MixBN_SymCat_Sym(m, nfeat, nclass, args)
-    return model
 
 def create_DiG_MixIB_SymCat_Sym_nhid(m, nfeat, nclass, args):
     '''
@@ -6910,55 +2087,9 @@ def create_DiG_MixIB_SymCat_Sym_nhid(m, nfeat, nclass, args):
     '''
     nlayer = args.layer
     if args.layer == 1:
-         raise NotImplementedError('mixed can not be from one layer!')
+        raise NotImplementedError('mixed can not be from one layer!')
     elif args.layer == 2:
         model = DiGCN_IB_2MixBN_SymCat_Sym_nhid(m, nfeat, nclass, args)
     else:
         model = DiGCN_IB_3MixBN_SymCat_Sym_nhid(m, nfeat, nclass, args)
-    return model
-
-def create_DiG_MixIB_SymCat_Sym_batch(m, nfeat, nclass, args):
-    '''
-    revised for edge_index confusion
-    Args:
-        nfeat:
-        nhid:
-        nclass:
-        dropout:
-        nlayer:
-        batchSize:
-
-    Returns:
-
-    '''
-    nlayer = args.layer
-    if args.layer == 1:
-         raise NotImplementedError('mixed can not be from one layer!')
-    elif args.layer == 2:
-        model = DiGCN_IB_2MixBN_SymCat_Sym_batch(m, nfeat, nclass, args)
-    else:
-        model = DiGCN_IB_3MixBN_SymCat_Sym_batch(m, nfeat, nclass, args)
-    return model
-
-def create_DiG_MixIB_SymCat_Sym_batch_nhid(m, nfeat, nclass, args):
-    '''
-    revised for edge_index confusion
-    Args:
-        nfeat:
-        nhid:
-        nclass:
-        dropout:
-        nlayer:
-        batchSize:
-
-    Returns:
-
-    '''
-    nlayer = args.layer
-    if args.layer == 1:
-         raise NotImplementedError('mixed can not be from one layer!')
-    elif args.layer == 2:
-        model = DiGCN_IB_2MixBN_SymCat_Sym_batch_nhid(m, nfeat, nclass, args)
-    else:
-        model = DiGCN_IB_3MixBN_SymCat_Sym_batch_nhid(m, nfeat, nclass, args)
     return model
