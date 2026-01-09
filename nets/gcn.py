@@ -126,6 +126,8 @@ def gcn_norm(edge_index, edge_weight=None, num_nodes=None, improved=False,
 class StandGCNXBN(nn.Module):
     def __init__(self, nfeat, nclass, args):
         super().__init__()
+        self._cached_adj_t = None
+
         self.BN_model = args.BN_model
         nhid = args.hid_dim
         dropout = args.dropout
@@ -150,10 +152,13 @@ class StandGCNXBN(nn.Module):
         self.layer = nlayer
 
     def forward(self, x, adj, edge_weight=None):
-        num_nodes = int(x.shape[0])
-        adj = SparseTensor.from_edge_index(adj, sparse_sizes=(num_nodes, num_nodes)).t()
-        x = self.conv1(x, adj)
+        num_nodes = x.size(0)
+        if self._cached_adj_t is None:
+            self._cached_adj_t = SparseTensor.from_edge_index(adj, sparse_sizes=(num_nodes, num_nodes)).t()
 
+        adj = self._cached_adj_t
+
+        x = self.conv1(x, adj)
         if self.layer == 1:
             # x = F.dropout(x,p= self.dropout_p, training=self.training)
             # if self.BN_model:
@@ -180,6 +185,7 @@ class StandGCNXBN(nn.Module):
 class GraphSAGEXBatNorm(nn.Module):
     def __init__(self,  nfeat, nclass, args):
         super().__init__()
+        self._cached_adj_t = None
         self.dropout_p = args.dropout
         nhid = args.hid_dim
         nlayer= args.layer
@@ -220,7 +226,10 @@ class GraphSAGEXBatNorm(nn.Module):
 
     def forward(self, x, adj, edge_weight=None):
         num_nodes = int(x.shape[0])
-        adj = SparseTensor.from_edge_index(adj, sparse_sizes=(num_nodes, num_nodes)).t()
+        if self._cached_adj_t is None:
+            self._cached_adj_t = SparseTensor.from_edge_index(adj, sparse_sizes=(num_nodes, num_nodes)).t()
+
+        adj = self._cached_adj_t
         x = self.conv1(x, adj)
         # x2 = self.conv1_1(x, edge_index, edge_weight)
         # x= torch.cat((x1, x2), dim=-1)
