@@ -8,7 +8,7 @@ from torch.cuda import device
 from torch.nn import Linear, ModuleList, init
 from torch_geometric.nn import GCNConv, GATConv, SAGEConv, ChebConv, GINConv, APPNP, JumpingKnowledge
 from torch.nn import Parameter
-from torch_geometric.utils import remove_self_loops
+from torch_geometric.utils import remove_self_loops, softmax
 from torch_sparse import SparseTensor
 from torch_sparse import sum as sparsesum
 from torch_sparse import mul
@@ -1370,14 +1370,37 @@ class DirGCNConv_Qin(torch.nn.Module):
 
         return self.lin_src_to_dst(out)
 
+
+def sparselogsumexp(adj, dim=1):
+    """Sparse row-wise logsumexp for PyG SparseTensor"""
+    N = adj.sizes()[0]  # ← Use .sizes()[0] instead of adj.shape[0]
+
+    row, col, value = adj.coo()  # ← Unpack 3 values
+    if value is None:
+        value = torch.ones(row.shape[0], device=adj.device())
+
+    norm_value = softmax(value, row, num_nodes=N)
+
+    # Return SparseTensor with normalized values
+    return adj.set_value_(norm_value, layout='coo')
+
+
 def get_norm_adj(adj, norm, rm_gen_sLoop=0):
     if norm == "sym":
         return gcn_norm(adj, add_self_loops=0)
     elif norm == "row":
-        return row_norm(adj)
+        row_sum = sparsesum(adj, dim=1)
+
+        return mul(adj, 1 / row_sum.view(-1, 1))
     elif norm == "dir":
 
         return directed_norm(adj, rm_gen_sLoop=rm_gen_sLoop)
+    elif norm == "softmax":
+        logsumexp = sparselogsumexp(adj, dim=1)
+        return logsumexp
+        # return mul(adj, torch.exp(adj - logsumexp.view(-1, 1)))
+        # alpha = softmax(alpha, index, ptr, size_i)
+        # return softmax(adj)
     elif norm is None or norm=="0":
         return adj.set_value(torch.ones(adj.nnz(), device=adj.device()))
     else:

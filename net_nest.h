@@ -1,14 +1,14 @@
 #!/bin/bash
 
-net_values="1iG  "
+net_values="RiG RiGib "
 layer_values="  2    "
-incinorm=" sym  "   # dir   row 0
+incinorm=" row  "   # dir   row 0
 lr0="0.01 0.005"
 
 
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'   'WikiCS/' 'WikipediaNetwork/squirrel'
 # 'WikipediaNetwork/chameleon'   'telegram/'   'dgl/pubmed'  'citeseer/'   #"$inci"
-Direct_dataset=(   'WikiCS/'   )
+Direct_dataset=(  'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'   )
 Direct_dataset_filename=$(echo $Direct_dataset | sed 's/\//_/g')
 generate_timestamp() {
   date +"%d%H%Ms%S"

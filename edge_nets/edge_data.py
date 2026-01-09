@@ -661,7 +661,7 @@ def WCJ_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
         deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0
 
         edge_weight = deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
-    elif norm in ['dir', 'row']:
+    elif norm in ['dir', 'row', 'softmax']:
         # type 1: conside different inci-norm
         row, col = edge_index
         adj_norm = get_norm_adj(SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
