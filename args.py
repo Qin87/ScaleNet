@@ -19,7 +19,7 @@ def parse_args():
     parser.add_argument("--normalize", type=int, help="whether use layer normalization in ScaleNet, model:0/1", default=1)
     parser.add_argument("--jk", type=str, choices=["max", "cat",  0], default="max")
     parser.add_argument("--jk_inner", type=str, choices=["max", "cat", 'lstm', None], default=None)
-    parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', '0'], default='dir')
+    parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', '0'], default='row')
     parser.add_argument("--fs", type=str, choices=["sum", "cat", 'weight_sum', 'linear'], default="dir", help='fusion method')
     parser.add_argument("--alphaDir", type=float, help="Direction convex combination params", default=0)
     parser.add_argument("--betaDir", type=float, help="Direction convex combination params", default=1)
@@ -32,7 +32,7 @@ def parse_args():
     parser.add_argument('--MakeImbalance', '-imbal', action='store_true', help='if convert graph to undirecteds')  # TODO change before git
     parser.add_argument('--imb_ratio', type=float, default=100, help='imbalance ratio')
 
-    parser.add_argument('--net', type=str, default='1iG', help='ScaleNet, Dir-GNN '
+    parser.add_argument('--net', type=str, default='RiGib', help='ScaleNet, Dir-GNN '
                      'Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc'
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG)'

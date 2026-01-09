@@ -19,7 +19,6 @@ from typing import Union, Tuple, Optional
 from torch_geometric.typing import (OptPairTensor, Adj, Size, NoneType,
                                     OptTensor)
 from torch import Tensor
-
 from nets.geometric_baselines import DirGCNConv, DirGCNConv_Qin
 
 
