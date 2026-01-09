@@ -85,7 +85,7 @@ dgl/pubmed:
 #  lr: 0.01
   normalize: 0
   BN_model: 0  #
-#  First_self_loop : 'add'
+  First_self_loop : 'add'
   jk: 'max'
 #  dropout: 0.0  #0.5(39), 0.0(77.5)
   alphaDir: 0.5   # 0.5(72.2), 0(73.2)

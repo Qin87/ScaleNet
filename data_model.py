@@ -5,6 +5,8 @@ import numpy as np
 import torch
 from torch_scatter import scatter_add
 
+from nets.gat import StandGATXBN
+from nets.gcn import StandGCNXBN
 from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model
 from nets.models import JKNet, create_MLP, create_SGC, create_pgnn, GPRGNNNet1
 
@@ -12,7 +14,7 @@ from nets.Signum_quaternion import QuaNet_node_prediction_one_laplacian_Qin
 from nets.Signum import SigMaNet_node_prediction_one_laplacian_Qin
 from edge_nets.edge_data import to_undirectedBen
 from gens import test_directed
-from nets import create_gcn, create_gat, create_sage
+from nets import  create_sage
 
 from data.data_utils import random_planetoid_splits, load_directedData
 from nets.APPNP_Ben import APPNP_Model, ChebModel, SymModel
@@ -150,9 +152,9 @@ def CreatModel(args, num_features, n_cls, data_x,device):
 
     else:
         if args.net == 'GCN':
-            model = create_gcn(nfeat=num_features, nhid=args.feat_dim, nclass=n_cls, dropout=args.dropout, nlayer=args.layer, norm= args.gcnconv_norm)
+            model = StandGCNXBN(num_features, n_cls, args=args)
         elif args.net == 'GAT':
-            model = create_gat(nfeat=num_features, nhid=args.feat_dim, nclass=n_cls, dropout=args.dropout, nlayer=args.layer, head=args.heads)
+            model = StandGATXBN(nfeat=num_features, nhid=args.feat_dim, nclass=n_cls, dropout=args.dropout, nlayer=args.layer, head=args.heads)
         elif args.net == "SAGE":
             model = create_sage(nfeat=num_features, nhid=args.feat_dim, nclass=n_cls, dropout=args.dropout,nlayer=args.layer)
         else:

@@ -10,6 +10,7 @@ import time
 
 import torch
 import torch.nn.functional as F
+from torch_sparse import SparseTensor
 
 from args import parse_args
 from data.data_utils import keep_all_data, seed_everything, set_device
@@ -154,6 +155,8 @@ args = use_best_hyperparams(args, args.Dataset) if args.use_best_hyperparams els
 data_x, data_y, edges, edges_weight, num_features, data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph = load_dataset(args)
 net_to_print, dataset_to_print = get_name(args, IsDirectedGraph)
 load_time = time.time()
+
+
 
 log_directory, log_file_name_with_timestamp = log_file(net_to_print, dataset_to_print, args)
 if not os.path.exists(log_directory):
@@ -331,6 +334,7 @@ try:
     with open(log_directory + log_file_name_with_timestamp, 'a') as log_file:
         print('Using Device: ', device, file=log_file)
         for split in range(num_run):
+
             model = CreatModel(args, num_features, n_cls, data_x, device).to(device)
             if split==0:
                 print('no_in, homo_in, no_out, homo_out:', no_in, homo_ratio_A, no_out, homo_ratio_At, file=log_file)
@@ -457,6 +461,7 @@ try:
             test_acc, test_bacc, test_f1 = 0.0, 0.0, 0.0
             CountNotImproved = 0
             end_epoch = 0
+
             for epoch in range(args.epoch):
                 val_loss, new_edge_index, new_x, new_y, new_y_train = train(edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight, X_real, X_img, Sigedge_index, norm_real,norm_imag,
                                                                                 X_img_i, X_img_j, X_img_k,norm_imag_i, norm_imag_j, norm_imag_k, Quaedge_index)
@@ -474,12 +479,12 @@ try:
                     # print('test_f1 CountNotImproved reset to 0 in epoch', epoch, file=log_file)
                 else:
                     CountNotImproved += 1
-                # if not epoch % 100 :
-                #     # end_time = time.time()
-                #     print('epoch: {:3d}, val_loss:{:2f}, acc: {:.2f}, bacc: {:.2f}, tmp_test_f1: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_f1*100, test_f1 * 100))
-                    # print(end_time - start_time, file=log_file)
-                    # print(end_time - start_time)
-                    # print('epoch: {:3d}, val_loss:{:2f}, acc: {:.2f}, bacc: {:.2f}, tmp_test_f1: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_f1*100, test_f1 * 100),file=log_file)
+                if not epoch % 100 :
+                    end_time = time.time()
+                    print('epoch: {:3d}, val_loss:{:2f}, acc: {:.2f}, bacc: {:.2f}, tmp_test_f1: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_f1*100, test_f1 * 100))
+                    print(end_time - start_time, file=log_file)
+                    print(end_time - start_time)
+                    print('epoch: {:3d}, val_loss:{:2f}, acc: {:.2f}, bacc: {:.2f}, tmp_test_f1: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_f1*100, test_f1 * 100),file=log_file)
                 end_epoch = epoch
                 if CountNotImproved > args.NotImproved:
                     # print("No improved for consecutive {:3d} epochs, break.".format(args.NotImproved))
