@@ -21,7 +21,6 @@ from nets.models import JKNet, create_MLP, create_SGC, create_pgnn, GPRGNNNet1, 
 from nets.Signum_quaternion import QuaNet_node_prediction_one_laplacian_Qin
 from nets.Signum import SigMaNet_node_prediction_one_laplacian_Qin
 from nets.edge_data import to_undirectedBen
-from nets import  create_gat
 
 from data.data_utils import random_planetoid_splits, load_directedData
 from nets.APPNP_Ben import APPNP_Model, ChebModel, SymModel
