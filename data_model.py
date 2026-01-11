@@ -165,12 +165,12 @@ def CreatModel(args, num_features, n_cls, data_x,device):
     init_model(model)
     return model
 
-def get_name(args, IsDirectedGraph):
+def get_name(args, IsDirectedGraph=1):
     dataset_to_print = args.Dataset.replace('/', '_')
-    if not IsDirectedGraph:
-        dataset_to_print = dataset_to_print + 'Undire'
-    else:
-        dataset_to_print = dataset_to_print + 'Direct'
+    # if not IsDirectedGraph:
+    #     dataset_to_print = dataset_to_print + 'Undire'
+    # else:
+    #     dataset_to_print = dataset_to_print + 'Direct'
     if args.net.startswith('Ri'):
         net_to_print = args.net + str(args.W_degree) + '_'
     elif args.net.startswith('Mag'):
@@ -329,7 +329,7 @@ def load_dataset(args):
             IsDirectedGraph = False
             print("Converted to undirected data")
 
-    return data_x, data_y, edges, edges_weight, dataset_num_features,data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph
+    return data_x, data_y, edges, edges_weight, dataset_num_features,data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin
 
 def feat_proximity(edge_index1, data_x):
     distances = []
