@@ -1,7 +1,7 @@
 import typing
 from typing import Any
 
-from utils import get_norm_adj
+from nets.geometric_baselines import get_norm_adj
 
 if typing.TYPE_CHECKING:
     from typing import overload
@@ -66,15 +66,14 @@ class UnifiedGATRATConv(MessagePassing):
         fill_value: Union[float, Tensor, str] = 'mean',
         bias: bool = True,
         residual: bool = False,
-        inci_norm: str = 'sym',
-        net: str = 'GAT',
+        args: Optional[Any] = None,
         **kwargs,
     ):
         kwargs.setdefault('aggr', 'add')
         super().__init__(node_dim=0, **kwargs)
-        self.attention_mode = net.lower()
+        self.attention_mode = args.net.lower()
+        self.inci_norm = args.inci_norm
 
-        self.inci_norm = inci_norm
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.heads = heads
@@ -138,7 +137,6 @@ class UnifiedGATRATConv(MessagePassing):
             self.res.reset_parameters()
         zeros(self.bias)
 
-    # -------------------------------------------------------------
 
     @overload
     def forward(
@@ -225,6 +223,16 @@ class UnifiedGATRATConv(MessagePassing):
             else:
                 edge_index = torch_sparse.set_diag(edge_index)
 
+        if isinstance(edge_index, Tensor):
+            index = edge_index[1]
+            dim_size = int(index.max()) + 1 if size is None else int(size[1])
+            E = index.numel()
+        else:  # SparseTensor
+            row, col, _ = edge_index.coo()
+            index = col
+            dim_size = edge_index.size(1)
+            E = index.numel()
+
         if self.attention_mode == 'gat':
             alpha_src = (x_src * self.att_src).sum(dim=-1)
             alpha_dst = None if x_dst is None else (x_dst * self.att_dst).sum(-1)
@@ -233,16 +241,6 @@ class UnifiedGATRATConv(MessagePassing):
             alpha = self.edge_updater(edge_index, alpha=alpha, edge_attr=edge_attr,
                                       size=size)
         else:
-            if isinstance(edge_index, Tensor):
-                index = edge_index[1]
-                dim_size = int(index.max()) + 1 if size is None else int(size[1])
-                E = index.numel()
-            else:  # SparseTensor
-                row, col, _ = edge_index.coo()
-                index = col
-                dim_size = edge_index.size(1)
-                E = index.numel()
-
             if self.attention_mode == 'rat':
                 alpha = torch.empty((E, self.heads),
                     device=index.device
@@ -376,9 +374,9 @@ class StandGATXBN(nn.Module):
         head_dim = nhid//num_head
         head_nclass = nclass//num_head
 
-        self.conv1 = ConvClass(nfeat, head_dim, heads=args.heads)
-        self.conv2 = ConvClass(nhid, head_dim, heads=head)
-        self.convx = nn.ModuleList([ConvClass(nhid, head_dim, heads=head) for _ in range(args.layer-2)])
+        self.conv1 = ConvClass(nfeat, head_dim, heads=args.heads, args= args)
+        self.conv2 = ConvClass(nhid, head_dim, heads=head, args= args)
+        self.convx = nn.ModuleList([ConvClass(nhid, head_dim, heads=head, args= args) for _ in range(args.layer-2)])
         self.dropout_p = dropout
         self.is_add_self_loops = True
 
