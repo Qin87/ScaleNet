@@ -16,7 +16,7 @@ from args import parse_args
 from data.data_utils import keep_all_data, seed_everything, set_device
 from edge_nets.edge_data import get_second_directed_adj, get_second_directed_adj_union, \
     WCJ_get_directed_adj, Qin_get_second_directed_adj, Qin_get_directed_adj, get_appr_directed_adj2, Qin_get_second_directed_adj0, Qin_get_second_adj, Qin_get_all_directed_adj, normalize_row_edges
-from data_model import CreatModel, log_file, get_name, load_dataset, feat_proximity, delete_edges, make_imbalanced, count_homophilic_nodes
+from data_model import CreatModel, log_file, get_name, load_dataset, feat_proximity, delete_edges, make_imbalanced, count_homophilic_nodes, remove_inner_class_edge
 from nets.DiG_NoConv import union_edges
 from nets.src2 import laplacian
 from nets.src2.quaternion_laplacian import process_quaternion_laplacian
@@ -208,6 +208,8 @@ data_train_maskOrigin = data_train_maskOrigin.to(device)
 data_val_maskOrigin = data_val_maskOrigin.to(device)
 data_test_maskOrigin = data_test_maskOrigin.to(device)
 
+if args.new_edge:
+    edges=remove_inner_class_edge(edges, data_y)
 
 criterion = CrossEntropy().to(device)
 n_cls = data_y.max().item() + 1
@@ -327,6 +329,7 @@ try:
 except:
     splits = 1
 Set_exit = False
+
 
 num_run = args.num_split if args.num_split<splits else splits
 preprocess_time = time.time()

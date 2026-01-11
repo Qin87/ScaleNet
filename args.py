@@ -2,8 +2,9 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--use_best_hyperparams", type=int, help="whether use parameters in best_hyperparameters.yml", default=1)
+    parser.add_argument("--use_best_hyperparams", type=int, help="use parameters in best_hyperparameters.yml", default=1)
     parser.add_argument('--GPUdevice', type=int, default=0, help='device')
+    parser.add_argument('--new_edge', type=int, default=0, help='1 remove edges connect inter-class nodes')
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
     parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=0)
     parser.add_argument("--nonlinear", type=int, help="whether use activation(relu) in ScaleNet model:0/1", default=1)
@@ -38,7 +39,7 @@ def parse_args():
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG)'
                         'Sym, 1ym')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='telegram/', help='citeseer/ , cora_ml/, dgl/pubmed, telegram/,  WikiCS/, dgl/cora ,'
+    parser.add_argument('--Dataset', type=str, default='dgl/pubmed', help='citeseer/ , cora_ml/, dgl/pubmed, telegram/,  WikiCS/, dgl/cora ,'
                                                                                 'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, '
                 'Cora, CiteSeer, PubMed, Coauthor-physics, Coauthor-CS, Amazon-Computers, Amazon-Photo ')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout prob')
@@ -47,7 +48,7 @@ def parse_args():
     parser.add_argument('-K', '--K', default=2, type=int)  # for cheb
     parser.add_argument('-AP_K', '--AP_K', default=10, type=int)  # for APPNP
 
-    parser.add_argument('--feat_dim', type=int, default=128, help='feature dimension')
+    parser.add_argument('--hid_dim', type=int, default=128, help='feature dimension')
     parser.add_argument('--epoch', type=int, default=1500, help='epoch1500,')
     parser.add_argument('--NotImproved', type=int, default=810, help='consecutively Not Improved, break, 500, 450, 410, 210, 60')
 
@@ -98,7 +99,7 @@ def parse_args():
     parser.add_argument("--has_1_order", type=int, help="Whether Ai* has 1-order edges:0/1", default=0)
     parser.add_argument('--paraD', action='store_true', help='ib is weighted sum')
     parser.add_argument('--gcnconv_norm', '-gcnnorm', action='store_false', help='GCNConv forward, normalize edge_index during training')
-    parser.add_argument('--to_undirected', '-tud', action='store_true', help='if convert graph to undirected')
+    parser.add_argument('--to_undirected', '-tud', type=int, default=0, help='if convert graph to undirected')
     parser.add_argument('--feat_proximity', action='store_true', help='filter out non similar nodes in scaled graph')
     parser.add_argument('--ibx1', action='store_true', help='share the same ibx block in DiGSymCatib')
     parser.add_argument('--log_root', type=str, default='../logs/', help='the path saving model.t7 and the training process')

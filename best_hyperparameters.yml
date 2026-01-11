@@ -3,7 +3,7 @@ telegram/:
 #  net: ScaleNet         # QiGi3
   conv_type: "dir-gcn"
   nonlinear: 1
-  feat_dim: 128
+  hid_dim: 128
   layer: 4
 #  lr: 0.01
   normalize: 1
@@ -24,7 +24,7 @@ cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
   conv_type: "dir-gcn"
   nonlinear: 1
 #  net: ScaleNet   #  net: QiGi3
-  feat_dim: 128   # better than 64
+  hid_dim: 128   # better than 64
   layer: 3   # 2(80), 3(75), 4(79.8), 5(79.6)
   lr: 0.01    # 0.1(79), 0.01(80.7)
   normalize: 0
@@ -43,7 +43,7 @@ citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.
   conv_type: "dir-gcn"
   jk_inner: 0
   nonlinear: 0    # 0(68.3), 1(67.6)
-  feat_dim: 128
+  hid_dim: 128
   layer: 3     # 1(65.3),2(64.8), 3(62.6), 4(64.0), 5(64.4)
   lr: 0.01
   normalize: 1    # 1(68.3), 0 much worse60.7,
@@ -96,7 +96,7 @@ dgl/pubmed:
 
 # (1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5, 79.5±1.4)
 WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5)
-  feat_dim: 128
+  hid_dim: 128
   conv_type: "dir-gcn"
   inci_norm: "dir"
   dropout: 0.0  # 0.5(acc65), 0.0(acc75)
@@ -139,7 +139,7 @@ directed-roman-empire/:
 #  First_self_loop: 0
   BN_model: 1
   normalize: 1
-  feat_dim: 256
+  hid_dim: 256
   layer: 5
   jk: "cat"
   dropout: 0.2
@@ -155,7 +155,7 @@ Cora:
 #  layer: 2
   First_self_loop: 'add'
 #  lr: 0.005
-  feat_dim: 64
+  hid_dim: 64
   NotImproved: 810
   has_scheduler: 1
   patience: 80
@@ -165,7 +165,7 @@ CiteSeer:
 #  lr: 0.005
   BN_model: 0  # Sure!
 #  layer: 2
-  feat_dim: 64
+  hid_dim: 64
   dropout: 0.5
 
   NotImproved: 810

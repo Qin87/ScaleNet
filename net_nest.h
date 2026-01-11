@@ -1,8 +1,8 @@
 #!/bin/bash
 
-net_values="1iA 1iAib "
+net_values="GAT "
 layer_values="  2    "
-incinorm=" softmax  "   # dir   row 0
+incinorm=" dir row sym  0 softmax"   # dir   row 0
 lr0="0.005"
 
 
