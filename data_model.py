@@ -232,8 +232,10 @@ def load_dataset(args):
         path = args.data_path
         path = osp.join(path, args.Dataset)
         dataset = get_dataset(args.Dataset, path, split_type='full')
+        IsDirectedGraph = 0
     else:
         dataset = load_directedData(args)
+        IsDirectedGraph = 1
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     if args.Dataset in ['ogbn-arxiv/', 'directed-roman-empire/']:
@@ -329,7 +331,7 @@ def load_dataset(args):
             IsDirectedGraph = False
             print("Converted to undirected data")
 
-    return data_x, data_y, edges, edges_weight, dataset_num_features,data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin
+    return data_x, data_y, edges, edges_weight, dataset_num_features,data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph
 
 def feat_proximity(edge_index1, data_x):
     distances = []

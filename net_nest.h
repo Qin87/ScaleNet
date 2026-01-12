@@ -1,13 +1,13 @@
 #!/bin/bash
 
-net_values="RiG RiGib "
-layer_values="  2  4  "
+net_values="RiGib "
+layer_values="4  "
 incinorm="  row"   # dir   row 0
-lr0="0.005 0.01"
+lr0="0.005 "
 
-while pgrep -x python3 >/dev/null; do
-    sleep 300
-done
+# while pgrep -x python3 >/dev/null; do
+#    sleep 300
+# done
 
 
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'   'WikiCS/' 'WikipediaNetwork/squirrel'
