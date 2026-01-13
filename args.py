@@ -6,6 +6,7 @@ def parse_args():
     parser.add_argument('--GPUdevice', type=int, default=0, help='device')
     parser.add_argument('--new_edge', type=int, default=0, help='1 remove edges connect inter-class nodes')
     parser.add_argument('--r20_per_class', type=int, default=0, help='1 train split is random 20 nodes_per_class')
+
     parser.add_argument('--originGAT', type=int, default=1, help='1 use official GAT')
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
     parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=0)
