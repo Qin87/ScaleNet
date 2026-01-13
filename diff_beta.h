@@ -1,7 +1,6 @@
 #!/bin/bash
 
 net_values=" ScaleNet  "
-q_value=0
 layer_values=" 4 "
 imbal="2  "
 Dir="0 0.5 1 "
