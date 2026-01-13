@@ -30,7 +30,7 @@ for Didataset in "${Direct_dataset[@]}"; do
             log_output="${Didataset//\//_}_${timestamp}_${net}_layer${layer}.log"
 
             python3 main.py   --net="$net"  --layer="$layer"  --use_best_hyperparams=1 --num_split=10   --inci_norm="$inci"  \
-            --originGAT=1   --lr="$lr" --BN_model=0  \
+            --originGAT=0   --lr="$lr" --BN_model=0  \
             --Dataset="$Didataset" > "$log_output"
              2>&1
             wait $pid
