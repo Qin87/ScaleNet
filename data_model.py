@@ -217,6 +217,8 @@ def get_name(args, IsDirectedGraph=1):
                 args.gamaDir)+'_sloop'+str(args.First_self_loop)+str(args.rm_gen_sloop)+'_jk'+str(args.jk)+'_norm'+args.inci_norm
     if args.net == 'GAT':
         net_to_print += '_ofc' + str(args.originGAT)
+    if args.r20_per_class:
+        dataset_to_print += '20_perclass'
 
     return net_to_print, dataset_to_print
 
@@ -307,17 +309,21 @@ def load_dataset(args):
         edges = data.edge_index  # for torch_geometric librar
         data_y = data.y
 
-        if data_y.dtype.is_floating_point:
-            data_y = data_y.to(torch.long)
-        if not hasattr(data, 'train_mask'):
-            data = random_planetoid_splits(data, data_y, train_ratio=0.48, val_ratio=0.1, num_splits=10, Flag=0)
-            data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
-        # elif args.Dataset in ['ogbn-arxiv/', 'arxiv_year', 'fb100/penn94', 'telegram/'] or (len(data.train_mask.shape) > 1 and data.train_mask.size(-1) > args.num_split - 1):
-        elif args.Dataset in ['ogbn-arxiv/', 'arxiv_year', 'fb100/penn94', 'telegram/'] or (len(data.train_mask.shape) > 1 and data.train_mask.size(-1) > 1):
-            data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
-        else:
+        if args.r20_per_class:
             data = random_planetoid_splits(data, data_y, percls_trn=20, val_lb=30, Flag=1)
             data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
+        else:
+
+            if data_y.dtype.is_floating_point:
+                data_y = data_y.to(torch.long)
+            if not hasattr(data, 'train_mask'):
+                data = random_planetoid_splits(data, data_y, train_ratio=0.48, val_ratio=0.1, num_splits=10, Flag=0)
+                data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
+            elif args.Dataset in ['ogbn-arxiv/', 'arxiv_year', 'fb100/penn94', 'telegram/'] or (len(data.train_mask.shape) > 1 and data.train_mask.size(-1) > 1):
+                data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
+            else:
+                data = random_planetoid_splits(data, data_y, percls_trn=20, val_lb=30, Flag=1)
+                data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
 
         data_x = data.x
         try:
