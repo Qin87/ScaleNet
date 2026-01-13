@@ -331,9 +331,9 @@ def load_dataset(args):
     if args.to_undirected:
         if IsDirectedGraph == 0:
             print("Already undirected graph")
-
-        IsDirectedGraph = test_directed(edges)  # time consuming
-        print("This is directed graph: ", IsDirectedGraph)
+        else:
+            IsDirectedGraph = test_directed(edges)  # time consuming
+            print("This is directed graph: ", IsDirectedGraph)
         if IsDirectedGraph:
             edges = to_undirectedBen(edges)
             IsDirectedGraph = 0

@@ -100,7 +100,7 @@ def parse_args():
     parser.add_argument("--has_1_order", type=int, help="Whether Ai* has 1-order edges:0/1", default=0)
     parser.add_argument('--paraD', action='store_true', help='ib is weighted sum')
     parser.add_argument('--gcnconv_norm', '-gcnnorm', action='store_false', help='GCNConv forward, normalize edge_index during training')
-    parser.add_argument('--to_undirected', '-tud', type=int, default=1, help='if convert graph to undirected')
+    parser.add_argument('--to_undirected', '-tud', type=int, default=0, help='if convert graph to undirected')
     parser.add_argument('--feat_proximity', action='store_true', help='filter out non similar nodes in scaled graph')
     parser.add_argument('--ibx1', action='store_true', help='share the same ibx block in DiGSymCatib')
     parser.add_argument('--log_root', type=str, default='../logs/', help='the path saving model.t7 and the training process')
