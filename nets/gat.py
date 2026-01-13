@@ -267,10 +267,10 @@ class UnifiedGATRATConv(MessagePassing):
             ptr = None
         else:  # SparseTensor
             row, col, _ = edge_index.coo()
-            index = row         # col is wrong!
             dim_size = edge_index.size(1)
+            index = row         # col is wrong!
+            ptr = edge_index.storage.rowptr()
             E = index.numel()
-            ptr = edge_index.storage.colptr()
 
         if self.attention_mode == 'gat':
             alpha = self.edge_updater(edge_index, alpha=alpha, edge_attr=edge_attr,
