@@ -147,10 +147,12 @@ class UnifiedGATRATConv(MessagePassing):
             self.lin_edge.reset_parameters()
         if self.res is not None:
             self.res.reset_parameters()
-        glorot(self.att_src)
-        glorot(self.att_dst)
-        glorot(self.att_edge)
-        zeros(self.bias)
+
+        if self.attention_mode == "gat":
+            glorot(self.att_src)
+            glorot(self.att_dst)
+            glorot(self.att_edge)
+            zeros(self.bias)
 
 
     @overload
@@ -273,20 +275,14 @@ class UnifiedGATRATConv(MessagePassing):
             E = index.numel()
 
         if self.attention_mode == 'gat':
-            alpha = self.edge_updater(edge_index, alpha=alpha, edge_attr=edge_attr,
-                                      size=size)
+            alpha = self.edge_updater(edge_index, alpha=alpha, edge_attr=edge_attr,size=size)
         else:
-
             if self.attention_mode == 'rat':
-                alpha = torch.empty((E, self.heads),
-                    device=index.device
-                ).uniform_(1e-4, 1e4)
+                alpha = torch.empty((E, self.heads),   device=index.device).uniform_(1e-4, 1e4)
             elif self.attention_mode == 'uat':
                 alpha = torch.ones((E, self.heads),device=index.device)
             else:
                 raise NotImplementedError(f"Unknown attention_mode: {self.attention_mode}")
-
-
 
         # SAME normalization as GAT
         alpha = F.leaky_relu(alpha, self.negative_slope)

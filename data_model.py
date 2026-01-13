@@ -170,10 +170,10 @@ def CreatModel(args, num_features, n_cls, data_x,device):
 
 def get_name(args, IsDirectedGraph=1):
     dataset_to_print = args.Dataset.replace('/', '_')
-    # if not IsDirectedGraph:
-    #     dataset_to_print = dataset_to_print + 'Undire'
-    # else:
-    #     dataset_to_print = dataset_to_print + 'Direct'
+    if not IsDirectedGraph:
+        dataset_to_print = dataset_to_print + 'Undire'
+    else:
+        dataset_to_print = dataset_to_print + 'Direct'
     if args.net.startswith('Ri'):
         net_to_print = args.net + str(args.W_degree) + '_'
     elif args.net.startswith('Mag'):
@@ -329,11 +329,14 @@ def load_dataset(args):
     print("data_x", data_x.shape)  # [11701, 300])
 
     if args.to_undirected:
-        IsDirectedGraph = test_directed(edges)  # time consuming
-        print("This is directed graph: ", IsDirectedGraph)
+        if IsDirectedGraph == 0:
+            print("Already undirected graph")
+        else:
+            IsDirectedGraph = test_directed(edges)  # time consuming
+            print("This is directed graph: ", IsDirectedGraph)
         if IsDirectedGraph:
             edges = to_undirectedBen(edges)
-            IsDirectedGraph = False
+            IsDirectedGraph = 0
             print("Converted to undirected data")
 
     return data_x, data_y, edges, edges_weight, dataset_num_features,data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph
