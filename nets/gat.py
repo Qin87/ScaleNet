@@ -63,6 +63,7 @@ class UnifiedGATRATConv(MessagePassing):
         negative_slope: float = 0.2,
         dropout: float = 0.0,
         add_self_loops: bool = True,
+        edge_dim: Optional[int] = None,
         fill_value: Union[float, Tensor, str] = 'mean',
         bias: bool = True,
         residual: bool = False,
@@ -81,6 +82,7 @@ class UnifiedGATRATConv(MessagePassing):
         self.negative_slope = negative_slope
         self.dropout = dropout
         self.add_self_loops = add_self_loops
+        self.edge_dim = edge_dim
         self.fill_value = fill_value
         self.residual = residual
 
@@ -104,6 +106,14 @@ class UnifiedGATRATConv(MessagePassing):
         if self.attention_mode == "gat":
             self.att_src = Parameter(torch.empty(1, heads, out_channels))
             self.att_dst = Parameter(torch.empty(1, heads, out_channels))
+
+        if edge_dim is not None:
+            self.lin_edge = Linear(edge_dim, heads * out_channels, bias=False,
+                                   weight_initializer='glorot')
+            self.att_edge = Parameter(torch.empty(1, heads, out_channels))
+        else:
+            self.lin_edge = None
+            self.register_parameter('att_edge', None)
 
 
         total_out_channels = out_channels * (heads if concat else 1)
@@ -133,8 +143,13 @@ class UnifiedGATRATConv(MessagePassing):
             self.lin_src.reset_parameters()
         if self.lin_dst is not None:
             self.lin_dst.reset_parameters()
+        if self.lin_edge is not None:
+            self.lin_edge.reset_parameters()
         if self.res is not None:
             self.res.reset_parameters()
+        glorot(self.att_src)
+        glorot(self.att_dst)
+        glorot(self.att_edge)
         zeros(self.bias)
 
 
@@ -187,16 +202,21 @@ class UnifiedGATRATConv(MessagePassing):
 
         # ---- Node feature projection (unchanged) ----
         if isinstance(x, Tensor):
+            assert x.dim() == 2, "Static graphs not supported in 'GATConv'"   # keep as GAT
+
             if self.res is not None:
                 res = self.res(x)
 
             if self.lin is not None:
                 x_src = x_dst = self.lin(x).view(-1, H, C)
             else:
+                assert self.lin_src is not None and self.lin_dst is not None    # keep as GAT
                 x_src = self.lin_src(x).view(-1, H, C)
                 x_dst = self.lin_dst(x).view(-1, H, C)
         else:
             x_src, x_dst = x
+            assert x_src.dim() == 2, "Static graphs not supported in 'GATConv'"    # keep as GAT
+
             if x_dst is not None and self.res is not None:
                 res = self.res(x_dst)
 
@@ -205,42 +225,58 @@ class UnifiedGATRATConv(MessagePassing):
                 if x_dst is not None:
                     x_dst = self.lin(x_dst).view(-1, H, C)
             else:
+                assert self.lin_src is not None and self.lin_dst is not None   # keep as GAT
+
                 x_src = self.lin_src(x_src).view(-1, H, C)
                 if x_dst is not None:
                     x_dst = self.lin_dst(x_dst).view(-1, H, C)
 
-        x_pair = (x_src, x_dst)
-
-        # ---- Self-loops (unchanged) ----
-        if self.add_self_loops:
-            if isinstance(edge_index, Tensor):
-                num_nodes = x_src.size(0)
-                edge_index, _ = remove_self_loops(edge_index)
-                edge_index, _ = add_self_loops(
-                    edge_index, num_nodes=num_nodes,
-                    fill_value=self.fill_value
-                )
-            else:
-                edge_index = torch_sparse.set_diag(edge_index)
-
-        if isinstance(edge_index, Tensor):
-            index = edge_index[1]
-            dim_size = int(index.max()) + 1 if size is None else int(size[1])
-            E = index.numel()
-        else:  # SparseTensor
-            row, col, _ = edge_index.coo()
-            index = col
-            dim_size = edge_index.size(1)
-            E = index.numel()
+        x = (x_src, x_dst)
 
         if self.attention_mode == 'gat':
             alpha_src = (x_src * self.att_src).sum(dim=-1)
             alpha_dst = None if x_dst is None else (x_dst * self.att_dst).sum(-1)
             alpha = (alpha_src, alpha_dst)
 
+
+        # ---- Self-loops (unchanged) ----
+        if self.add_self_loops:
+            if isinstance(edge_index, Tensor):
+                num_nodes = x_src.size(0)
+                if x_dst is not None:
+                    num_nodes = min(num_nodes, x_dst.size(0))
+                num_nodes = min(size) if size is not None else num_nodes
+                edge_index, edge_attr = remove_self_loops(
+                    edge_index, edge_attr)
+                edge_index, edge_attr = add_self_loops(
+                    edge_index, edge_attr, fill_value=self.fill_value,
+                    num_nodes=num_nodes)
+            elif isinstance(edge_index, SparseTensor):
+                if self.edge_dim is None:
+                    edge_index = torch_sparse.set_diag(edge_index)
+                else:
+                    raise NotImplementedError(
+                        "The usage of 'edge_attr' and 'add_self_loops' "
+                        "simultaneously is currently not yet supported for "
+                        "'edge_index' in a 'SparseTensor' form")
+
+        if isinstance(edge_index, Tensor):
+            index = edge_index[1]
+            dim_size = int(index.max()) + 1 if size is None else int(size[1])
+            E = index.numel()
+            ptr = None
+        else:  # SparseTensor
+            row, col, _ = edge_index.coo()
+            index = row         # col is wrong!
+            dim_size = edge_index.size(1)
+            E = index.numel()
+            ptr = edge_index.storage.colptr()
+
+        if self.attention_mode == 'gat':
             alpha = self.edge_updater(edge_index, alpha=alpha, edge_attr=edge_attr,
                                       size=size)
         else:
+
             if self.attention_mode == 'rat':
                 alpha = torch.empty((E, self.heads),
                     device=index.device
@@ -250,11 +286,13 @@ class UnifiedGATRATConv(MessagePassing):
             else:
                 raise NotImplementedError(f"Unknown attention_mode: {self.attention_mode}")
 
+
+
         # SAME normalization as GAT
         alpha = F.leaky_relu(alpha, self.negative_slope)
 
         if self.inci_norm == 'softmax':
-            alpha = softmax(alpha, index, None, dim_size)
+            alpha = softmax(alpha, index, ptr, dim_size)
         else:
             alpha = self._alpha_from_adj(edge_index, norm=self.inci_norm)
 
@@ -262,11 +300,10 @@ class UnifiedGATRATConv(MessagePassing):
 
 
         # ---- Message passing (unchanged) ----
-        # ---- RANDOM ATTENTION (replacement block) ----
-        out = self.propagate(edge_index, x=x_pair, alpha=alpha, size=size)
+        out = self.propagate(edge_index, x=x, alpha=alpha, size=size)
 
         if self.concat:
-            out = out.view(-1, H * C)
+            out = out.view(-1, self.heads * self.out_channels)
         else:
             out = out.mean(dim=1)
 
@@ -317,41 +354,107 @@ class UnifiedGATRATConv(MessagePassing):
             edge_weight = torch.ones(norm_adj.nnz(), device=norm_adj.device())
 
         alpha = edge_weight.view(-1, 1).repeat(1, self.heads)  # [E, H]
-        alpha = F.dropout(alpha, p=self.dropout, training=self.training)
         return alpha
 
     def message(self, x_j: Tensor, alpha: Tensor) -> Tensor:
         return alpha.unsqueeze(-1) * x_j
 
-    def edge_updater(
-        self,
-        edge_index: Adj,
-        size: Size = None,
-        **kwargs: Any,
-    ) -> Tensor:
-        r"""just copy from message_passing.py
+    # def edge_updater(
+    #     self,
+    #     edge_index: Adj,
+    #     size: Size = None,
+    #     **kwargs: Any,
+    # ) -> Tensor:
+    #     r"""just copy from message_passing.py
+    #
+    #     """
+    #     for hook in self._edge_update_forward_pre_hooks.values():
+    #         res = hook(self, (edge_index, size, kwargs))
+    #         if res is not None:
+    #             edge_index, size, kwargs = res
+    #
+    #     mutable_size = self._check_input(edge_index, size=None)
+    #
+    #     coll_dict = self._collect(self._edge_user_args, edge_index,
+    #                               mutable_size, kwargs)
+    #
+    #     edge_kwargs = self.inspector.collect_param_data(
+    #         'edge_update', coll_dict)
+    #     out = self.edge_update(**edge_kwargs)
+    #
+    #     for hook in self._edge_update_forward_hooks.values():
+    #         res = hook(self, (edge_index, size, kwargs), out)
+    #         if res is not None:
+    #             out = res
+    #
+    #     return out
 
-        """
-        for hook in self._edge_update_forward_pre_hooks.values():
-            res = hook(self, (edge_index, size, kwargs))
-            if res is not None:
-                edge_index, size, kwargs = res
-
-        mutable_size = self._check_input(edge_index, size=None)
-
-        coll_dict = self._collect(self._edge_user_args, edge_index,
-                                  mutable_size, kwargs)
-
-        edge_kwargs = self.inspector.collect_param_data(
-            'edge_update', coll_dict)
-        out = self.edge_update(**edge_kwargs)
-
-        for hook in self._edge_update_forward_hooks.values():
-            res = hook(self, (edge_index, size, kwargs), out)
-            if res is not None:
-                out = res
-
-        return out
+    # def edge_updater(
+    #         self,
+    #         edge_index: Union[Tensor, SparseTensor],
+    #         alpha: OptPairTensor,
+    #         edge_attr: OptTensor,
+    #         size: Size = None,
+    # ) -> Tensor:
+    #
+    #     mutable_size = self._check_input(edge_index, size)
+    #
+    #     kwargs = self.edge_collect(
+    #         edge_index,
+    #         alpha,
+    #         edge_attr,
+    #         mutable_size,
+    #     )
+    #
+    #     # Begin Edge Update Forward Pre Hook #######################################
+    #     if not torch.jit.is_scripting() and not is_compiling():
+    #         for hook in self._edge_update_forward_pre_hooks.values():
+    #             hook_kwargs = dict(
+    #                 alpha_j=kwargs.alpha_j,
+    #                 alpha_i=kwargs.alpha_i,
+    #                 edge_attr=kwargs.edge_attr,
+    #                 index=kwargs.index,
+    #                 ptr=kwargs.ptr,
+    #                 dim_size=kwargs.dim_size,
+    #             )
+    #             res = hook(self, (edge_index, size, hook_kwargs))
+    #             if res is not None:
+    #                 edge_index, size, hook_kwargs = res
+    #                 kwargs = CollectArgs(
+    #                     alpha_j=hook_kwargs['alpha_j'],
+    #                     alpha_i=hook_kwargs['alpha_i'],
+    #                     edge_attr=hook_kwargs['edge_attr'],
+    #                     index=hook_kwargs['index'],
+    #                     ptr=hook_kwargs['ptr'],
+    #                     dim_size=hook_kwargs['dim_size'],
+    #                 )
+    #     # End Edge Update Forward Pre Hook #########################################
+    #
+    #     out = self.edge_update(
+    #         alpha_j=kwargs.alpha_j,
+    #         alpha_i=kwargs.alpha_i,
+    #         edge_attr=kwargs.edge_attr,
+    #         index=kwargs.index,
+    #         ptr=kwargs.ptr,
+    #         dim_size=kwargs.dim_size,
+    #     )
+    #
+    #     # Begin Edge Update Forward Hook ###########################################
+    #     if not torch.jit.is_scripting() and not is_compiling():
+    #         for hook in self._edge_update_forward_hooks.values():
+    #             hook_kwargs = dict(
+    #                 alpha_j=kwargs.alpha_j,
+    #                 alpha_i=kwargs.alpha_i,
+    #                 edge_attr=kwargs.edge_attr,
+    #                 index=kwargs.index,
+    #                 ptr=kwargs.ptr,
+    #                 dim_size=kwargs.dim_size,
+    #             )
+    #             res = hook(self, (edge_index, size, hook_kwargs), out)
+    #             out = res if res is not None else out
+    #     # End Edge Update Forward Hook #############################################
+    #
+    #     return out
 
     def __repr__(self) -> str:
         return (
@@ -379,7 +482,7 @@ class StandGATXBN(nn.Module):
             self.conv2 = GATConv(nhid, head_dim, heads=head)
             self.convx = nn.ModuleList([GATConv(nhid, head_dim, heads=head) for _ in range(args.layer - 2)])
         else:
-            self.conv1 = ConvClass(nfeat, head_dim, heads=args.heads, args= args)
+            self.conv1 = ConvClass(nfeat, head_dim, heads=args.heads, args=args)
             self.conv2 = ConvClass(nhid, head_dim, heads=head, args= args)
             self.convx = nn.ModuleList([ConvClass(nhid, head_dim, heads=head, args= args) for _ in range(args.layer-2)])
         self.dropout_p = dropout

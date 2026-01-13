@@ -5,7 +5,7 @@ def parse_args():
     parser.add_argument("--use_best_hyperparams", type=int, help="use parameters in best_hyperparameters.yml", default=1)
     parser.add_argument('--GPUdevice', type=int, default=0, help='device')
     parser.add_argument('--new_edge', type=int, default=0, help='1 remove edges connect inter-class nodes')
-    parser.add_argument('--originGAT', type=int, default=0, help='1 use official GAT')
+    parser.add_argument('--originGAT', type=int, default=1, help='1 use official GAT')
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
     parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=0)
     parser.add_argument("--nonlinear", type=int, help="whether use activation(relu) in ScaleNet model:0/1", default=1)
@@ -40,7 +40,7 @@ def parse_args():
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG)'
                         'Sym, 1ym')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='Amazon-Photo', help='citeseer/ , cora_ml/, dgl/pubmed, telegram/,  WikiCS/, dgl/cora ,'
+    parser.add_argument('--Dataset', type=str, default='Cora', help='citeseer/ , cora_ml/, dgl/pubmed, telegram/,  WikiCS/, dgl/cora ,'
                                                                                 'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, '
                 'Cora, CiteSeer, PubMed, Coauthor-physics, Coauthor-CS, Amazon-Computers, Amazon-Photo ')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout prob')
