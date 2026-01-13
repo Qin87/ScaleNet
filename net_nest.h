@@ -1,8 +1,8 @@
 #!/bin/bash
 
-net_values="1iG 1iGib "
+net_values="UAT  "
 layer_values="2   "
-incinorm="  softmax "   # dir   row 0
+incinorm="  softmax dir   row 0 "   # dir   row 0
 lr0="0.01  0.005 "
 
 while pgrep -x python3 >/dev/null; do
@@ -12,7 +12,7 @@ done
 
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'   'WikiCS/' 'WikipediaNetwork/squirrel'
 # 'WikipediaNetwork/chameleon'   'telegram/'   'dgl/pubmed'  'citeseer/'   #"$inci"
-Direct_dataset=(     'telegram/'    )
+Direct_dataset=(    'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'     )
 Direct_dataset_filename=$(echo $Direct_dataset | sed 's/\//_/g')
 generate_timestamp() {
   date +"%d%H%Ms%S"

@@ -156,7 +156,10 @@ def CreatModel(args, num_features, n_cls, data_x,device):
         if args.net == 'GCN':
             model = StandGCNXBN(num_features, n_cls, args=args)
         elif args.net in ['GAT', 'RAT', 'UAT']:
-            model = StandGATXBN(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, args=args)
+            if args.net=='GAT' and args.originGAT:
+                model = StandGATXBN(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, args=args)
+            else:
+                model = StandGATXBN(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, args=args)
         elif args.net == "SAGE":
             model = create_sage(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout,nlayer=args.layer)
         else:
@@ -212,6 +215,8 @@ def get_name(args, IsDirectedGraph=1):
         else:
             net_to_print = net_to_print +'_part'+str(args.alphaDir)+'_'+ str(args.betaDir)+'_'+str(
                 args.gamaDir)+'_sloop'+str(args.First_self_loop)+str(args.rm_gen_sloop)+'_jk'+str(args.jk)+'_norm'+args.inci_norm
+    if args.net == 'GAT':
+        net_to_print += '_official' + str(args.originGAT)
 
     return net_to_print, dataset_to_print
 

@@ -4,7 +4,7 @@ telegram/:
   conv_type: "dir-gcn"
   nonlinear: 1
   hid_dim: 128
-  layer: 4
+#  layer: 4
 #  lr: 0.01
   normalize: 1
   BN_model: 1    # sure
@@ -15,7 +15,7 @@ telegram/:
   alphaDir: 0.5     # 0.5, 0.2(94.8)
   betaDir: -1
   gamaDir: -1
-  NotImproved: 410
+#  NotImproved: 410
 
 
 
