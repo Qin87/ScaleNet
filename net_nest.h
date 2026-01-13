@@ -9,10 +9,10 @@ while pgrep -x python3 >/dev/null; do
     sleep 300
 done
 
-
+# PubMed, Coauthor-physics, Coauthor-CS, Amazon-Computers, Amazon-Photo
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'   'WikiCS/' 'WikipediaNetwork/squirrel'
 # 'WikipediaNetwork/chameleon'   'telegram/'   'dgl/pubmed'  'citeseer/'   #"$inci"
-Direct_dataset=(    'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'     )
+Direct_dataset=(    'Coauthor-physics'     )
 Direct_dataset_filename=$(echo $Direct_dataset | sed 's/\//_/g')
 generate_timestamp() {
   date +"%d%H%Ms%S"
