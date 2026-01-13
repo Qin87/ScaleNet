@@ -216,7 +216,7 @@ def get_name(args, IsDirectedGraph=1):
             net_to_print = net_to_print +'_part'+str(args.alphaDir)+'_'+ str(args.betaDir)+'_'+str(
                 args.gamaDir)+'_sloop'+str(args.First_self_loop)+str(args.rm_gen_sloop)+'_jk'+str(args.jk)+'_norm'+args.inci_norm
     if args.net == 'GAT':
-        net_to_print += '_official' + str(args.originGAT)
+        net_to_print += '_ofc' + str(args.originGAT)
 
     return net_to_print, dataset_to_print
 
