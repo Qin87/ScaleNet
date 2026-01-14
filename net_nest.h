@@ -1,18 +1,18 @@
 #!/bin/bash
 
 net_values="GAT  "
-layer_values="2   "
-incinorm=" dir row sym 0 "   # dir   row
+layer_values="1 3 5  "
+incinorm="dir row sym"   # dir   row
 lr0="0.005 0.01"
 
 while pgrep -x python3 >/dev/null; do
     sleep 300
 done
 
-# # PubMed, Coauthor-physics, Coauthor-CS, Amazon-Computers, Amazon-Photo
+# # PubMed, Coauthor-physics, , Amazon-Computers, Amazon-Photo, 'Amazon-Computers' 'Coauthor-CS'
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'   'WikiCS/' 'WikipediaNetwork/squirrel'
 # 'WikipediaNetwork/chameleon'   'telegram/'   'dgl/pubmed'  'citeseer/'   #"$inci"
-Direct_dataset=(     'Amazon-Photo'      )
+Direct_dataset=(     'telegram/'   )
 Direct_dataset_filename=$(echo $Direct_dataset | sed 's/\//_/g')
 generate_timestamp() {
   date +"%d%H%Ms%S"
