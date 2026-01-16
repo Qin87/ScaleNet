@@ -176,14 +176,14 @@ PubMed:
   BN_model: 0
   First_self_loop: 'add'
   lr: 0.005
-  layer: 2
+#  layer: 2
   NotImproved: 810
   has_scheduler: 1
   patience: 80
 
 Coauthor-CS:
   BN_model: 0
-  layer: 2
+#  layer: 2
   First_self_loop: 'add'
   lr: 0.0005
 

@@ -72,7 +72,12 @@ class UnifiedGATRATConv(MessagePassing):
     ):
         kwargs.setdefault('aggr', 'add')
         super().__init__(node_dim=0, **kwargs)
-        self.attention_mode = args.net.lower()
+        if args.net in ['GAT', 'RAT', 'UAT']:
+            self.attention_mode = args.net.lower()
+        # elif args.net.lower() in ['AiG']:
+        #     self.attention_mode = args.net.lower()[-1]+'at'
+        else:
+            self.attention_mode = 'gat'
         self.inci_norm = args.inci_norm
 
         self.in_channels = in_channels
@@ -375,16 +380,15 @@ class StandGATXBN(nn.Module):
         head = args.heads
         num_head = 1
         head_dim = nhid//num_head
-        head_nclass = nclass//num_head
 
-        if args.net=='GAT' and args.originGAT:
-            self.conv1 = GATConv(nfeat, head_dim, heads=args.heads)
-            self.conv2 = GATConv(nhid, head_dim, heads=head)
-            self.convx = nn.ModuleList([GATConv(nhid, head_dim, heads=head) for _ in range(args.layer - 2)])
+        if args.net=='GAT' and args.originGAT and args.inci_norm=='softmax':
+            self.conv1 = GATConv(nfeat, head_dim, heads=args.heads, concat=False)
+            self.conv2 = GATConv(nhid, head_dim, heads=head, concat=False)
+            self.convx = nn.ModuleList([GATConv(nhid, head_dim, heads=head, concat=False) for _ in range(args.layer - 2)])
         else:
-            self.conv1 = ConvClass(nfeat, head_dim, heads=args.heads, args=args)
-            self.conv2 = ConvClass(nhid, head_dim, heads=head, args= args)
-            self.convx = nn.ModuleList([ConvClass(nhid, head_dim, heads=head, args= args) for _ in range(args.layer-2)])
+            self.conv1 = ConvClass(nfeat, head_dim, heads=args.heads, args=args, concat=False)
+            self.conv2 = ConvClass(nhid, head_dim, heads=head, args= args, concat=False)
+            self.convx = nn.ModuleList([ConvClass(nhid, head_dim, heads=head, args= args, concat=False) for _ in range(args.layer-2)])
         self.dropout_p = dropout
         self.is_add_self_loops = True
 
