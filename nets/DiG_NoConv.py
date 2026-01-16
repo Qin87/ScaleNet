@@ -13,6 +13,8 @@ from typing import Union, Tuple, Optional
 from torch_geometric.typing import (OptPairTensor, Adj, Size, OptTensor)
 from torch import Tensor
 
+from nets.gat import UnifiedGATRATConv
+
 
 class InceptionBlock_Qinlist(torch.nn.Module):
     def __init__(self, in_dim, out_dim):
@@ -77,20 +79,22 @@ class InceptionBlock_Di(torch.nn.Module):
         self.fusion_mode = args.fs
         alpha_dir = args.alphaDir
 
+        tuple_num = 2
         self.ln = Linear(in_dim, out_dim)
         if m == 'S':
-            self.convx = nn.ModuleList([DiSAGEConv(in_dim, out_dim) for _ in range(20)])
-        elif m == 'G':
-            self.convx = nn.ModuleList([DIGCNConv(in_dim, out_dim) for _ in range(20)])
+            self.convx = nn.ModuleList([DiSAGEConv(in_dim, out_dim) for _ in range(tuple_num)])
+        elif m in ['RiGib', 'UiGib']:
+            self.convx = nn.ModuleList([DIGCNConv(in_dim, out_dim) for _ in range(tuple_num)])
             # self.convx = nn.ModuleList([DirGCNConv(in_dim, out_dim, alpha_dir) for _ in range(20)])
             # self.convx = nn.ModuleList([DirGCNConv(in_dim, out_dim) for _ in range(20)])
             # self.convx = DirGCNConv(in_dim, out_dim)
         elif m == 'C':
-            self.convx = nn.ModuleList([DIChebConv(in_dim, out_dim, K) for _ in range(20)])
-        elif m == 'A':
+            self.convx = nn.ModuleList([DIChebConv(in_dim, out_dim, K) for _ in range(tuple_num)])
+        elif m in ['AiGib']:
             num_head = 1
             head_dim = out_dim // num_head
-            self.convx = nn.ModuleList([GATConv(in_dim, head_dim, heads=head) for _ in range(20)])
+            # self.convx = nn.ModuleList([GATConv(in_dim, head_dim, heads=head) for _ in range(tuple_num)])
+            self.convx = nn.ModuleList([UnifiedGATRATConv(in_dim, head_dim, heads=head,  args= args,concat=False) for _ in range(tuple_num)])
         else:
             raise ValueError(f"Model '{m}' not implemented")
 
@@ -418,6 +422,8 @@ def Conv_Out(x, Conv):
 class DiSAGE_xBN_nhid(torch.nn.Module):
     def __init__(self, m, input_dim, out_dim, args):
         super().__init__()
+        self._cached_adj_t = None
+        self.BN_model = args.BN_model
         self.dropout = args.dropout
         nhid = args.hid_dim
         layer = args.layer
@@ -438,7 +444,7 @@ class DiSAGE_xBN_nhid(torch.nn.Module):
             self.conv1 = DiSAGEConv(input_dim, nhid)
             self.conv2 = DiSAGEConv(nhid, nhid)
             self.convx = nn.ModuleList([DiSAGEConv(nhid, nhid) for _ in range(layer - 2)])
-        elif m == 'G':
+        elif m in ['RiG', 'UiG']:
             self.conv1 = DIGCNConv(input_dim, nhid)
             self.conv2 = DIGCNConv(nhid, nhid)
             self.convx = nn.ModuleList([DIGCNConv(nhid, nhid) for _ in range(layer - 2)])
@@ -446,13 +452,12 @@ class DiSAGE_xBN_nhid(torch.nn.Module):
             self.conv1 = DIChebConv(input_dim, nhid, K)
             self.conv2 = DIChebConv(nhid, nhid, K)
             self.convx = nn.ModuleList([DIChebConv(nhid, nhid, K) for _ in range(layer - 2)])
-        elif m == 'A':
+        elif m in ['AiG']:
             num_head = 1
             head_dim = nhid // num_head
-
-            self.conv1 = GATConv(input_dim, head_dim, heads=head)
-            self.conv2 = GATConv(nhid, head_dim, heads=head)
-            self.convx = nn.ModuleList([GATConv(nhid, head_dim, heads=head) for _ in range(layer - 2)])
+            self.conv1 = UnifiedGATRATConv(input_dim, head_dim, heads=head,  args= args,concat=False)
+            self.conv2 = UnifiedGATRATConv(nhid, head_dim, heads=head,  args= args, concat=False)
+            self.convx = nn.ModuleList([UnifiedGATRATConv(nhid, head_dim, heads=head, args= args, concat=False) for _ in range(layer - 2)])
         else:
             raise ValueError(f"Model '{m}' not implemented")
 
@@ -473,6 +478,12 @@ class DiSAGE_xBN_nhid(torch.nn.Module):
             self.non_reg_params = self.conv2.parameters()
 
     def forward(self, x, edge_index, edge_weight):
+        num_nodes = x.size(0)
+        if self._cached_adj_t is None:
+            self._cached_adj_t = SparseTensor.from_edge_index(edge_index, sparse_sizes=(num_nodes, num_nodes)).t()
+
+        edge_index = self._cached_adj_t
+
         xs = []
         x = self.conv1(x, edge_index, edge_weight)
         x = F.dropout(x, self.dropout, training=self.training)
@@ -490,7 +501,9 @@ class DiSAGE_xBN_nhid(torch.nn.Module):
                 xs += [x]
 
         x = F.dropout(x, self.dropout, training=self.training)
-        x = self.batch_norm2(self.conv2(x, edge_index, edge_weight))
+        x=self.conv2(x, edge_index, edge_weight)
+        if self.BN_model:
+            x = self.batch_norm2(x)
         xs += [x]
 
         if self.jk:
@@ -533,31 +546,22 @@ class DiSAGE_x_nhid(torch.nn.Module):
             self.conv1 = DiSAGEConv(input_dim, n_change)
             self.conv2 = DiSAGEConv(nhid, out1)
             self.convx = nn.ModuleList([DiSAGEConv(nhid, nhid) for _ in range(layer - 2)])
-        elif m == 'G':
+        elif m in ['RiG', 'UiG']:
             # self.conv1 = DIGCNConv(input_dim, n_change)
             self.conv1 = DIGCNConv(input_dim, nhid)  # Qin temp
-            self.mlp1 = Linear(nhid, nhid)  # Qin temp
-            self.mlp12 = Linear(nhid, nhid)  # Qin temp
-            self.mlp13 = Linear(nhid, nhid)  # Qin temp
-            self.mlp11 = Linear(nhid, out1)  # Qin temp
             self.conv2 = DIGCNConv(nhid, out1)
-            self.mlp21 = Linear(out1, out1)
-            self.mlp23 = Linear(out1, out1)
-            self.mlp2 = Linear(out1, out1)
-            self.mlp22 = Linear(out1, out1)
             # self.conv2 = Linear(nhid, out1)     # Qin temp
             self.convx = nn.ModuleList([DIGCNConv(nhid, nhid) for _ in range(layer - 2)])
         elif m == 'C':
             self.conv1 = DIChebConv(input_dim, n_change, K)
             self.conv2 = DIChebConv(nhid, out1, K)
             self.convx = nn.ModuleList([DIChebConv(nhid, nhid, K) for _ in range(layer - 2)])
-        elif m == 'A':
+        elif m in ['AiG']:
             num_head = 1
             head_dim = nhid // num_head
-
-            self.conv1 = GATConv(input_dim, n_change // num_head, heads=head)
-            self.conv2 = GATConv(nhid, out1 // num_head, heads=head)
-            self.convx = nn.ModuleList([GATConv(nhid, head_dim, heads=head) for _ in range(layer - 2)])
+            self.conv1 = UnifiedGATRATConv(input_dim, head_dim, heads=head, args=args, concat=False)
+            self.conv2 = UnifiedGATRATConv(nhid, head_dim, heads=head, args=args, concat=False)
+            self.convx = nn.ModuleList([UnifiedGATRATConv(nhid, head_dim, heads=head, args=args, concat=False) for _ in range(layer - 2)])
         else:
             raise ValueError(f"Model '{m}' not implemented")
 
@@ -576,11 +580,6 @@ class DiSAGE_x_nhid(torch.nn.Module):
         xs = []
         x = F.dropout(x, self.dropout, training=self.training)
         x = self.conv1(x, edge_index, edge_weight)
-        # x = self.mlp1(x)    # Qin temp
-        # x = self.mlp12(x)    # Qin temp
-        # x = self.mlp13(x)    # Qin temp
-        # x = self.mlp11(x)    # Qin temp  # ######  using this
-        # x = F.relu(x)  # Qin temp
         xs += [x]
         if self.layer == 1:
             x = F.dropout(x, self.dropout, training=self.training)
@@ -592,19 +591,10 @@ class DiSAGE_x_nhid(torch.nn.Module):
             for iter_layer in self.convx:
                 x = F.dropout(x, self.dropout, training=self.training)
                 x = F.relu(iter_layer(x, edge_index, edge_weight))
-                # x = self.mlp23(x)  # Qin temp
-                # x = self.mlp21(x)  # Qin temp
-                # x = self.mlp2(x)  # Qin temp
                 xs += [x]
 
         x = F.dropout(x, self.dropout, training=self.training)
         x = self.conv2(x, edge_index, edge_weight)
-        # x = self.mlp2(x)  # Qin temp
-        # x = self.mlp23(x)  # Qin temp
-        # x = self.mlp21(x)  # Qin temp
-        # x = self.mlp22(x)  # Qin temp
-        # x = F.relu(x)  # Qin temp
-        # x = self.conv2(x)       # Qin temp
         xs += [x]
 
         if self.jk is not None and bool(self.jk):
@@ -1713,6 +1703,7 @@ class DiGCN_IB_3MixBN_SymCat_Sym_nhid(torch.nn.Module):
 class Di_IB_XBN_nhid_ConV(torch.nn.Module):
     def __init__(self, m, input_dim, out_dim, args):
         super().__init__()
+        self._cached_adj_t = None
         self._dropout = args.dropout
         nhid = args.hid_dim
         layer = args.layer
@@ -1733,6 +1724,14 @@ class Di_IB_XBN_nhid_ConV(torch.nn.Module):
         self.non_reg_params = self.ib2.parameters()
 
     def forward(self, x, edge_index_tuple, edge_weight_tuple):
+        num_nodes = x.size(0)
+        if self._cached_adj_t is None:
+            cached_list = []
+            for edge_index in edge_index_tuple:
+                cached_list.append(SparseTensor.from_edge_index(edge_index, sparse_sizes=(num_nodes, num_nodes)).t())
+            self._cached_adj_t = tuple(cached_list)
+
+        edge_index_tuple = self._cached_adj_t
         # layer Normalization best only one at last layer, good for telegram
         x = self.ib1(x, edge_index_tuple, edge_weight_tuple)
         x = F.dropout(x, p=self._dropout, training=self.training)
@@ -1743,11 +1742,12 @@ class Di_IB_XBN_nhid_ConV(torch.nn.Module):
             x = Conv_Out(x, self.Conv)
             return x
 
-        # x = F.relu(x)
+        x = F.relu(x)
         if self.layer > 2:
             for iter_layer in self.ibx:
                 x = F.dropout(x, p=self._dropout, training=self.training)
                 x = iter_layer(x, edge_index_tuple, edge_weight_tuple)
+                x = F.relu(x)
 
         x = self.ib2(x, edge_index_tuple, edge_weight_tuple)
         if self.BN_model:

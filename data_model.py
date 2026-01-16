@@ -92,48 +92,20 @@ def CreatModel(args, num_features, n_cls, data_x,device):
         model = GPRGNN(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, args= args)
     elif args.net == 'APPNP':
         model = APPNP_Model(num_features, n_cls,args.hid_dim, alpha=args.alpha,dropout=args.dropout, layer=args.layer).to(device)
-    elif args.net.startswith(('Di', '1i', 'Ri', 'Ui', 'Li', 'Ai', 'Ti', 'Hi','Ii', 'ii')):        # GCN  -->  SAGE
-        if len(args.net) < 4 or args.net.startswith(('Ui', 'Li')):
+    elif args.net.startswith(('Di', 'Ui', 'Ri', 'Ai')):        # GCN  -->  SAGE
+        if len(args.net) < 4 :
             if args.BN_model:
-                model = DiSAGE_xBN_nhid(args.net[2], num_features, n_cls, args).to(device)
+                model = DiSAGE_xBN_nhid(args.net, num_features, n_cls, args).to(device)
             else:
-                model = DiSAGE_x_nhid(args.net[2], num_features, n_cls, args).to(device)     # July 24  keep it: the original DiG paper
+                model = DiSAGE_x_nhid(args.net, num_features, n_cls, args).to(device)     # July 24  keep it: the original DiG paper
         else:
-            if args.net[3:].startswith(('Sym', '1ym')):
-                if args.net[6:].startswith('Cat'):
-                    if args.net[9:].startswith('Mix'):
-                        if args.net[12:].startswith(('Sym', '1ym')):
-                            model = create_DiG_MixIB_SymCat_Sym_nhid(args.net[2], num_features, args.hid_dim, n_cls, args.dropout, args.layer).to(device)
-                        else:
-                            model = create_DiG_MixIB_SymCat_nhid(args.net[2],num_features, args.hid_dim, n_cls, args.dropout, args.layer).to(device)
-                    else:
-                        model = create_DiG_IB_SymCat_nhid(args.net[2], num_features, args.hid_dim, n_cls, args.dropout, args.layer, args.ibx1).to(device)
-                else:
-                    if args.paraD:
-                        model = create_DiG_IB_Sym_nhid_para(args.net[2], num_features,  n_cls, args).to(device)
-                    else:
-                        model = create_DiG_IB_Sym_nhid(args.net[2], num_features,  n_cls, args).to(device)
+            if args.paraD:
+                model = DiGCN_IB_XBN_nhid_para(args.net[2], num_features,  n_cls,  args).to(device)        # July 25
             else:
-                if args.net.startswith(('Ai', 'Ti')):
-                    if args.paraD:
-                        model = DiGCN_IB_X_nhid_para_Jk(args.net[2], num_features,  n_cls,  args).to(device)
-                    else:
-                        model = Di_IB_XBN_nhid_ConV_JK(m=args.net[2], input_dim=num_features, out_dim=n_cls, args=args).to(device)
+                if args.net.startswith('Di'):
+                    model = create_Di_IB_nhid(m=args.net[2], nfeat=num_features, nclass=n_cls, args=args).to(device)    # keep this: original DiGib paper
                 else:
-                    if args.paraD:
-                        model = DiGCN_IB_XBN_nhid_para(args.net[2], num_features,  n_cls,  args).to(device)        # July 25
-                    else:
-                        if args.net.startswith('Di'):
-                            model = create_Di_IB_nhid(m=args.net[2], nfeat=num_features, nclass=n_cls, args=args).to(device)    # keep this: original DiGib paper
-                        else:
-                            model = Di_IB_XBN_nhid_ConV(m=args.net[2], input_dim=num_features, out_dim=n_cls, args=args).to(device)     # July 24: 1 BN
-    elif args.net.startswith(('Sym', '1ym')):
-        model = SymModel(num_features, n_cls, filter_num=args.hid_dim,dropout=args.dropout, layer=args.layer).to(device)
-    elif args.net.startswith(('addSym', 'addQym')):
-        if not args.net.endswith('para'):
-            model = create_SymReg_add(num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, nlayer=args.layer).to(device)
-        else:
-            model = create_SymReg_para_add(num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, nlayer=args.layer).to(device)
+                        model = Di_IB_XBN_nhid_ConV(m=args.net, input_dim=num_features, out_dim=n_cls, args=args).to(device)     # July 24: 1 BN
     elif args.net.startswith('Mag'):
         if args.net[3:].startswith('Qin'):
             model = ChebNet_BenQin(num_features, K=args.K, label_dim=n_cls, layer=args.layer,
@@ -180,7 +152,7 @@ def get_name(args, IsDirectedGraph=1):
         net_to_print = args.net + str(args.q)
     else:
         net_to_print = args.net
-    if args.net[1:3] == 'iA' or args.net == 'GAT':
+    if args.net[:2] == 'Ai' or args.net == 'GAT':
         net_to_print = net_to_print + '_Head' + str(args.heads)
     if args.BN_model:
         net_to_print = 'LNorm_' + net_to_print

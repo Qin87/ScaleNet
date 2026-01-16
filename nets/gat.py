@@ -72,7 +72,12 @@ class UnifiedGATRATConv(MessagePassing):
     ):
         kwargs.setdefault('aggr', 'add')
         super().__init__(node_dim=0, **kwargs)
-        self.attention_mode = args.net.lower()
+        if args.net in ['GAT', 'RAT', 'UAT']:
+            self.attention_mode = args.net.lower()
+        # elif args.net.lower() in ['AiG']:
+        #     self.attention_mode = args.net.lower()[-1]+'at'
+        else:
+            self.attention_mode = 'gat'
         self.inci_norm = args.inci_norm
 
         self.in_channels = in_channels

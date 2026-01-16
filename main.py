@@ -87,11 +87,8 @@ def train(edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight, X_
     optimizer.zero_grad()
     if args.net.startswith(('Sym', 'addSym', '1ym', 'addQym')):
         out = model(data_x, biedges, edge_in, in_weight, edge_out, out_weight)
-    elif args.net.startswith(('Di', '1i', 'Ri', 'Ui', 'Li', 'Ai', 'Ti',  'Hi', 'Ii', 'ii')) and not args.net.startswith('Dir'):
-        if args.net[3:].startswith(('Sym', '1ym')):
-            out = model(data_x, biedges, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight)
-        else:
-            out = model(data_x, SparseEdges, edge_weight)
+    elif args.net.startswith(('Di', 'Ui', 'Ri', 'Ai')) and not args.net.startswith('Dir'):
+        out = model(data_x, SparseEdges, edge_weight)
     elif args.net.startswith('Mag'):
         out = model(X_real, X_img, edges, args.q, edge_weight)  # (1,5,183)
     elif args.net.startswith('Sig'):
@@ -106,7 +103,7 @@ def train(edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight, X_
         model.eval()
         if args.net.startswith(('Sym', 'addSym', '1ym', 'addQym')):
             out = model(data_x, biedges, edge_in, in_weight, edge_out, out_weight)
-        elif args.net.startswith(('Di', '1i', 'Ri', 'Ui', 'Li', 'Ti', 'Ai', 'Hi', 'Ii', 'ii')) and not args.net.startswith('Dir'):
+        elif args.net.startswith(('Di', 'Ui', 'Ri', 'Ai')) and not args.net.startswith('Dir'):
             if args.net[3:].startswith(('Sym', '1ym')):
                 out = model(data_x, biedges, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight)
             else:
@@ -132,7 +129,7 @@ def test():
     model.eval()
     if args.net.startswith(('Sym', 'addSym', '1ym', 'addQym')):
         logits = model(data_x, biedges, edge_in, in_weight, edge_out, out_weight)
-    elif args.net.startswith(('Di', '1i', 'Ri', 'Ui', 'Li', 'Ti', 'Ai', 'Hi', 'Ii', 'ii')) and not args.net.startswith('Dir'):
+    elif args.net.startswith(('Di', 'Ui', 'Ri', 'Ai')) and not args.net.startswith('Dir'):
         if args.net[3:].startswith(('Sym', '1ym')):
             logits = model(data_x, biedges, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight)
         else:
@@ -227,13 +224,13 @@ if args.new_edge:
 criterion = CrossEntropy().to(device)
 n_cls = data_y.max().item() + 1
 
-if args.net.startswith(('1i', 'Ri', 'Di', 'pan', 'Ui', 'Li', 'Ti', 'Ai', 'Hi','Ii', 'ii')) and not args.net.startswith('Dir'):
+if args.net.startswith(('Ui', 'Ri', 'Di', 'Ai')) and not args.net.startswith('Dir'):
     if args.feat_proximity:
         average_distance, threshold_value = feat_proximity(edges, data_x)
         proximity_threshold = threshold_value
     if args.net.startswith('Ri'):
         edge_index1, edge_weights1 = WCJ_get_directed_adj(args, edges.long(), data_y.size(-1), data_x.dtype)
-    elif args.net.startswith(('1i', 'pan', 'Ui', 'Li', 'Ti', 'Ai', 'Hi', 'Ii', 'ii')):
+    elif args.net.startswith(('Ui', 'Ai')):
         edge_index1, edge_weights1 = Qin_get_directed_adj(args, edges.long(), data_y.size(-1), data_x.dtype)
     elif args.net.startswith('Di'):
         edge_index1, edge_weights1 = get_appr_directed_adj2(args.First_self_loop, args.alpha, edges.long(), data_y.size(-1), data_x.dtype)  # consumiing for large graph
@@ -244,18 +241,8 @@ if args.net.startswith(('1i', 'Ri', 'Di', 'pan', 'Ui', 'Li', 'Ti', 'Ai', 'Hi','I
             k = 2
         else:
             k = int(args.net[-1])
-        if args.net.startswith(('Ti', 'Ai', 'Hi')):       # Hi is heterogeneous
-            IsExhaustive = True
         if IsDirectedGraph:
-            if args.net.startswith('Ai'):
-                edge_index_tuple, edge_weights_tuple = Qin_get_all_directed_adj(args, edges.long(), data_y.size(-1), k, IsExhaustive, mode='independent', norm=args.inci_norm)
-            elif args.net.startswith('Ii'):
-                IsExhaustive = True
-                edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj(args, edges.long(), data_y.size(-1), k, IsExhaustive, mode='independent', norm=args.inci_norm)
-            elif args.net.startswith('ii'):
-                IsExhaustive = False
-                edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj(args, edges.long(), data_y.size(-1), k, IsExhaustive, mode='independent', norm=args.inci_norm)
-            elif args.net[-2] == 'i':
+            if args.net[-2] == 'i':
                 if k == 2 and args.net.startswith('Di'):
                     edge_list = []
                     if args.net.startswith('Di'):
@@ -276,17 +263,9 @@ if args.net.startswith(('1i', 'Ri', 'Di', 'pan', 'Ui', 'Li', 'Ti', 'Ai', 'Hi','I
                 raise NotImplementedError("Not Implemented" + args.net)
         else:    # undirected graph
             edge_index_tuple, edge_weights_tuple = Qin_get_second_adj(edges.long(), data_y.size(-1), k, IsExhaustive)
-        if args.net.startswith(('Hi', 'Ai')):
-            SparseEdges = edge_index_tuple
-            edge_weight = edge_weights_tuple
-        else:
-            SparseEdges = (edge_index1,) + edge_index_tuple
-            edge_weight = (edge_weights1,) + edge_weights_tuple
+        SparseEdges = (edge_index1,) + edge_index_tuple
+        edge_weight = (edge_weights1,) + edge_weights_tuple
         del edge_index_tuple, edge_weights_tuple
-        if args.net.startswith('Ui'):
-            SparseEdges, edge_weight = union_edges(data_x.size()[0], SparseEdges, device, mode='union')
-        elif args.net.startswith('Li'):
-            SparseEdges, edge_weight = union_edges(data_x.size()[0], SparseEdges, device, mode='last')
     else:
         SparseEdges = edge_index1
         edge_weight = edge_weights1
