@@ -161,8 +161,6 @@ def WCJ_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
         # indices = torch.randperm(edge_index.size(1), device=edge_index.device)[edge_index.size(1) // 2:]
         # edge_weight[indices] = 0
 
-        edge_weight[:edge_index.size(1) // 2] = 0
-
         min_val = torch.min(edge_weight).item()
         max_val = torch.max(edge_weight).item()
 
