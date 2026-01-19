@@ -103,18 +103,25 @@ print(f"MAX: agg={aggs[max_i]:g}, mean±std={means[max_i]:.2f}±{stds[max_i]:.2f
 # -----------------------------
 # 3) Plot (error bars) + annotate min/max
 # -----------------------------
-plt.figure(figsize=(8, 4.5))
+plt.figure(figsize=(16, 6))
 plt.errorbar(aggs, means, yerr=stds, fmt="o-", capsize=3,  color="green")
+
+ymin, ymax = plt.ylim()
+plt.ylim(ymin, ymax + 0.3*(ymax - ymin))  # +15% on top
+
 
 # log scale is usually best for agg sweeps (covers 5e-08 ... 200)
 plt.xscale("log")
-plt.xlabel("Coefficient")
-plt.ylabel("Accuracy (%)")
-plt.title("Squirrel: Accuracy vs Coefficient (mean ± std)")
+plt.xlabel("Coefficient", fontsize=28)
+plt.ylabel("Accuracy (%)", fontsize=28)
+plt.title("Squirrel: Accuracy vs Coefficient (mean ± std)", fontsize=30)
+
+plt.xticks(fontsize=24)
+plt.yticks(fontsize=24)
 
 # highlight min/max points (no custom colors; use markers)
-plt.plot(aggs[min_i], means[min_i], marker="v", markersize=9, linestyle="None")
-plt.plot(aggs[max_i], means[max_i], marker="^", markersize=9, linestyle="None")
+plt.plot(aggs[min_i], means[min_i], marker="v", markersize=16, linestyle="None")
+plt.plot(aggs[max_i], means[max_i], marker="^", markersize=16, linestyle="None")
 
 # annotate
 def annotate(i: int, label: str, x, y):
@@ -124,13 +131,14 @@ def annotate(i: int, label: str, x, y):
         xytext=(x, y),
         textcoords="offset points",
         arrowprops=dict(arrowstyle="->", lw=1),
-        fontsize=9,
+        fontsize=26,
         ha="left",
         va="bottom",
     )
 
-annotate(min_i, "MIN", -180, 160)
-annotate(max_i, "MAX", -100, 160)
+annotate(min_i, "MIN", -250, 120)
+annotate(max_i, "MAX", -210, 90)
 
 plt.tight_layout()
+plt.savefig("squirrel_accuracy_vs_coef.pdf", format="pdf", bbox_inches="tight",  pad_inches=0.05,)
 plt.show()
