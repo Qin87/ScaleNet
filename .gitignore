@@ -14,5 +14,6 @@
 *.iml
 /data/film
 .idea/*   # JetBrains IDE settings
+.idea/
 utils/lightning_logs/*
 utils/checkpoint/*
