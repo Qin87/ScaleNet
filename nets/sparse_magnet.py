@@ -488,7 +488,7 @@ class complex_relu_layer2026(nn.Module):
 
 class complex_relu_layer_SigBen(nn.Module):
     def __init__(self, ):
-        super(complex_relu_layer_SigBen, self).__init__()
+        super().__init__()
 
     def complex_relu(self, real, img):
         mask = 1.0 * (real >= 0)
