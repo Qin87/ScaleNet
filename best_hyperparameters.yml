@@ -143,7 +143,7 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
 #  net: ScaleNet
   layer: 5      # 80.1
   lr: 0.005
-  normalize: 1
+#  normalize: 1
   BN_model: 0  #  without layerNorm, very bad(but Dir-GNN prefer no LN)
   add_selfloop: 0
   jk: 'max'

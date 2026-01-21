@@ -10,11 +10,16 @@
 #*.pk
 *.pt
 *.png
-utils/lightning_logs/*
-utils/checkpoint/*
-
-
 *.idea
 *.iml
 /data/film
 .idea/*   # JetBrains IDE settings
+utils/lightning_logs/*
+utils/checkpoint/*
+
+# PyCharm ALL PERSONAL SETTINGS - ignore completely
+.idea/
+
+# Keep ONLY these shared (same on both computers)
+!.idea/vcs.xml
+!.idea/misc.xml

@@ -1,49 +1,33 @@
 ################################
-# this version to ensure that when I stop the process half way, it still could print the result.
+
 ################################
 import socket, uuid
 import sys
 import os
-
 import numpy as np
-from torch_geometric.utils import add_self_loops, remove_self_loops
-from torch_sparse import SparseTensor
-
-from longest import  longest_hop_undirect, longest_hop_direct
-from nets.geometric_baselines import add_self_loop_qin
-from utils0.util_qin import analyze_edge_index, remove_bidirectional_edges, get_k_hop_edges, matrix_power_analysis
 
 print("Python Path:", sys.path)
 print("Current Working Directory:", os.getcwd())
+import os
 import signal
 import statistics
 import sys
 import time
-
-
-import torch
 import torch.nn.functional as F
 
 from args import parse_args
-from data.data_utils import keep_all_data, seed_everything, set_device, scaled_edges, find_max_spanning_tree, visualize_tensor_network, visualize_class_relationships, calculate_degree_features
-from edge_nets.edge_data import get_second_directed_adj, get_second_directed_adj_union, \
-    WCJ_get_directed_adj, Qin_get_second_directed_adj, Qin_get_directed_adj, get_appr_directed_adj2, Qin_get_second_directed_adj0, Qin_get_second_adj, Qin_get_all_directed_adj, normalize_row_edges, \
-    get_second_directed_adj_weight1, get_second_directed_adj_random
-from data_model import CreatModel, log_file, get_name, load_dataset, feat_proximity, delete_edges, make_imbalanced, count_homophilic_nodes, calculate_metrics, create_mask, print_x
+from data.data_utils import keep_all_data, seed_everything, set_device
+from nets.edge_data import get_second_directed_adj, WCJ_get_directed_adj, Qin_get_second_directed_adj, Qin_get_directed_adj, get_appr_directed_adj2, Qin_get_second_directed_adj0, Qin_get_second_adj, Qin_get_all_directed_adj, normalize_row_edges
+from utils.data_model import CreatModel, log_file, get_name, load_dataset, feat_proximity, delete_edges, make_imbalanced
 from nets.DiG_NoConv import union_edges
-from nets.models import random_walk_pe
 from nets.src2 import laplacian
 from nets.src2.quaternion_laplacian import process_quaternion_laplacian
 from data.preprocess import  F_in_out, F_in_out0
-from utils import CrossEntropy, use_best_hyperparams
+from utils.utils import CrossEntropy, use_best_hyperparams, print_memory
 from sklearn.metrics import balanced_accuracy_score, f1_score
-
 import warnings
-
 warnings.filterwarnings("ignore")
-
-
-
+import torch
 
 
 def signal_handler(sig, frame):
@@ -54,12 +38,13 @@ def signal_handler(sig, frame):
     log_results()
     sys.exit(0)
 
+
 def log_results():
     global start_time, end_time
     if start_time is not None and end_time is not None:
-        with open(log_directory + log_file_name_with_timestamp, 'a') as log_file:
+        with open(log_directory + log_file_name_with_timestamp, 'a') as logfile:
             elapsed_time = end_time - start_time
-            print("Total time: {:.2f} seconds".format(elapsed_time), file=log_file)
+            print("Total time: {:.2f} seconds".format(elapsed_time), file=logfile)
             print("Total time: {:.2f} seconds".format(elapsed_time))
             if len(macro_F1) > 1:
                 average = statistics.mean(macro_F1)
@@ -68,13 +53,23 @@ def log_results():
                 std_dev_acc = statistics.stdev(acc_list)
                 average_bacc = statistics.mean(bacc_list)
                 std_dev_bacc = statistics.stdev(bacc_list)
+                result_str = f"{average_acc:.1f}±{std_dev_acc:.1f}_{len(macro_F1):2d}splits"
                 print(net_to_print +'_'+ str(args.layer) + '_'+dataset_to_print + "_acc" + f"{average_acc:.1f}±{std_dev_acc:.1f}" + "_bacc" + f"{average_bacc:.1f}±{std_dev_bacc:.1f}" + '_MacroF1:' + f"{average:.1f}±{std_dev:.1f},{len(macro_F1):2d}splits")
-                print(net_to_print +'_'+ str(args.layer) + '_'+dataset_to_print + "_acc" + f"{average_acc:.1f}±{std_dev_acc:.1f}" + "_bacc" + f"{average_bacc:.1f}±{std_dev_bacc:.1f}" + '_MacroF1:' + f"{average:.1f}±{std_dev:.1f},{len(macro_F1):2d}splits", file=log_file)
+                print(net_to_print +'_'+ str(args.layer) + '_'+dataset_to_print + "_acc" + f"{average_acc:.1f}±{std_dev_acc:.1f}" + "_bacc" + f"{average_bacc:.1f}±{std_dev_bacc:.1f}" + '_MacroF1:' + f"{average:.1f}±{std_dev:.1f},{len(macro_F1):2d}splits", file=logfile)
             elif len(macro_F1) == 1:
-                print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print +"_acc"+f"{acc_list[0]:.1f}"+"_bacc" + f"{bacc_list[0]:.1f}"+'_MacroF1_'+f"{macro_F1[0]:.1f}, 1split", file=log_file)
+                result_str = f"{acc_list[0]:.1f}"
+                print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print +"_acc"+f"{acc_list[0]:.1f}"+"_bacc" + f"{bacc_list[0]:.1f}"+'_MacroF1_'+f"{macro_F1[0]:.1f}, 1split", file=logfile)
                 print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print +"_acc"+f"{acc_list[0]:.1f}"+"_bacc" + f"{bacc_list[0]:.1f}"+'_MacroF1_'+f"{macro_F1[0]:.1f}, 1split")
             else:
                 print("not a single split is finished")
+
+            # Rename log file
+            old_path = os.path.join(log_directory, log_file_name_with_timestamp)
+            new_file_name = f"{result_str}_{log_file_name_with_timestamp}"
+            new_path = os.path.join(log_directory, new_file_name)
+
+            os.rename(old_path, new_path)
+            print(f"Log file renamed to: {new_path}", file=sys.__stdout__)
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
@@ -87,7 +82,6 @@ def train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_wei
     new_x = None
     new_y = None
     new_y_train = None
-
     model.train()
     if args.net.endswith('ymN1'):   # without 1st-order edges
         biedges = edge_in
@@ -105,12 +99,8 @@ def train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_wei
         out = model(X_real, X_img, norm_real, norm_imag, Sigedge_index)
     elif args.net.startswith('Qua'):
         out = model(X_real, X_img_i, X_img_j, X_img_k,norm_img_i, norm_img_j, norm_img_k, norm_real,Quaedge_index)
-    elif args.net.lower() in ['mamba']:
-        out = model(data_x, data_pe, edges, edge_attr, data_batch)
     elif args.net == 'tSNE':
         out = model(data_x, edges, data_y, epoch)
-    elif args.net == 'GCN':
-        out = model(data_x, edges, args)
     else:
         out = model(data_x, edges)
     criterion(out[data_train_mask], data_y[data_train_mask]).backward()
@@ -132,11 +122,12 @@ def train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_wei
             out = model(X_real, X_img_i, X_img_j, X_img_k,norm_img_i, norm_img_j, norm_img_k, norm_real,Quaedge_index)
         elif args.net == 'tSNE':
             out = model(data_x, edges, data_y, epoch)
-        elif args.net == 'GCN':
-            out = model(data_x, edges, args)
         else:
             out = model(data_x, edges)
         val_loss = F.cross_entropy(out[data_val_mask], data_y[data_val_mask])
+    optimizer.step()
+    if args.has_scheduler:
+        scheduler.step(val_loss.item(), epoch)   # Scheduler expects float, not tensor
 
     return val_loss, new_edge_index, new_x, new_y, new_y_train
 # from sklearn.metrics import confusion_matrix
@@ -160,8 +151,6 @@ def test():
         logits = model(X_real, X_img_i, X_img_j, X_img_k, norm_imag_i, norm_imag_j, norm_imag_k, norm_real, Quaedge_index)
     elif args.net == 'tSNE':
         logits = model(data_x, edges[:, train_edge_mask], data_y, epoch)
-    elif args.net == 'GCN':
-        logits = model(data_x, edges[:, train_edge_mask], args)
     else:
         logits = model(data_x, edges[:, train_edge_mask])
     accs, baccs, f1s = [], [], []
@@ -206,56 +195,22 @@ args = parse_args()
 args = use_best_hyperparams(args, args.Dataset) if args.use_best_hyperparams else args
 
 data_x, data_y, edges, edges_weight, num_features, data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph, edge_attr, data_batch = load_dataset(args)
-net_to_print, dataset_to_print = get_name(args, IsDirectedGraph)
+if data_y.dim() > 1 and data_y.shape[1] == 1:
+    data_y = data_y.squeeze(1)
 load_time = time.time()
-# data_x=print_x(data_x)
+net_to_print, dataset_to_print = get_name(args, IsDirectedGraph)
 log_directory, log_file_name_with_timestamp = log_file(net_to_print, dataset_to_print, args)
+log_file_name_with_timestamp = 'main_' + log_file_name_with_timestamp
 if not os.path.exists(log_directory):
     os.makedirs(log_directory)
 print(args)
 
-if args.add_selfloop  == 1:
-    edges, _ = add_self_loops(edges)   # this system function is rubbish, got duplicate edge
-elif args.add_selfloop  == -1:
-    edges, _ = remove_self_loops(edges)
-edges = torch.unique(edges, dim=1)
-
 seed_everything(args.seed)
 
-no_in, homo_ratio_A, no_out,   homo_ratio_At, in_homophilic_nodes, out_homophilic_nodes, in_heterophilic_nodes, out_heterophilic_nodes, no_in_nodes, no_out_nodes = count_homophilic_nodes(edges, data_y)
-# mst = find_max_spanning_tree(edges, data_x.shape[0])
-if args.to_reverse_edge:
-    edges = edges[torch.tensor([1, 0])]
-if args.rm_bidirect_edge:
-    edges = remove_bidirectional_edges(edges)
-if args.Ak:
-    edges = get_k_hop_edges(edges, data_x.shape[0], args.Ak)
-
-if args.num_edge:
-    results = matrix_power_analysis(edges, data_x.shape[0], k_max=20)
-
-
-# result = longest_hop_direct(edges[torch.tensor([1, 0])], data_x.shape[0])
-# row = torch.tensor([0, 0, 1, 1, 2, 3, 4, 4])
-# col = torch.tensor([1, 2, 0, 3, 4, 1, 2, 3])
-# edges = torch.stack((row, col), dim=0)  # TODO delete
-# x = torch.ones((6, 1))
-
-with open(log_directory + log_file_name_with_timestamp, 'w') as log_file:
-    print(args, file=log_file)
-    print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=log_file)
-
-    # result = longest_hop_direct(edges, data_x.shape[0])
-    # count = sum(1 for x in result if x > args.layer)
-    # print(count)
-    # print("Longest hop for each node:", result, file=log_file)
-    # print(f"Percent of node with hops larger than num-layer: {count / len(result) * 100:.1f}", "largest hop:",max(result), file=log_file)
-
-    # print("Percent of node with hops larger than num-layer:", count/len(result)*100, file=log_file)
-    # print(mst, file=log_file)
-# print("Percent of node with hops larger than num-layer:", count/len(result)*100)
-#     print(f"Percent of node with hops larger than num-layer: {count / len(result) * 100:.1f}", "largest hop:", max(result))
-
+with open(log_directory + log_file_name_with_timestamp, 'w') as logfile:
+    print(args, file=logfile)
+    print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=logfile)
+    print('Running Branch multi_scale_paper', file=logfile)
 
 biedges = None
 edge_in = None
@@ -287,36 +242,17 @@ macro_F1 = []
 acc_list = []
 bacc_list = []
 
+device = set_device(args)
+
+data_x = data_x.to(device)
+data_y = data_y.to(device)
 if args.all1:
-    all1d = args.all1d
-    if all1d:
-        data_x = torch.ones((data_x.shape[0], all1d))
-        num_features = all1d
-    else:
-        data_x = torch.ones_like(data_x)
-if args.degfea:
-    data_x = calculate_degree_features(edges, args.degfea)
-    num_features = abs(args.degfea)
+    data_x = torch.ones_like(data_x)
+edges = edges.to(device)
 
-if args.paral:
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    data_x.to(device)
-    data_y.to(device)
-    edges.to(device).contiguous()
-    data_train_maskOrigin.to(device)
-    data_val_maskOrigin.to(device)
-    data_test_maskOrigin.to(device)
-else:
-    device = set_device(args)
-
-    data_x = data_x.to(device)
-    data_y = data_y.to(device)
-    edges = edges.to(device)
-    data_train_maskOrigin = data_train_maskOrigin.to(device)
-    data_val_maskOrigin = data_val_maskOrigin.to(device)
-    data_test_maskOrigin = data_test_maskOrigin.to(device)
-
+data_train_maskOrigin = data_train_maskOrigin.to(device)
+data_val_maskOrigin = data_val_maskOrigin.to(device)
+data_test_maskOrigin = data_test_maskOrigin.to(device)
 
 criterion = CrossEntropy().to(device)
 n_cls = data_y.max().item() + 1
@@ -350,14 +286,10 @@ if args.net.startswith(('1i', 'Ri', 'Di', 'pan', 'Ui', 'Li', 'Ti', 'Ai', 'Hi','I
                 IsExhaustive = False
                 edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj(args, edges.long(), data_y.size(-1), k, IsExhaustive, mode='independent', norm=args.inci_norm)
             elif args.net[-2] == 'i':
-                if (k == 2 and args.net.startswith('Di')) or args.net.endswith('ib'):
+                if k == 2 and args.net.startswith('Di'):
                     edge_list = []
                     if args.net.startswith('Di'):
                         edge_index_tuple, edge_weights_tuple = get_second_directed_adj(args, edges.long(), data_y.size(-1), data_x.dtype)
-                    elif args.net == '1iGib':
-                        edge_index_tuple, edge_weights_tuple = get_second_directed_adj_weight1(args, edges.long(), data_y.size(-1), data_x.dtype)
-                    elif args.net == 'RiGib':
-                        edge_index_tuple, edge_weights_tuple = get_second_directed_adj_random(args, edges.long(), data_y.size(-1), data_x.dtype)
                     else:   # just for debug
                         edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj0(edges.long(), data_y.size(-1), data_x.dtype)
                     edge_list.append(edge_index_tuple)
@@ -431,15 +363,6 @@ elif args.net.startswith(('Mag', 'Sig', 'Qua')):
         Quaedge_index, norm_real, norm_imag_i, norm_imag_j, norm_imag_k = process_quaternion_laplacian(edge_index=edges, x_real=X_real, edge_weight=edge_weight,
                                                                                                     normalization='sym', return_lambda_max=False)
 
-elif args.net.lower() in ['mamba']:
-    import torch_geometric.transforms as T
-    from torch_geometric.data import Data
-    temp_data = Data(x=data_x, edge_index=edges)
-    transform = T.AddRandomWalkPE(walk_length=20, attr_name='pe')
-    temp_data = transform(temp_data)
-    data_pe = temp_data.pe
-
-
 else:
     pass
 try:
@@ -453,40 +376,37 @@ Set_exit = False
 
 num_run = args.num_split if args.num_split<splits else splits
 preprocess_time = time.time()
-try:
-    with open(log_directory + log_file_name_with_timestamp, 'a') as log_file:
-        print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=log_file)
+args.num_features, args.num_classes, args.edge_index, args.num_nodes = data_x.shape[1], n_cls, edges, data_x.shape[0]
 
-        print('Using Device: ', device, file=log_file)
+try:
+    with open(log_directory + log_file_name_with_timestamp, 'a') as logfile:
+        print('Using Device: ', device, file=logfile)
+        print(f"Script: {__file__}", file=logfile)
+        print_memory("Start")
         for split in range(num_run):
-            model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1])
-            if args.paral:
-                if torch.cuda.device_count() > 1:
-                    model = torch.nn.DataParallel(model)
-                    print(f'model parallel!', flush=True)
-                    model.to(device)
-            else:
-                model = model.to(device)
+            print_memory("Before model load")
+
+            model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device)
+
+            print_memory("After model load")
             if split==0:
-                print('no_in, homo_in, no_out, homo_out:', no_in, homo_ratio_A, no_out, homo_ratio_At, file=log_file)
-                print(model, file=log_file)
+                print(model, file=logfile)
                 print(model)
-                if args.net.startswith('ym'):
-                    print('Sym edge size(biedge, edge_in, edge_out):', biedges.size(),  in_weight.size(),  out_weight.size(), file=log_file)
+                if args.net[1:].startswith('ym'):
+                    print('Sym edge size(biedge, edge_in, edge_out):', biedges.size(),  in_weight.size(),  out_weight.size(), file=logfile)
                     print('Sym edge size(biedge, edge_in, edge_out):', biedges.size(),  in_weight.size(),  out_weight.size())
                 elif args.net[1:].startswith('i'):
-                    print(args.net, 'edge size:', end=' ', file=log_file)
+                    print(args.net, 'edge size:', end=' ', file=logfile)
                     print(args.net, 'edge size:', end=' ')
                     if isinstance(edge_weight, tuple):
                         for i in edge_weight:
-                            print(i.size()[0], end=' ', file=log_file)
+                            print(i.size()[0], end=' ', file=logfile)
                             print(i.size()[0], end=' ')
                     else:
                         if edge_weight is not None:
-                            print(edge_weight.size()[0], end=' ', file=log_file)
+                            print(edge_weight.size()[0], end=' ', file=logfile)
                             print(edge_weight.size()[0], end=' ')
 
-            # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.l2)
             if hasattr(model, 'coefs'):     # parameter without weight_decay will typically change faster
                 optimizer = torch.optim.Adam(
                     [dict(params=model.reg_params, lr=args.lr, weight_decay=5e-4), dict(params=model.non_reg_params, lr=args.lr, weight_decay=0),
@@ -503,12 +423,7 @@ try:
                 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.l2)
 
             if args.has_scheduler:
-                if args.monitor == 'loss':
-                    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience, verbose=True)
-                elif args.monitor == 'acc':
-                    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=args.patience, verbose=True)
-                else:
-                    raise NotImplementedError
+                scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience)
 
             if splits == 1:
                 data_train_mask, data_val_mask, data_test_mask = (data_train_maskOrigin.clone(),data_val_maskOrigin.clone(),data_test_maskOrigin.clone())
@@ -526,50 +441,6 @@ try:
                     except:
                         data_test_mask = data_test_maskOrigin.clone()
 
-            all_list = [
-                ("no_in_nodes", no_in_nodes),
-                ("in_homophilic_nodes", in_homophilic_nodes),
-                ("in_heterophilic_nodes", in_heterophilic_nodes),
-                ("no_out_nodes", no_out_nodes),
-                ("out_homophilic_nodes", out_homophilic_nodes),
-                ("out_heterophilic_nodes", out_heterophilic_nodes)
-            ]
-
-            noIn_noOut_nodes = list(set(no_in_nodes) & set(no_out_nodes))
-            noIn_outHomo_nodes = list(set(no_in_nodes) & set(out_homophilic_nodes))
-            noIn_outHetero_nodes = list(set(no_in_nodes) & set(out_heterophilic_nodes))
-            inHomo_noOut_nodes = list(set(in_homophilic_nodes) & set(no_out_nodes))
-            inHomo_outHomo_nodes = list(set(in_homophilic_nodes) & set(out_homophilic_nodes))
-            inHomo_outHetero_nodes = list(set(in_homophilic_nodes) & set(out_heterophilic_nodes))
-            inHetero_noOut_nodes = list(set(in_heterophilic_nodes) & set(no_out_nodes))
-            inHetero_outHomo_nodes = list(set(in_heterophilic_nodes) & set(out_homophilic_nodes))
-            inHetero_outHetero_nodes = list(set(in_heterophilic_nodes) & set(out_heterophilic_nodes))
-
-            # New combined list with intersections
-            combined_intersection_list = [
-                ("noIn_noOut_nodes", noIn_noOut_nodes),
-                ("noIn_outHomo_nodes", noIn_outHomo_nodes),
-                ("noIn_outHetero_nodes", noIn_outHetero_nodes),
-                ("inHomo_noOut_nodes", inHomo_noOut_nodes),
-                ("inHomo_outHomo_nodes", inHomo_outHomo_nodes),
-                ("inHomo_outHetero_nodes", inHomo_outHetero_nodes),
-                ("inHetero_noOut_nodes", inHetero_noOut_nodes),
-                ("inHetero_outHomo_nodes", inHetero_outHomo_nodes),
-                ("inHetero_outHetero_nodes", inHetero_outHetero_nodes)
-                ,('all nodes', list(range(data_x.shape[0])))
-            ]
-
-            for name, lst in combined_intersection_list:
-                if len(lst) == 0:
-                    print(f"{name}:No Node")
-                    continue
-                mask = create_mask(lst, data_x.shape[0])
-                if args.paral:
-                    mask.to(device)
-                else:
-                    mask = mask.to(device)
-                train_temp, val_temp, test_temp = mask & data_train_mask, mask & data_val_mask, mask & data_test_mask
-                print(f"{name}: Train={train_temp.sum().item()}, Val={val_temp.sum().item()}, Test={test_temp.sum().item()}")
 
             n_data0 = []  # num of train in each class
             for i in range(n_cls):
@@ -588,7 +459,7 @@ try:
 
             if args.MakeImbalance:
                 print("make imbalanced", args.imb_ratio)
-                print("make imbalanced",args.imb_ratio, file=log_file)
+                print("make imbalanced",args.imb_ratio, file=logfile)
                 class_num_list, data_train_mask, idx_info, train_node_mask, train_edge_mask = \
                     make_imbalanced(edges, data_y, n_data, n_cls, args.imb_ratio, data_train_mask.clone())
                 new_class_num_list = []
@@ -596,11 +467,11 @@ try:
                     new_class_num_list.append(tensor_node.shape[0])
                 new_class_num_list = sorted(new_class_num_list)
                 if split==0:
-                    # print('new train class in data: ', new_class_num_list, '\n', 'real imbal ratio: ', new_class_num_list[-1]/new_class_num_list[0])
+                    print('new train class in data: ', new_class_num_list, '\n', 'real imbal ratio: ', new_class_num_list[-1]/new_class_num_list[0])
                     print(dataset_to_print + '\ttotalNode_' + str(data_train_mask.size()[0]) + '\t trainNodeBal_' + str(node_train) + '\t trainNodeImbal_' + str(torch.sum(
-                        data_train_mask).item()), file=log_file)
+                        data_train_mask).item()), file=logfile)
                     print(dataset_to_print + '\ttotalEdge_' + str(edges.size()[1]) + '\t trainEdgeBal_' + str(train_edge_mask.size()[0]) + '\t trainEdgeImbal_' + str(torch.sum(
-                        train_edge_mask).item()), file=log_file)
+                        train_edge_mask).item()), file=logfile)
                     print(dataset_to_print + '\ttotalNode_' + str(data_train_mask.size()[0]) + '\t trainNodeBal_' + str(node_train) + '\t trainNodeImbal_' + str(torch.sum(
                         data_train_mask).item()))
                     print(dataset_to_print + '\ttotalEdge_' + str(edges.size()[1]) + '\t trainEdgeBal_' + str(train_edge_mask.size()[0]) + '\t trainEdgeImbal_' + str(torch.sum(
@@ -609,8 +480,8 @@ try:
                 class_num_list, data_train_mask, idx_info, train_node_mask, train_edge_mask = \
                     keep_all_data(edges, data_y, n_data, n_cls, data_train_mask)
                 if split == 0:
-                    print(dataset_to_print + '\ttotalNode_' + str(data_train_mask.size()[0]) + '\t trainNode_' + str(node_train), file=log_file)
-                    print(dataset_to_print + '\ttotalEdge_' + str(edges.size()[1]) + '\t trainEdge_' + str(train_edge_mask.size()[0]), file=log_file)
+                    print(dataset_to_print + '\ttotalNode_' + str(data_train_mask.size()[0]) + '\t trainNode_' + str(node_train), file=logfile)
+                    print(dataset_to_print + '\ttotalEdge_' + str(edges.size()[1]) + '\t trainEdge_' + str(train_edge_mask.size()[0]), file=logfile)
                     print(dataset_to_print + '\ttotalNode_' + str(data_train_mask.size()[0]) + '\t trainNodeBal_' + str(node_train) + '\t trainNodeNow_' + str(torch.sum(
                         data_train_mask).item()))
                     print(dataset_to_print + '\ttotalEdge_' + str(edges.size()[1]) + '\t trainEdgeBal_' + str(train_edge_mask.size()[0]) + '\t trainEdgeNow_' + str(
@@ -652,6 +523,7 @@ try:
             CountNotImproved = 0
             end_epoch = 0
             set_new_opt = True
+            print_memory("Before training")
             for epoch in range(args.epoch):
                 val_loss, new_edge_index, new_x, new_y, new_y_train = train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight, X_real, X_img, Sigedge_index, norm_real,norm_imag,
                                                                                 X_img_i, X_img_j, X_img_k,norm_imag_i, norm_imag_j, norm_imag_k, Quaedge_index)
@@ -659,21 +531,12 @@ try:
                 train_acc, val_acc, tmp_test_acc = accs
                 train_f1, val_f1, tmp_test_f1 = f1s
 
-                optimizer.step()
-                if args.has_scheduler:
-                    if args.monitor == 'loss':
-                        scheduler.step(val_loss)
-                    elif args.monitor == 'acc':
-                        scheduler.step(val_acc)
-                    else:
-                        raise NotImplementedError
+                monitor_metric = val_acc if args.monitor == 'val_acc' else -val_loss  # Use -val_loss to handle minimization
+                best_metric = best_val_acc if args.monitor == 'val_acc' else -best_val_loss
 
-                monitor_metric = val_acc if args.monitor == 'acc' else -val_loss  # Use -val_loss to handle minimization
-                best_metric = best_val_acc if args.monitor == 'acc' else -best_val_loss
-                # if args.monitor == 'acc':
-                # # if val_acc > best_val_acc:
-                # if val_loss < best_val_loss:
                 if monitor_metric > best_metric:
+                # if val_acc > best_val_acc:
+                # if val_loss < best_val_loss:
                     metrics_list = []
                     best_val_acc = val_acc
                     best_val_loss = val_loss
@@ -682,12 +545,9 @@ try:
                     test_bacc = baccs[2]
                     test_f1 = f1s[2]
                     CountNotImproved = 0
-                    # print('test_f1 CountNotImproved reset to 0 in epoch', epoch, file=log_file)
+                    # print('test_f1 CountNotImproved reset to 0 in epoch', epoch, file=logfile)
                     # Store the calculated metrics in variables instead of printing
 
-                    for name, lst in combined_intersection_list:
-                        metrics_temp = calculate_metrics(logits, data_test_mask, data_y, lst, edges)
-                        metrics_list.append((name, metrics_temp))
 
                 else:
                     CountNotImproved += 1
@@ -697,37 +557,35 @@ try:
                     # end_time = time.time()
                     print('epoch: {:3d}, val_loss:{:2f}, test_acc: {:.2f}, bacc: {:.2f}, tmp_test_acc: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_acc*100,
                                                                                                                               test_f1 * 100))
-                    # print(end_time - start_time, file=log_file)
-                    # print(end_time - start_time)
                     print('epoch: {:3d}, val_loss:{:2f}, test_acc: {:.2f}, bacc: {:.2f}, tmp_test_f1: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_f1*100,
-                                                                                                                             test_f1 * 100),file=log_file)
+                                                                                                                             test_f1 * 100),file=logfile)
                 end_epoch = epoch
                 if CountNotImproved > args.NotImproved:
 
-                    # for name, metric_temp in metrics_list:
-                    #     print(name, metric_temp)
-                    #     print(name, metric_temp, file=log_file)
+                    for name, metric_temp in metrics_list:
+                        print(name, metric_temp)
+                        print(name, metric_temp, file=logfile)
 
                     for class_id, class_info in class_detail[-1].items():
                         print(f"Class {class_id}: {class_info}")
-                        print(f"Class {class_id}: {class_info}", file=log_file)
+                        print(f"Class {class_id}: {class_info}", file=logfile)
 
                     break
-
+            dataset_to_print = args.Dataset.replace('/', '_') + str(args.to_undirected)
             print(net_to_print+'layer'+str(args.layer), dataset_to_print, 'EndEpoch', str(end_epoch), 'lr', args.lr)
             print('Split{:3d}, acc: {:.2f}, bacc: {:.2f}, f1: {:.2f}'.format(split, test_acc * 100, test_bacc * 100, test_f1 * 100))
-            print(net_to_print, args.layer, dataset_to_print, 'EndEpoch', str(end_epoch), 'lr', args.lr, file=log_file)
-            print('Split{:3d}, acc: {:.2f}, bacc: {:.2f}, f1: {:.2f}'.format(split, test_acc * 100, test_bacc * 100, test_f1 * 100), file=log_file)
+            print(net_to_print, args.layer, dataset_to_print, 'EndEpoch', str(end_epoch), 'lr', args.lr, file=logfile)
+            print('Split{:3d}, acc: {:.2f}, bacc: {:.2f}, f1: {:.2f}'.format(split, test_acc * 100, test_bacc * 100, test_f1 * 100), file=logfile)
             macro_F1.append(test_f1*100)
             acc_list.append(test_acc*100)
             bacc_list.append(test_bacc*100)
             if Set_exit:
                 sys.exit(1)
-        dataset_to_print = dataset_to_print.replace('/', '_') + str(args.to_undirected)
+
         last_time = time.time()
         elapsed_time0 = last_time-start_time
         print("Time(s): Total_{}= Load_{} + Preprocess_{} + Train_{}".format(int(last_time-start_time), int(load_time-start_time), int(preprocess_time-load_time), int(last_time-preprocess_time)),
-              file=log_file)
+              file=logfile)
         print(
             "Time(s): Total_{}= Load_{} + Preprocess_{} + Train_{}".format(int(last_time - start_time), int(load_time - start_time), int(preprocess_time - load_time), int(last_time - preprocess_time)))
         if len(macro_F1) > 1:
@@ -738,10 +596,11 @@ try:
             average_bacc = statistics.mean(bacc_list)
             std_dev_bacc = statistics.stdev(bacc_list)
             print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print+"_acc"+f"{average_acc:.1f}±{std_dev_acc:.1f}"+"_bacc"+f"{average_bacc:.1f}±{std_dev_bacc:.1f}"+'_Macro F1:'+f"{average:.1f}±{std_dev:.1f}")
-            print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print+"_acc"+f"{average_acc:.1f}±{std_dev_acc:.1f}"+"_bacc"+f"{average_bacc:.1f}±{std_dev_bacc:.1f}"+'_Macro F1:'+f"{average:.1f}±{std_dev:.1f}", file=log_file)
-            result_str = f"{average_acc:.1f}±{std_dev_acc:.1f}"
+            print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print+"_acc"+f"{average_acc:.1f}±{std_dev_acc:.1f}"+"_bacc"+f"{average_bacc:.1f}±{std_dev_bacc:.1f}"+'_Macro F1:'+f"{average:.1f}±{std_dev:.1f}", file=logfile)
+
+            result_str = f"{average_acc:.2f}±{std_dev_acc:.2f}"
         else:
-            result_str = f"{test_acc * 100:.1f}"
+            result_str = f"{test_acc * 100:.2f}"
 
         # Rename log file
         old_path = os.path.join(log_directory, log_file_name_with_timestamp)
