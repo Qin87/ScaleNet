@@ -547,8 +547,6 @@ try:
                     CountNotImproved = 0
                     # print('test_f1 CountNotImproved reset to 0 in epoch', epoch, file=logfile)
                     # Store the calculated metrics in variables instead of printing
-
-
                 else:
                     CountNotImproved += 1
                 if epoch < 200 and epoch%20 == 1:
@@ -557,8 +555,8 @@ try:
                     # end_time = time.time()
                     print('epoch: {:3d}, val_loss:{:2f}, test_acc: {:.2f}, bacc: {:.2f}, tmp_test_acc: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_acc*100,
                                                                                                                               test_f1 * 100))
-                    print('epoch: {:3d}, val_loss:{:2f}, test_acc: {:.2f}, bacc: {:.2f}, tmp_test_f1: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_f1*100,
-                                                                                                                             test_f1 * 100),file=logfile)
+                    # print('epoch: {:3d}, val_loss:{:2f}, test_acc: {:.2f}, bacc: {:.2f}, tmp_test_f1: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_f1*100,test_f1 * 100),file=logfile)
+
                 end_epoch = epoch
                 if CountNotImproved > args.NotImproved:
 
