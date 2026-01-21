@@ -52,6 +52,10 @@ def init_model(model):
 
 def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
     if args.net.lower() == 'largescalenet':
+        args.conv_type2 = "scale"
+        model = GNN2(args).to(device)
+    elif args.net.lower() == 'fabernet':
+        args.conv_type2 = "faber"
         model = GNN2(args).to(device)
     elif args.net.lower() == 'link':
         model = LINK(args).to(device)

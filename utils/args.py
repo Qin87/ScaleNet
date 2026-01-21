@@ -16,7 +16,7 @@ def parse_args():
     parser.add_argument("--jk", type=str, choices=["max", "cat", 'weighted',  0], default='max')
     parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', 0], default="dir")
     parser.add_argument("--fs", type=str, choices=["sum", "cat", 'weight_sum', 'linear'], default="dir", help='fusion method')
-    parser.add_argument("--alphaDir", type=float, help="Direction convex combination params", default=1)
+    parser.add_argument("--alphaDir", type=float, help="Direction convex combination params", default=0)
     parser.add_argument("--betaDir", type=float, help="Direction convex combination params", default=-1)
     parser.add_argument("--gamaDir", type=float, help="Direction convex combination params", default=-1)
     parser.add_argument("--learn_alpha", action="store_true")
@@ -25,13 +25,13 @@ def parse_args():
     parser.add_argument('--num_split', type=int, default=1, help='num of run in spite of many splits')
 
 
-    parser.add_argument('--net', type=str, default='LargeScaleNet', help='Mag, Sig, QuaNet, '
+    parser.add_argument('--net', type=str, default='FaberNet', help='Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc, ParaGCN, SimGAT, SloopNet, tSNE,RandomNet, HFNet '
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym' 
                     'mlp, link, linkxcat, linkxadd, linkx, linkxgit, Dir-GNN, '
-                    'ScaleNet, LargeScaleNet')
+                    'ScaleNet, LargeScaleNet, FaberNet')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='arxiv-year/', help=
+    parser.add_argument('--Dataset', type=str, default='telegram/', help=
     'telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/, '
@@ -96,7 +96,7 @@ def parse_args():
     parser.add_argument("--checkpoint_directory", type=str, help="Directory to save checkpoints", default="checkpoint")
     parser.add_argument("--weight_decay", type=float, help="Weight decay", default=1e-3)
     parser.add_argument("--lrelu_slope", type=float, help="negative slope of Leaky Relu", default=-1.0)
-    parser.add_argument("--conv_type2", type=str, help="scale, faber ", default="faber")
+    parser.add_argument("--conv_type2", type=str, help="scale, faber ", default="scale")
     parser.add_argument("--weight_penalty", type=str, choices=["exp", "lin", "None"], default="exp")
     parser.add_argument("--k_plus", type=int, help="Polynomial order", default=2)
     parser.add_argument("--exponent", type=float, help="exponent in norm, -0.25, -0.5", default=-0.5)

@@ -70,8 +70,8 @@ class ScaleConv(torch.nn.Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
 
-        self.lins_src_to_dst = torch.nn.ModuleList([Linear(input_dim, output_dim) for _ in range(2 * args.k_plus)])
         self.lins_dst_to_src = torch.nn.ModuleList([Linear(input_dim, output_dim) for _ in range(2 * args.k_plus)])
+        self.lins_src_to_dst = torch.nn.ModuleList([Linear(input_dim, output_dim) for _ in range(2 * args.k_plus)])
 
         self.alpha = args.alphaDir
         self.beta = args.betaDir

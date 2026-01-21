@@ -1,12 +1,11 @@
-# ScaleNet
-After paper [Scale Invariance of Graph Neural Networks].
+# Scale-Aware Message Passing for Graph Node Classification
 
 ## Requirements
 
 This repository has been tested with the following packages:
 - Python == 3.9 - 3.12
-- PyTorch == 2.1.2
-- PyTorch Geometric == 2.4.0
+- PyTorch == 2.1.2 - 2.2.1
+- PyTorch Geometric == 2.4.0- 2.5.0
 - torch-scatter==2.1.2
 - torch-sparse==0.6.18
 
@@ -22,17 +21,22 @@ By following these steps, you can resolve compatibility issues and avoid segment
 ## Dataset
 Specify the name of the dataset you want to use. The available datasets are categorized as follows:
 
-- **Directed Datasets**:
-  - **Assortative Graph**:
+- **Medium Datasets**:
+  - **Homophilic Graph**:
     - `citeseer/`
     - `cora_ml/`
     - `WikiCS/`
     - `telegram/`
     - `dgl/pubmed`
   
-  - **Disassortative Graph**:
+  - **Heterophilic Graph**:
     - `WikipediaNetwork/squirrel`
     - `WikipediaNetwork/chameleon`
+    
+- **Large Datasets**:
+  - `directed-roman-empire/`
+  - `arxiv-year/`
+  - `snap-patents/`
 
 ## GNN Models 
 - **GNN baselines**:
@@ -60,6 +64,9 @@ Specify the name of the dataset you want to use. The available datasets are cate
     Number 2, 3 can be replaced with any number k>1.
 - **BiDirectional models**:
   - `Dir-GNN`
+  - `FaberNet`
+  - `ScaleNet`
+  - `LargeScaleNet` 
 
 ### How to Run
 
@@ -69,10 +76,10 @@ Specify the name of the dataset you want to use. The available datasets are cate
     ```
     python3 main.py  --net='ScaleNet' --use_best_hyperparams=1  --Dataset='cora_ml/'
     ```
-  
+
+    To use PyTorch Lightning instead, replace main.py with main_lit.py in any of the above commands:
     ```
-    python3 main.py --net='Dir-GNN' --use_best_hyperparams=1   --Dataset='citeseer_npz/'
-    
+    python3 main_lit.py --net='ScaleNet' --use_best_hyperparams=1 --Dataset='cora_ml/'
     ```
   - For imbalanced datasets:
     ```
@@ -83,15 +90,13 @@ To run with your own configurations, revise net_nest.h by kicking in all the net
 all the datasets in Direct_dataset. Then in terminal, run: 
 
   ```
-  ./net_nest.h
+  batch_sh/net_nest.h
   ```
-
-
 
 - **(3) To compare ScaleNet with the enumeration of the parameters alpha, beta, and gamma, use the following command**:
 
   ```
-  ./scale.h &
+  batch_sh/scale.h &
   ```
 
 - **(4) To get performance of removing shared edges with lower-scale graphs**:
@@ -102,12 +107,11 @@ all the datasets in Direct_dataset. Then in terminal, run:
     
     args.differ_AA=1
 - **(5) Wilcoxon test** 
+
 To run the Wilcoxon test on each dataset, execute the corresponding script. For example:
   ```
   python3 ./wilcoxon/wilcoxon_cham.py  &
   ```
-- **(6) For Pytorch Lightning **
-Run main_lit.py instead of main.py
 
 
 ## License
@@ -115,7 +119,9 @@ MIT License
 
 ## Acknowledgements
 
-The code is implemented based on [DiGCN](https://github.com/flyingtango/DiGCN),  [DirGNN](https://github.com/emalgorithm/directed-graph-neural-network)and 
-[MagNet](https://github.com/matthew-hirn/magnet).
+This code is implemented based on the following repositories:
+- [DiGCN](https://github.com/flyingtango/DiGCN)
+- [DirGNN](https://github.com/emalgorithm/directed-graph-neural-network)
+- [MagNet](https://github.com/matthew-hirn/magnet)
+- [FaberNet](https://github.com/ChristianKoke/HoloNets)
 
-[//]: # (## Citation)

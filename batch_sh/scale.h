@@ -1,10 +1,11 @@
 #!/bin/bash
 
-net_values="LargeScaleNet"
-layer_values="8"
-bDir="3 4 2"
-Dir="0  0.5 "
-Patiences=(1)
+net_values="LargeScaleNet "
+layer_values=" 2 3 4 5 6 7 8"
+aDir="0  0.5 1 -1"
+bDir="0  0.5 1 -1"
+cDir="0  0.5 1 -1"
+Patiences=(100 200 400)
 
 while pgrep -x python3 > /dev/null; do
   echo "Waiting for all python3 processes to finish..."
@@ -19,24 +20,24 @@ generate_timestamp() {
 }
 timestamp=$(generate_timestamp)
 for Didataset in "${Direct_dataset[@]}"; do
-      # for patience in "${Patiences[@]}"; do
-   #  for layer in $layer_values; do
+       for patience in "${Patiences[@]}"; do
+    for layer in $layer_values; do
         logfile="outforlayer${layer}.log"
         exec > "$logfile" 2>&1  # Redirect stdout and stderr to log file
-   #        for alphadir in $Dir; do
+         for alphadir in $aDir; do
        for betadir in $bDir; do
-        for gamadir in $Dir; do
+        for gamadir in $cDir; do
         for net in $net_values; do
             log_output="${Didataset//\//_}_${timestamp}_A${a}_alpha${dir}__${net}_layer${layer}.log"
 
-            # Run the Python script with parameters and log output
-python3 main_lit.py  --seed="$betadir" --alphaDir=0.5  --betaDir=0    --gamaDir=0 \
+python3 main_lit.py   --alphaDir="$alphadir"  --betaDir="$betadir"    --gamaDir="$gamadir" \
 --num_split=1  --add_selfloop=0  \
---dropout="$gamadir" --use_best_hyperparams=1   \
- --all1=1   \
+--dropout="$gamadir"      \
+--use_best_hyperparams=1   \
 --weight_penalty='None'\
  --net="$net"  \
- --Dataset='arxiv-year/' >  \
+ --patience="$patience"  \
+ --Dataset="$Didataset" >  \
 "$log_output"  2>&1
 
             wait $pid
