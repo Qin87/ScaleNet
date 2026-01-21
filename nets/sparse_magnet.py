@@ -77,12 +77,12 @@ class ChebConv(nn.Module):
         imag = result[1]
         return real + self.bias, imag + self.bias
 
-class ChebConv_Qin_Direct(nn.Module):
+class ChebConv2026_Direct(nn.Module):
     """
     differ from ChebConv is parameter(X_real, X_imag) in __init__ move to forward.
     """
     def __init__(self, in_c, out_c, K, bias=True):
-        super(ChebConv_Qin_Direct, self).__init__()
+        super(ChebConv2026_Direct, self).__init__()
 
         self.weight = nn.Parameter(torch.Tensor(K + 1, in_c, out_c))  # [K+1, 1, in_c, out_c]
 
@@ -143,12 +143,12 @@ class ChebConv_Qin_Direct(nn.Module):
         # return real + self.bias, imag + self.bias
         return real + self.bias, imag + self.bias, edges, q, edge_weight
 
-class ChebConv_Qin(nn.Module):
+class ChebConv2026(nn.Module):
     """
     differ from ChebConv is parameter(X_real, X_imag) in __init__ move to forward.
     """
     def __init__(self, in_c, out_c, K, bias=True):
-        super(ChebConv_Qin, self).__init__()
+        super().__init__()
 
         self.weight = nn.Parameter(torch.Tensor(K + 1, in_c, out_c))  # [K+1, 1, in_c, out_c]
 
@@ -215,12 +215,12 @@ class ChebConv_Qin(nn.Module):
         # return real + self.bias, imag + self.bias
         return real + self.bias, imag + self.bias, edges, q, edge_weight
 
-class ChebConv_Qin_05(nn.Module):
+class ChebConv2026_05(nn.Module):
     """
     differ from ChebConv is parameter(X_real, X_imag) in __init__ move to forward.
     """
     def __init__(self, in_c, out_c, K, bias=True):
-        super(ChebConv_Qin_05, self).__init__()
+        super(ChebConv2026_05, self).__init__()
 
         self.weight = nn.Parameter(torch.Tensor(K + 1, in_c, out_c))  # [K+1, 1, in_c, out_c]
 
@@ -286,12 +286,12 @@ class ChebConv_Qin_05(nn.Module):
         # return real + self.bias, imag + self.bias
         return real + self.bias, imag + self.bias, edges, q, edge_weight
 
-class ChebConv_QinDirect(nn.Module):
+class ChebConv2026Direct(nn.Module):
     """
     differ from ChebConv is parameter(X_real, X_imag) in __init__ move to forward.
     """
     def __init__(self, in_c, out_c, K, bias=True):
-        super(ChebConv_QinDirect, self).__init__()
+        super(ChebConv2026Direct, self).__init__()
 
         self.weight = nn.Parameter(torch.Tensor(K + 1, in_c, out_c))  # [K+1, 1, in_c, out_c]
 
@@ -357,12 +357,12 @@ class ChebConv_QinDirect(nn.Module):
         return real + self.bias, imag + self.bias, edges, q, edge_weight
 
 
-class ChebConv_Qin_2bias(nn.Module):
+class ChebConv2026_2bias(nn.Module):
     """
     differ from ChebConv is parameter(X_real, X_imag) in __init__ move to forward.
     """
     def __init__(self, in_c, out_c, K, bias=True):
-        super(ChebConv_Qin_2bias, self).__init__()
+        super(ChebConv2026_2bias, self).__init__()
 
         self.weight = nn.Parameter(torch.Tensor(K + 1, in_c, out_c))  # [K+1, 1, in_c, out_c]
 
@@ -467,9 +467,9 @@ class complex_relu_layer(nn.Module):
 #         raise ValueError(f"dropout probability has to be between 0 and 1, but got {p}")
 #     return _VF.dropout_(input, p, training) if inplace else _VF.dropout(input, p, training)
 
-class complex_relu_layer_Ben(nn.Module):
+class complex_relu_layer2026(nn.Module):
     def __init__(self, ):
-        super(complex_relu_layer_Ben, self).__init__()
+        super(complex_relu_layer2026, self).__init__()
 
     def complex_relu(self, real, img):
         mask = 1.0 * (real >= 0)
@@ -488,7 +488,7 @@ class complex_relu_layer_Ben(nn.Module):
 
 class complex_relu_layer_SigBen(nn.Module):
     def __init__(self, ):
-        super(complex_relu_layer_SigBen, self).__init__()
+        super().__init__()
 
     def complex_relu(self, real, img):
         mask = 1.0 * (real >= 0)
@@ -517,7 +517,7 @@ class ChebNet(nn.Module):
         super(ChebNet, self).__init__()
 
         chebs = [ChebConv(in_c=in_c, out_c=num_filter, K=K, L_norm_real=L_norm_real, L_norm_imag=L_norm_imag)]
-        # chebs = [ChebConv_Qin(in_c=in_c, out_c=num_filter, K=K)]
+        # chebs = [ChebConv2026(in_c=in_c, out_c=num_filter, K=K)]
         # self.ib1 = InceptionBlock(num_features, hidden)
         if activation:
             chebs.append(complex_relu_layer())
@@ -560,14 +560,14 @@ class ChebNet_BenQin(nn.Module):
         super(ChebNet_BenQin, self).__init__()
         self.dropout = dropout
 
-        chebs = [ChebConv_Qin_Direct(in_c=in_c, out_c=num_filter, K=K)]
+        chebs = [ChebConv2026_Direct(in_c=in_c, out_c=num_filter, K=K)]
         if activation:
-            chebs.append(complex_relu_layer_Ben())
+            chebs.append(complex_relu_layer2026())
 
         for i in range(1, layer):
-            chebs.append(ChebConv_Qin_Direct(in_c=num_filter, out_c=num_filter, K=K))
+            chebs.append(ChebConv2026_Direct(in_c=num_filter, out_c=num_filter, K=K))
             if activation:
-                chebs.append(complex_relu_layer_Ben())
+                chebs.append(complex_relu_layer2026())
         self.Chebs = torch.nn.Sequential(*chebs)
 
         last_dim = 2
@@ -610,16 +610,16 @@ class ChebNet_Ben(nn.Module):
         :param K: for cheb series
         :param L_norm_real, L_norm_imag: normalized laplacian
         """
-        super(ChebNet_Ben, self).__init__()
+        super().__init__()
 
-        chebs = [ChebConv_Qin(in_c=in_c, out_c=num_filter, K=K)]
+        chebs = [ChebConv2026(in_c=in_c, out_c=num_filter, K=K)]
         if activation:
-            chebs.append(complex_relu_layer_Ben())
+            chebs.append(complex_relu_layer2026())
 
         for i in range(1, layer):
-            chebs.append(ChebConv_Qin(in_c=num_filter, out_c=num_filter, K=K))
+            chebs.append(ChebConv2026(in_c=num_filter, out_c=num_filter, K=K))
             if activation:
-                chebs.append(complex_relu_layer_Ben())
+                chebs.append(complex_relu_layer2026())
 
         self.Chebs = torch.nn.Sequential(*chebs)
 
@@ -667,14 +667,14 @@ class ChebNet_Ben_05(nn.Module):
         """
         super(ChebNet_Ben_05, self).__init__()
 
-        chebs = [ChebConv_Qin_05(in_c=in_c, out_c=num_filter, K=K)]
+        chebs = [ChebConv2026_05(in_c=in_c, out_c=num_filter, K=K)]
         if activation:
-            chebs.append(complex_relu_layer_Ben())
+            chebs.append(complex_relu_layer2026())
 
         for i in range(1, layer):
-            chebs.append(ChebConv_Qin_05(in_c=num_filter, out_c=num_filter, K=K))
+            chebs.append(ChebConv2026_05(in_c=num_filter, out_c=num_filter, K=K))
             if activation:
-                chebs.append(complex_relu_layer_Ben())
+                chebs.append(complex_relu_layer2026())
 
         self.Chebs = torch.nn.Sequential(*chebs)
 
