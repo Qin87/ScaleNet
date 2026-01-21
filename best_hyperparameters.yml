@@ -168,7 +168,7 @@ WikipediaNetwork/squirrel:
 #  net: ScaleNet
   layer: 6
   lr: 0.01
-  normalize: 1
+#  normalize: 1
   BN_model: 1 # 0(48.9), 1(72)
   add_selfloop: 0     # 0 or 1 is worse
   jk: 'max'
