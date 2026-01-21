@@ -1,5 +1,5 @@
 ################################
-
+# 2026 Jan 21--- Run coef_agg OK
 ################################
 import socket, uuid
 import sys
@@ -210,7 +210,7 @@ seed_everything(args.seed)
 with open(log_directory + log_file_name_with_timestamp, 'w') as logfile:
     print(args, file=logfile)
     print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=logfile)
-    print('Running Branch multi_scale_paper', file=logfile)
+    print('Running Branch after_iclr', file=logfile)
 
 biedges = None
 edge_in = None
