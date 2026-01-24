@@ -1,5 +1,4 @@
-# ScaleNet
-Implementation of paper [ScaleNet: Scale Invariance Learning in Directed Graphs](??).
+# Position: Attention Mechanism might be Dispensable for Node Classification
 
 ## Requirements
 
@@ -24,43 +23,36 @@ By following these steps, you can resolve compatibility issues and avoid segment
 Specify the name of the dataset you want to use. The available datasets are categorized as follows:
 
 - **Directed Datasets**:
-  - **Assortative Graph**:
-    - `citeseer_npz/`
+    - `citeseer/`
     - `cora_ml/`
     - `WikiCS/`
     - `telegram/telegram`
     - `dgl/pubmed`
-  
-  - **Disassortative Graph**:
-    - `WikipediaNetwork/squirrel`
-    - `WikipediaNetwork/chameleon`
 
-### GNN Backbone 
-- **GNN baselines**:
-  - `MLP`  
-  - `GCN`
-  - `GAT`
-  - `SAGE` for GraphSAGE
-  - `Cheb`
-  - `APPNP`
+- **Undirected Datasets**:  
+  - `Amazon-Photo`
+  - `Amazon-Computers`
+  - `PubMed`
+  - `Coauthor-physics`
+  - `Coauthor-CS`
 
-- **Hermitian Matrix GNNs**:
-  - `Mag` for MagNet
-  - `Sig`  for SigMaNet
-  - `Qua` for QuaNet
-- **Symmetric models**: 
-  -  *`Sym`* for DGCN
-      - `1ym`
-  - *`DiG`, `DiGi2`*  for DiGCN(ib) 
-    - `1iG`
-    - `RiG`
+
+### GNN models
+- **GAT variants**:
+  - `GAT`  for attention weights
+  - `UAT`  for uniform weights(all 1)
+  - `RAT`  for random weights
   
-    In DiG\*, 1iG\*, RiG\*,  * can be nothing or exampled as follows**:
-      - `i2` interception of 2-order edges
-      - `u3` union of 3-order edges 
-    Number 2, 3 can be replaced with any number k>1.
-- **BiDirectional models**:
-  - `Dir-GNN`
+  set --inci_norm: softmax  dir sym row 0 for different normalizations
+
+  
+- **DiGib variants**: 
+
+  - `DiGib`
+  - `UiGib`
+  - `RiGib`
+
+
 
 ### How to Run
 
@@ -68,17 +60,14 @@ Specify the name of the dataset you want to use. The available datasets are cate
   - On original datasets:
 
     ```
-    python3 main.py  --net='ScaleNet' --use_best_hyperparams=1  --Dataset='cora_ml/'
+    python3 main.py  --net='RAT' --use_best_hyperparams=1  --Dataset='cora_ml/'
     ```
   
     ```
-    python3 main.py --net='Dir-GNN' --use_best_hyperparams=1   --Dataset='citeseer_npz/'
+    python3 main.py --net='UAT' --use_best_hyperparams=1   --Dataset='citeseer/'
     
     ```
-  - For imbalanced datasets:
-    ```
-    python3 main.py  --net='ScaleNet' --use_best_hyperparams=1  --Dataset='cora_ml/'   --MakeImbalance   --imb_ratio=100
-    ```
+
 - **(2)Run in batches**:
 To run with your own configurations, revise net_nest.h by kicking in all the nets in net_values, all the layers in layer_values,
 all the datasets in Direct_dataset. Then in terminal, run: 
@@ -88,25 +77,6 @@ all the datasets in Direct_dataset. Then in terminal, run:
   ```
 
 
-
-- **(3) To compare ScaleNet with the enumeration of the parameters alpha, beta, and gamma, use the following command**:
-
-  ```
-  ./scale.h &
-  ```
-
-- **(4) To get performance of removing shared edges with lower-scale graphs**:
-  - To get performance of AAt-A-At, AtA-A-At, AAt+AtA-A-At ('-' means removing the shared edges with A or At):
-    
-    args.differ_AAt=1    args.differ_AA=0
-  - To get performance of AA-A-At, AtAt-A-At, AA+AtAt-A-At ('-' means removing the shared edges with A or At):
-    
-    args.differ_AA=1
-- **(5) Wilcoxon test** 
-To run the Wilcoxon test on each dataset, execute the corresponding script. For example:
-  ```
-  python3 ./wilcoxon/wilcoxon_cham.py  &
-  ```
 
 
 
