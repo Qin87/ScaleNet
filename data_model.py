@@ -172,7 +172,7 @@ def get_name(args, IsDirectedGraph=1):
         # if args.feat_proximity:
         #     net_to_print = net_to_print + '_feaProx'
     if args.hid_dim != 64:
-        net_to_print = net_to_print + str(args.hid_dim) + 'hid_'
+        net_to_print = net_to_print + '_hid' + str(args.hid_dim)
     if args.MakeImbalance:
         net_to_print = net_to_print + '_Imbal' + str(args.imb_ratio)
     else:
