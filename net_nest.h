@@ -1,8 +1,8 @@
 #!/bin/bash
 
-net_values="AiGib   "
+net_values="RiGib UiGib  "
 layer_values="2  "
-incinorm=" dir sym  softmax row "   #   dir row sym
+incinorm=" dir sym  softmax row 0 "   #   dir row sym
 lr0=" 0.005 "
 
 while pgrep -x python3 >/dev/null; do
