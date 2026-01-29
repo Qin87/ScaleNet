@@ -106,18 +106,6 @@ class InceptionBlock_Di(torch.nn.Module):
         return x0
 
 
-def union_edges(num_node, edge_index_tuple, device, mode):
-    if mode == 'union':
-        concatenated_tensor = torch.cat(edge_index_tuple, dim=1)
-        edges_tuples = list(set(zip(concatenated_tensor[0].tolist(), concatenated_tensor[1].tolist())))
-        edges = torch.tensor(edges_tuples).T
-    else:
-        edges = edge_index_tuple[-1]
-    weights = normalize_row_edges(edge_index=edges, num_nodes=num_node)
-
-    return edges.to(device), weights.to(device)
-
-
 class DIChebConv(MessagePassing):
     r"""The Chebyshev graph convolutional operator for directed graphs.
 

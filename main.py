@@ -15,7 +15,7 @@ import torch.nn.functional as F
 from args import parse_args
 from data.data_utils import keep_all_data, seed_everything, set_device
 from edge_nets.edge_data import get_second_directed_adj, \
-    WCJ_get_directed_adj, Qin_get_second_directed_adj, Qin_get_directed_adj, get_appr_directed_adj2, Qin_get_second_directed_adj0, Qin_get_second_adj
+    WCJ_get_directed_adj, Qin_get_second_directed_adj, Qin_get_directed_adj, get_appr_directed_adj2
 from data_model import CreatModel, log_file, get_name, load_dataset, count_homophilic_nodes, remove_inner_class_edge
 from utils import CrossEntropy, use_best_hyperparams
 from sklearn.metrics import balanced_accuracy_score, f1_score
@@ -171,12 +171,12 @@ if args.new_edge:
 
 criterion = CrossEntropy().to(device)
 n_cls = data_y.max().item() + 1
-
+args.num_nodes = data_y.size(-1)
 if args.net.startswith(('Ui', 'Ri', 'Di', 'Ai')) and not args.net.startswith('Dir'):
     if args.net.startswith('Ri'):
-        edge_index1, edge_weights1 = WCJ_get_directed_adj(args, edges.long(), data_y.size(-1), data_x.dtype)
+        edge_index1, edge_weights1 = WCJ_get_directed_adj(args, edges.long(), data_x.dtype)
     elif args.net.startswith(('Ui', 'Ai')):
-        edge_index1, edge_weights1 = Qin_get_directed_adj(args, edges.long(), data_y.size(-1), data_x.dtype)
+        edge_index1, edge_weights1 = Qin_get_directed_adj(args, edges.long(), data_x.dtype)
     elif args.net.startswith('Di'):
         edge_index1, edge_weights1 = get_appr_directed_adj2(args.First_self_loop, args.alpha, edges.long(), data_y.size(-1), data_x.dtype)  # consumiing for large graph
     else:
@@ -192,21 +192,25 @@ if args.net.startswith(('Ui', 'Ri', 'Di', 'Ai')) and not args.net.startswith('Di
                 edge_list = []
                 if args.net.startswith('Di'):
                     edge_index_tuple, edge_weights_tuple = get_second_directed_adj(args, edges.long(), data_y.size(-1), data_x.dtype)
-                else:   # just for debug
-                    edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj0(edges.long(), data_y.size(-1), data_x.dtype)
+                # elif args.net.startswith('Ui'):   # just for debug
+                #     edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj0(edges.long(), data_y.size(-1), data_x.dtype)
+                # elif args.net.startswith('Ri'):
+                #     edge_index_tuple, edge_weights_tuple = WCJ_get_second_directed_adj0(args, edges.long(), data_y.size(-1), data_x.dtype)
+
                 edge_list.append(edge_index_tuple)
                 edge_index_tuple = tuple(edge_list)
                 edge_weights_tuple = (edge_weights_tuple, )
                 del edge_list
-            else:
+            elif args.net.startswith(('Ui', 'Ri')):
                 edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj(args, edges.long(), data_y.size(-1), k, IsExhaustive, mode='intersection', norm=args.inci_norm)
+
         elif args.net[-2] == 'u':
             edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj(args, edges.long(), data_y.size(-1), k, IsExhaustive, mode='union', norm=args.inci_norm)
         elif args.net[-2] == 's':  # separate tuple for A_in, and A_out
             edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj(args, edges.long(), data_y.size(-1), k, IsExhaustive, mode='separate', norm=args.inci_norm)
         else:
             raise NotImplementedError("Not Implemented" + args.net)
-        # else:    # undirected graph
+        # else:    # undirected graph  # TODO big BUG!
         #     edge_index_tuple, edge_weights_tuple = Qin_get_second_adj(edges.long(), data_y.size(-1), k, IsExhaustive)
         SparseEdges = (edge_index1,) + edge_index_tuple
         edge_weight = (edge_weights1,) + edge_weights_tuple

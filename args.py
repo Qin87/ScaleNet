@@ -21,7 +21,7 @@ def parse_args():
     # for DirGNN
     parser.add_argument("--conv_type", type=str, help="DirGNN Model", default="dir-gcn")
     parser.add_argument("--normalize", type=int, help="whether use layer normalization in ScaleNet, model:0/1", default=1)
-    parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', '0', 'softmax'], default='row')
+    parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', '0', 'softmax'], default='sym')
     parser.add_argument('--num_split', type=int, default=20, help='num of run in spite of many splits')
 
     parser.add_argument('--net', type=str, default='RiGib', help='GAT, RAT, UAT, DiGib, AiGib, UiGib')

@@ -278,98 +278,17 @@ def get_second_directed_adj(selfloop, edge_index, num_nodes, dtype):
     return edge_index, deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
 
 
-
-def Qin_get_second_directed_adj0(edge_index, num_nodes, dtype):
-    edge_weight = torch.ones((edge_index.size(1),), dtype=dtype,
-                             device=edge_index.device)
-    fill_value = 1
-    edge_index, edge_weight = add_self_loops(
-        edge_index, edge_weight, fill_value, num_nodes)
-    p_dense = torch.sparse.FloatTensor(edge_index, edge_weight, torch.Size([num_nodes, num_nodes])).to_dense()
-
-    L_in = torch.mm(p_dense.t(), p_dense)
-    L_out = torch.mm(p_dense, p_dense.t())
-
-    L = L_in
-    L[L_out == 0] = 0        # intersection
-
-    # L[torch.isnan(L)] = 0
-    L_indices = torch.nonzero(L, as_tuple=False).t()
-    edge_index = L_indices
-    edge_weight = torch.ones((edge_index.size(1),), dtype=dtype,
-                             device=edge_index.device)
-
-    # row normalization
-    row, col = edge_index
-    deg = scatter_add(edge_weight, row, dim=0, dim_size=num_nodes)
-    deg_inv_sqrt = deg.pow(-0.5)
-    deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0
-
-    return edge_index, deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
-
-def union_edge_index(edge_index):
-    # Concatenate the original edge_index with its reverse
-    union = torch.cat([edge_index, edge_index.flip(0)], dim=1)
-
-    # Remove duplicates
-    union = torch.unique(union, dim=1)
-
-    return union
-
-def Qin_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
-    selfloop = args.First_self_loop
-    norm = args.inci_norm
+def get_custom_edge_weight(args, edge_index, dtype=torch.float32):
     device = edge_index.device
-    if selfloop == 'add':
-        edge_index, _ = add_self_loops(edge_index.long(), fill_value=1, num_nodes=num_nodes)       # with selfloop, QiG get better
-    elif selfloop == 'remove':
-        edge_index, _ = remove_self_loops(edge_index)
-    edge_index = torch.unique(edge_index, dim=1).to(device)
-    edge_index = torch.cat([edge_index, edge_index.flip(0)], dim=1)
-    edge_index = torch.unique(edge_index, dim=1).to(device)
-
-    # type 1: conside different inci-norm
-    if norm in ['dir', 'row', '0', 'sym']:
-        row, col = edge_index
-        adj_norm = get_norm_adj(SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
-        edge_weight = adj_norm.storage.value()
-    # elif norm == 'sym':
-    #     # type 2: only GCN_norm
-    #     edge_weight = normalize_row_edges(edge_index, num_nodes).to(device)
-
-    if edge_weight is None:
-        edge_weight = torch.ones((edge_index.size(1),), dtype=torch.float, device=device)
-    return edge_index,  edge_weight
-
-def WCJ_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
-    norm = args.inci_norm
-    # norm = 'sym'
-    self_loop = args.First_self_loop
     W_degree = args.W_degree
-    # random value to edge weights
-    device = edge_index.device
-    if edge_weight is None:
-        edge_weight = torch.ones((edge_index.size(1), ), dtype=dtype,
-                                     device=edge_index.device)
-    if self_loop == 'add':
-        edge_index, edge_weight = add_self_loops(edge_index.long(), edge_weight, fill_value=1, num_nodes=num_nodes)  # with selfloop, QiG get better
-    elif self_loop == 'remove':
-        edge_index, _ = remove_self_loops(edge_index)
+    num_nodes = args.num_nodes
+    edge_weight = torch.ones((edge_index.size(1),), dtype=dtype,
+                             device=edge_index.device)
     row, col = edge_index
     deg0 = scatter_add(edge_weight, row, dim=0, dim_size=num_nodes).to(device)  # row degree
     deg1 = scatter_add(edge_weight, col, dim=0, dim_size=num_nodes).to(device)  # col degree
     deg2 = deg0 + deg1
 
-    # plt.hist(deg0.cpu(), bins=50, edgecolor='k')
-    # plt.xlabel('degree')
-    # plt.ylabel('Frequency')
-    # plt.title('Original Distribution of  degree0:NPZ')  # Shuffled Absolute Value-Transformed Edge Weights
-    # plt.show()
-
-    edge_index = torch.cat([edge_index, edge_index.flip(0)], dim=1)
-    edge_index = torch.unique(edge_index, dim=1)
-
-    # edge_weight = torch.ones((edge_index.size(1),), dtype=dtype, device=edge_index.device)
     if W_degree == 0:  # in-degree
         edge_weight = deg0[edge_index[0]] + deg0[edge_index[1]]
         print("Using deg0")
@@ -425,24 +344,92 @@ def WCJ_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
     else:
         NotImplementedError('Not Implemented edge-weight type')
 
+    return edge_weight
+
+def Qin_get_second_directed_adj0(edge_index, num_nodes, dtype):
+    edge_weight = torch.ones((edge_index.size(1),), dtype=dtype,
+                             device=edge_index.device)
+    fill_value = 1
+    edge_index, edge_weight = add_self_loops(
+        edge_index, edge_weight, fill_value, num_nodes)
+    p_dense = torch.sparse.FloatTensor(edge_index, edge_weight, torch.Size([num_nodes, num_nodes])).to_dense()
+
+    L_in = torch.mm(p_dense.t(), p_dense)
+    L_out = torch.mm(p_dense, p_dense.t())
+
+    L = L_in
+    L[L_out == 0] = 0        # intersection
+
+    # L[torch.isnan(L)] = 0
+    L_indices = torch.nonzero(L, as_tuple=False).t()
+    edge_index = L_indices
+    edge_weight = torch.ones((edge_index.size(1),), dtype=dtype,
+                             device=edge_index.device)
+
+    # row normalization
+    row, col = edge_index
+    deg = scatter_add(edge_weight, row, dim=0, dim_size=num_nodes)
+    deg_inv_sqrt = deg.pow(-0.5)
+    deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0
+
+    return edge_index, deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
+
+
+def Qin_get_directed_adj(args, edge_index, edge_weight=None):
+    selfloop = args.First_self_loop
+    num_nodes = args.num_nodes
+    norm = args.inci_norm
+    device = edge_index.device
+    if selfloop == 'add':
+        edge_index, _ = add_self_loops(edge_index.long(), fill_value=1, num_nodes=num_nodes)       # with selfloop, QiG get better
+    elif selfloop == 'remove':
+        edge_index, _ = remove_self_loops(edge_index)
+    edge_index = torch.unique(edge_index, dim=1).to(device)
+    edge_index = torch.cat([edge_index, edge_index.flip(0)], dim=1)
+    edge_index = torch.unique(edge_index, dim=1).to(device)
+
+    # type 1: conside different inci-norm
+    if norm in ['dir', 'row', '0', 'sym']:
+        row, col = edge_index
+        adj_norm = get_norm_adj(SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
+        edge_weight = adj_norm.storage.value()
+
+    if edge_weight is None:
+        edge_weight = torch.ones((edge_index.size(1),), dtype=torch.float, device=device)
+    return edge_index,  edge_weight
+
+def WCJ_get_directed_adj(args, edge_index, dtype=torch.float32):
+    norm = args.inci_norm
+    num_nodes = args.num_nodes
+    self_loop = args.First_self_loop
+    W_degree = args.W_degree
+    edge_weight = torch.ones((edge_index.size(1), ), dtype=dtype,
+                                     device=edge_index.device)
+    if self_loop == 'add':
+        edge_index, edge_weight = add_self_loops(edge_index.long(), edge_weight, fill_value=1, num_nodes=num_nodes)  # with selfloop, QiG get better
+    elif self_loop == 'remove':
+        edge_index, _ = remove_self_loops(edge_index)
+
+    # plt.hist(deg0.cpu(), bins=50, edgecolor='k')
+    # plt.xlabel('degree')
+    # plt.ylabel('Frequency')
+    # plt.title('Original Distribution of  degree0:NPZ')  # Shuffled Absolute Value-Transformed Edge Weights
+    # plt.show()
+
+    edge_index = torch.cat([edge_index, edge_index.flip(0)], dim=1)
+    edge_index = torch.unique(edge_index, dim=1)
+
+    edge_weight = get_custom_edge_weight(args, edge_index, dtype)
     # plt.hist(edge_weight.cpu(), bins=50, edgecolor='k')
     # plt.xlabel('Absolute Edge Weight')
     # plt.ylabel('Frequency')
     # plt.title('Original Distribution of  WiG-2 edge weights_F1=()')  # Shuffled Absolute Value-Transformed Edge Weights
     # plt.show()
 
-    if norm == 'sym':
-        # row normalization
-        row, col = edge_index
-        deg = scatter_add(edge_weight, row, dim=0, dim_size=num_nodes)
-        deg_inv_sqrt = deg.pow(-0.5)
-        deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0
-
-        edge_weight = deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
-    elif norm in ['dir', 'row', 'softmax']:
+    if norm in ['dir', 'row', 'softmax', 'sym']:
         # type 1: conside different inci-norm
         row, col = edge_index
-        adj_norm = get_norm_adj(SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
+        adj_norm = get_norm_adj(SparseTensor(row=row, col=col, value=edge_weight, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
         # all_hop_edge_index.append(torch.stack(adj_norm.coo()[:2]))
         edge_weight = adj_norm.storage.value()
 
@@ -462,30 +449,6 @@ def WCJ_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
     # plt.show()
 
     return edge_index,  edge_weight
-
-# def Qin_get_appr_directed_adj0(alpha, edge_index, num_nodes, dtype, edge_weight=None):
-#     """
-#     based on get_appr_directed_adj, all weights to 1, this is equal to GCN(norm inside GCNConV is False, and better than GCN with norm)
-#     QinDiG worked for telegram
-#         alpha:
-#         edge_index:
-#         num_nodes:
-#         dtype:
-#         edge_weight:
-#
-#     Returns:
-#
-#     """
-#
-#     device = edge_index.device
-#     if edge_weight is None:
-#         edge_weight = torch.ones((edge_index.size(1), ), dtype=dtype,
-#                                      device=edge_index.device)
-#     fill_value = 1
-#     edge_index, edge_weight = add_self_loops(edge_index.long(), edge_weight, fill_value, num_nodes)
-#     edge_index = edge_index.to(device)
-#
-#     return edge_index,  edge_weight
 
 
 def get_appr_directed_adj2(selfloop, alpha, edge_index, num_nodes, dtype, edge_weight=None):
@@ -1160,11 +1123,17 @@ def Qin_get_second_directed_adj(args, edge_index, num_nodes, k, IsExhaustive, mo
     all_hops_weight = []
     for L in L_tuple:  # Skip L1 if not needed
         row, col = L._indices()
-        adj_norm = get_norm_adj(SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
+        if args.net.startswith('Ui'):
+            adj_norm = get_norm_adj(SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
+        elif args.net.startswith('Ri'):
+            edge_weight = get_custom_edge_weight(args, L._indices())  # Jan29
+            adj_norm = get_norm_adj(SparseTensor(row=row, col=col, value=edge_weight, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
         all_hop_edge_index.append(torch.stack(adj_norm.coo()[:2]))
         all_hops_weight.append(adj_norm.storage.value())
 
     return tuple(all_hop_edge_index), tuple(all_hops_weight)
+
+
 
 def dir_normalize_edge_weights_origin(edge_index, num_nodes, edge_weights=None):
 # from DirGNN
