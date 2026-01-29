@@ -1,6 +1,6 @@
 #!/bin/bash
 
-net_values="RiGib UiGib  "
+net_values="RiGib  "
 layer_values="2  "
 incinorm=" dir sym  softmax row 0 "   #   dir row sym
 lr0=" 0.005 "
