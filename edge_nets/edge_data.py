@@ -6,59 +6,21 @@ import torch
 import numpy as np
 import pickle as pk
 import networkx as nx
-from matplotlib import pyplot as plt
 from scipy.sparse import coo_matrix, csr_matrix
-from torch_geometric.data import Data
 from torch import Tensor
 from torch_sparse import SparseTensor, coalesce
-# from stellargraph.data import EdgeSplitter    # can't install Ben
 from sklearn.model_selection import train_test_split
-from torch_geometric.utils import negative_sampling, dropout_adj
-from torch_geometric.data import Data
-from torch_geometric.utils import is_undirected, to_networkx
-from networkx.algorithms.components import is_weakly_connected
+from torch_geometric.utils import negative_sampling
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 import scipy
 import os
 from joblib import Parallel, delayed
-from torch_geometric.utils import add_remaining_self_loops, add_self_loops, remove_self_loops
+from torch_geometric.utils import add_self_loops, remove_self_loops
 from torch_scatter import scatter_add
 
 from nets.geometric_baselines import get_norm_adj
 
 
-def fast_sparse_boolean_multi_hop(A, k):
-    row, col = A._indices()     # the non-zero elements in the sparse tensor
-    n = A.size(0)
-
-    # Create dictionary for fast lookup
-    neighbors = {i: set() for i in range(n)}        # Initializes a dictionary neighbors :  key i represents a node, and the corresponding value is an empty set
-    for r, c in zip(row.tolist(), col.tolist()):
-        neighbors[r].add(c)     # store the neighbors (nodes directly connected by edges) for each node
-
-    def k_hop_neighbors(node, hops):
-        if hops == 0:
-            return {node}       # Returns a set containing only the node itself
-        if hops == 1:
-            return set(neighbors[node])     # Returns the set of immediate neighbors of the node
-        prev_hop = k_hop_neighbors(node, hops - 1)
-        current_hop = set()
-        for prev_node in prev_hop:
-            current_hop.update(neighbors[prev_node])
-        return current_hop
-
-    all_hops = []
-    for hop in range(1, k + 1):
-        new_edges = set()
-        for node in range(n):
-            hop_neighbors = k_hop_neighbors(node, hop)
-            new_edges.update((node, h) for h in hop_neighbors if h != node)
-
-        new_indices = torch.tensor(list(new_edges), dtype=torch.long).t()
-        values = torch.ones(new_indices.size(1), dtype=torch.bool)
-        all_hops.append(torch.sparse_coo_tensor(new_indices, values, (n, n)).coalesce())
-
-    return tuple(all_hops)
 
 def sub_adj(edge_index, prob, seed):
     sub_train, sub_test = train_test_split(edge_index.T, test_size=prob, random_state=seed)
@@ -66,9 +28,6 @@ def sub_adj(edge_index, prob, seed):
     return sub_train.T, sub_val.T, sub_test.T
 
 
-def edges_positive(edge_index):
-    # return true edges and reverse edges
-    return edge_index, edge_index[[1, 0]]
 
 
 def edges_negative(edge_index):
@@ -101,79 +60,6 @@ def split_negative(edge_index, prob, seed, neg_sampling=True):
     sub_train, sub_val = train_test_split(sub_train, test_size=0.2, random_state=seed)
     return sub_train.T, sub_val.T, sub_test.T
 
-
-def label_pairs_gen(pos, neg):
-    pairs = torch.cat((pos, neg), axis=-1)
-    label = np.r_[np.ones(len(pos[0])), np.zeros(len(neg[0]))]
-    return pairs, label
-
-
-def generate_dataset_2class(edge_index, splits=10, test_prob=0.6):
-    # this function doesn't consider the connectivity during removing edges for validation/testing
-    from torch_geometric.utils import to_undirected
-    datasets = {}
-
-    for i in range(splits):
-        train, val, test = sub_adj(edge_index, prob=test_prob, seed=i * 10)
-        train_neg, val_neg, test_neg = split_negative(edge_index, seed=i * 10, prob=test_prob)
-        ############################################
-        # training data
-        ############################################
-        # positive edges, reverse edges, negative edges
-        datasets[i] = {}
-
-        datasets[i]['graph'] = train
-        datasets[i]['undirected'] = to_undirected(train).numpy().T
-
-        rng = np.random.default_rng(i)
-
-        datasets[i]['train'] = {}
-        pairs, label = label_pairs_gen(train, train_neg)
-        perm = rng.permutation(len(pairs[0]))
-        datasets[i]['train']['pairs'] = pairs[:, perm].numpy().T
-        datasets[i]['train']['label'] = label[perm]
-
-        ############################################
-        # validation data
-        ############################################
-        # positive edges, reverse edges, negative edges
-
-        datasets[i]['validate'] = {}
-        pairs, label = label_pairs_gen(val, val_neg)
-        perm = rng.permutation(len(pairs[0]))
-        datasets[i]['validate']['pairs'] = pairs[:, perm].numpy().T
-        datasets[i]['validate']['label'] = label[perm]
-        ############################################
-        # test data
-        ############################################
-        # positive edges, reverse edges, negative edges
-
-        datasets[i]['test'] = {}
-        pairs, label = label_pairs_gen(test, test_neg)
-        perm = rng.permutation(len(pairs[0]))
-        datasets[i]['test']['pairs'] = pairs[:, perm].numpy().T
-        datasets[i]['test']['label'] = label[perm]
-    return datasets
-
-
-# in-out degree calculation
-# def in_out_degree(edge_index, size):
-#     A = coo_matrix((np.ones(len(edge_index)), (edge_index[:, 0], edge_index[:, 1])), shape=(size, size), dtype=np.float32).tocsr()
-#     out_degree = np.sum(A, axis=0).T
-#     in_degree = np.sum(A, axis=1)
-#     degree = torch.from_numpy(np.c_[in_degree, out_degree]).float()
-#     return degree
-
-def in_out_degree(edge_index, size, weight=None):
-    if weight is None:
-        A = coo_matrix((np.ones(len(edge_index)), (edge_index[0], edge_index[1])), shape=(size, size), dtype=np.float32).tocsr()
-    else:
-        A = coo_matrix((weight, (edge_index[0], edge_index[1])), shape=(size, size), dtype=np.float32).tocsr()
-
-    out_degree = np.sum(np.abs(A), axis = 0).T
-    in_degree = np.sum(np.abs(A), axis = 1)
-    degree = torch.from_numpy(np.c_[in_degree, out_degree]).float()
-    return degree
 
 
 def undirected_label2directed_label(adj, edge_pairs, task):
@@ -218,114 +104,6 @@ def undirected_label2directed_label(adj, edge_pairs, task):
     return new_edge_pairs[labels >= 0], labels[labels >= 0]
 
 
-def generate_dataset_3class(edge_index, size, save_path, splits=10, probs=[0.15, 0.05], task=2, label_dim=2):
-    # print(os.getcwd())
-    # print(sys.argv[0])
-    script_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
-    os.chdir(script_directory)
-    save_file = save_path + 'task' + str(task) + 'dim' + str(label_dim) + 'prob' + str(int(probs[0] * 100)) + '_' + str(int(probs[1] * 100)) + '.pk'
-    if os.path.exists(save_file):
-        print('File exists!')
-        d_results = pk.load(open(save_file, 'rb'))
-        return d_results
-
-    row, col = edge_index[0], edge_index[1]
-    # adj = coo_matrix((np.ones(len(row)), (row, col)), shape=(size, size), dtype=np.float32).tocsr()
-    # A_dense = np.array(adj.todense())
-    # edge_num = np.sum(A_dense)
-    # print( "undirected rate:", 1.0*np.sum(A_dense * A_dense.T)/edge_num )
-
-    A = coo_matrix((np.ones(len(row)), (row, col)), shape=(size, size), dtype=np.float32).tocsr()
-    # G = nx.from_scipy_sparse_matrix(A)  # create an undirected graph based on the adjacency
-    G = nx.from_scipy_sparse_array(A)  # create an undirected graph based on the adjacency
-
-    def iteration(ind):
-        datasets = {}
-        edge_splitter_test = EdgeSplitter(G)
-        G_test, ids_test, _ = edge_splitter_test.train_test_split(p=float(probs[0]), method="global", keep_connected=True, seed=ind)
-        ids_test, labels_test = undirected_label2directed_label(A, ids_test, task)
-
-        edge_splitter_val = EdgeSplitter(G_test)
-        G_val, ids_val, _ = edge_splitter_val.train_test_split(p=float(probs[1]), method="global", keep_connected=True, seed=ind)
-        ids_val, labels_val = undirected_label2directed_label(A, ids_val, task)
-
-        edge_splitter_train = EdgeSplitter(G_val)
-        _, ids_train, _ = edge_splitter_train.train_test_split(p=0.99, method="global", keep_connected=False, seed=ind)
-        ids_train, labels_train = undirected_label2directed_label(A, ids_train, task)
-
-        # observation after removing edges for training/validation/testing
-        edges = [e for e in G_val.edges]
-        # convert back to directed graph
-        oberved_edges = np.zeros((len(edges), 2), dtype=np.int32)
-        undirected_edges = np.zeros((2 * len(G.edges), 2), dtype=np.int32)
-
-        for i, e in enumerate(edges):
-            if A[e[0], e[1]] > 0:
-                oberved_edges[i, 0] = int(e[0])
-                oberved_edges[i, 1] = int(e[1])
-            if A[e[1], e[0]] > 0:
-                oberved_edges[i, 0] = int(e[1])
-                oberved_edges[i, 1] = int(e[0])
-
-        for i, e in enumerate(G.edges):
-            if A[e[0], e[1]] > 0 or A[e[1], e[0]] > 0:
-                undirected_edges[i, :] = [int(e[1]), e[0]]
-                undirected_edges[i + len(edges), :] = [int(e[0]), e[1]]
-        if label_dim == 2:
-            ids_train = ids_train[labels_train < 2]
-            labels_train = labels_train[labels_train < 2]
-            ids_test = ids_test[labels_test < 2]
-            labels_test = labels_test[labels_test < 2]
-            ids_val = ids_val[labels_val < 2]
-            labels_val = labels_val[labels_val < 2]
-        ############################################
-        # training data
-        ############################################
-        datasets[ind] = {}
-        datasets[ind]['graph'] = torch.from_numpy(oberved_edges.T).long()
-        datasets[ind]['undirected'] = undirected_edges
-
-        datasets[ind]['train'] = {}
-        datasets[ind]['train']['pairs'] = ids_train
-        datasets[ind]['train']['label'] = labels_train
-        ############################################
-        # validation data
-        ############################################
-        datasets[ind]['validate'] = {}
-        datasets[ind]['validate']['pairs'] = ids_val
-        datasets[ind]['validate']['label'] = labels_val
-        ############################################
-        # test data
-        ############################################
-        datasets[ind]['test'] = {}
-        datasets[ind]['test']['pairs'] = ids_test
-        datasets[ind]['test']['label'] = labels_test
-        return datasets
-
-    # use larger n_jobs if the number of cpus is enough
-    try:
-        p_data = Parallel(n_jobs=4)(delayed(iteration)(ind) for ind in range(20))
-    except:
-        p_data = Parallel(n_jobs=1)(delayed(iteration)(ind) for ind in range(20))
-
-    d_results = {}
-    for ind in p_data:
-        split = list(ind.keys())[0]
-        d_results[split] = ind[split]
-
-    if os.path.isdir(save_path) == False:
-        try:
-            os.makedirs(save_path)
-        except FileExistsError:
-            print('Folder exists!')
-
-    if os.path.exists(save_file) == False:
-        try:
-            pk.dump(d_results, open(save_file, 'wb'), protocol=pk.HIGHEST_PROTOCOL)
-        except FileExistsError:
-            print('File exists!')
-
-    return d_results
 
 
 #################################################################################

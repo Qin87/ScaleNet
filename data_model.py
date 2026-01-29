@@ -7,29 +7,15 @@ from torch_scatter import scatter_add
 
 from nets.gat import StandGATXBN
 from nets.gcn import StandGCNXBN
-from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model
-from nets.models import JKNet, create_MLP, create_SGC, create_pgnn, GPRGNNNet1
+from nets.models import create_MLP
 
-from nets.Signum_quaternion import QuaNet_node_prediction_one_laplacian_Qin
-from nets.Signum import SigMaNet_node_prediction_one_laplacian_Qin
 from edge_nets.edge_data import to_undirectedBen
 from gens import test_directed
-from nets import  create_sage
+from nets import create_sage
 
 from data.data_utils import random_planetoid_splits, load_directedData
-from nets.APPNP_Ben import APPNP_Model, ChebModel, SymModel
-# from nets.DGCN import SymModel
-# from nets.DiGCN import DiModel, DiGCN_IB
-from nets.DiG_NoConv import (create_DiG_MixIB_SymCat_Sym_nhid,
-                             create_DiG_MixIB_SymCat_nhid, create_DiG_IB_SymCat_nhid, create_DiG_IB_Sym_nhid, create_DiG_IB_Sym_nhid_para,
-                             create_Di_IB_nhid, DiGCN_IB_XBN_nhid_para, Di_IB_XBN_nhid_ConV,
-                             DiSAGE_x_nhid, DiSAGE_xBN_nhid,
-                          DiGCN_IB_X_nhid_para_Jk, Di_IB_XBN_nhid_ConV_JK)
-# from nets.DiG_NoConv import  create_DiG_IB
-from nets.GIN_Ben import create_GIN
-from nets.Sym_Reg import create_SymReg_add, create_SymReg_para_add
-# from nets.UGCL import UGCL_Model_Qin
-from nets.sparse_magnet import ChebNet_Ben, ChebNet_BenQin, ChebNet_Ben_05
+from nets.DiG_NoConv import (create_Di_IB_nhid, DiGCN_IB_XBN_nhid_para, Di_IB_XBN_nhid_ConV,
+                             DiSAGE_x_nhid, DiSAGE_xBN_nhid)
 import torch.nn.init as init
 
 
@@ -50,48 +36,8 @@ def init_model(model):
             module.reset_parameters()  # Res
 
 def CreatModel(args, num_features, n_cls, data_x,device):
-    if args.net.lower() == 'pgnn':
-        model = create_pgnn(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls,
-                            mu=args.mu,
-                            p=args.p,
-                            K=args.K,
-                            dropout=args.dropout, layer =args.layer)
-    elif args.net.lower() == 'mlp':
+    if args.net.lower() == 'mlp':
         model = create_MLP(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, nlayer=args.layer)
-    elif args.net.lower() == 'sgc':
-        model = create_SGC(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, nlayer=args.layer,K=args.K)
-    elif args.net == 'Dir-GNN':
-        model = get_model(num_features,  n_cls, args)
-    elif args.net.lower() == 'jk':
-        model = JKNet(in_channels=num_features,
-                        out_channels=n_cls,
-                        num_hid=args.hid_dim,
-                        K=args.K,
-                        alpha=args.alpha,
-                        dropout=args.dropout, layer=args.layer)
-    elif args.net.lower() == 'gprgnn':
-        # model = GPRGNNNet1_Qin(in_channels=num_features,      # a bit worse
-        model = GPRGNNNet1(in_channels=num_features,
-                            out_channels=n_cls,
-                            num_hid=args.hid_dim,
-                            ppnp=args.ppnp,
-                            K=args.K,
-                            alpha=args.alpha,
-                            Init=args.Init,
-                            Gamma=args.Gamma,
-                            dprate=args.dprate,
-                            dropout=args.dropout)
-
-    elif args.net == 'GIN':
-        model = create_GIN(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, nlayer=args.layer).to(device)
-    elif args.net == 'Cheb':
-        model = ChebModel(num_features, n_cls, K=args.K,filter_num=args.hid_dim, dropout=args.dropout,layer=args.layer).to(device)
-    elif args.net == 'ScaleNet':
-        model = GCN_JKNet(nfeat=num_features, nclass=n_cls, args=args)
-    elif args.net == 'GPRGNN':
-        model = GPRGNN(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, args= args)
-    elif args.net == 'APPNP':
-        model = APPNP_Model(num_features, n_cls,args.hid_dim, alpha=args.alpha,dropout=args.dropout, layer=args.layer).to(device)
     elif args.net.startswith(('Di', 'Ui', 'Ri', 'Ai')):        # GCN  -->  SAGE
         if len(args.net) < 4 :
             if args.BN_model:
@@ -99,30 +45,10 @@ def CreatModel(args, num_features, n_cls, data_x,device):
             else:
                 model = DiSAGE_x_nhid(args.net, num_features, n_cls, args).to(device)     # July 24  keep it: the original DiG paper
         else:
-            if args.paraD:
-                model = DiGCN_IB_XBN_nhid_para(args.net[2], num_features,  n_cls,  args).to(device)        # July 25
+            if args.net.startswith('Di'):
+                model = create_Di_IB_nhid(m=args.net, nfeat=num_features, nclass=n_cls, args=args).to(device)    # keep this: original DiGib paper
             else:
-                if args.net.startswith('Di'):
-                    model = create_Di_IB_nhid(m=args.net[2], nfeat=num_features, nclass=n_cls, args=args).to(device)    # keep this: original DiGib paper
-                else:
-                        model = Di_IB_XBN_nhid_ConV(m=args.net, input_dim=num_features, out_dim=n_cls, args=args).to(device)     # July 24: 1 BN
-    elif args.net.startswith('Mag'):
-        if args.net[3:].startswith('Qin'):
-            model = ChebNet_BenQin(num_features, K=args.K, label_dim=n_cls, layer=args.layer,
-                                activation=args.activation, num_filter=args.hid_dim, dropout=args.dropout).to(device)
-        if args.net[3:].startswith('0_5'):      # 0.5
-            model = ChebNet_Ben_05(num_features, K=args.K, label_dim=n_cls, layer=args.layer,
-                                activation=args.activation, num_filter=args.hid_dim, dropout=args.dropout).to(device)
-        else:
-            model = ChebNet_Ben(num_features, K=args.K, label_dim=n_cls, layer=args.layer,
-                            activation=args.activation, num_filter=args.hid_dim, dropout=args.dropout).to(device)
-    elif args.net.startswith('Sig'):
-        model = SigMaNet_node_prediction_one_laplacian_Qin(num_features, K=args.K, hidden=args.hid_dim, label_dim=n_cls,i_complex=args.i_complex, layer=args.layer,
-                                                           activation=args.activation,follow_math=args.follow_math, gcn=args.gcn, net_flow=args.netflow, unwind=True).to(device)
-    elif args.net.startswith('Qua'):
-        model = QuaNet_node_prediction_one_laplacian_Qin(device, num_features, K=args.K, hidden=args.hid_dim, label_dim=n_cls,
-                                                     layer=args.layer, unwind=True,
-                                                     quaternion_weights=args.qua_weights, quaternion_bias=args.qua_bias).to(device)
+                model = Di_IB_XBN_nhid_ConV(m=args.net, input_dim=num_features, out_dim=n_cls, args=args).to(device)     # July 24: 1 BN
 
     else:
         if args.net == 'GCN':
@@ -148,8 +74,6 @@ def get_name(args, IsDirectedGraph=1):
         dataset_to_print = dataset_to_print + 'Direct'
     if args.net.startswith('Ri'):
         net_to_print = args.net + str(args.W_degree) + '_'
-    elif args.net.startswith('Mag'):
-        net_to_print = args.net + str(args.q)
     else:
         net_to_print = args.net
     if args.net[:2] == 'Ai' or args.net == 'GAT':
@@ -159,9 +83,6 @@ def get_name(args, IsDirectedGraph=1):
     else:
         net_to_print = 'NoLNorm_' + net_to_print
     if args.net[1] == 'i':
-        if args.paraD:
-            net_to_print = net_to_print + 'paraD' + str(args.coeflr)
-
         if args.First_self_loop == 'add':
             net_to_print = net_to_print + '_AddSloop'
         elif args.First_self_loop == 'remove':
@@ -169,24 +90,8 @@ def get_name(args, IsDirectedGraph=1):
         else:
             net_to_print = net_to_print + '_NoSloop'
 
-        # if args.feat_proximity:
-        #     net_to_print = net_to_print + '_feaProx'
     if args.hid_dim != 64:
         net_to_print = net_to_print + '_hid' + str(args.hid_dim)
-    if args.MakeImbalance:
-        net_to_print = net_to_print + '_Imbal' + str(args.imb_ratio)
-    else:
-        net_to_print = net_to_print + '_Bal'
-    if args.net == 'ScaleNet':
-        if args.differ_AA or args.differ_AAt:
-            if args.differ_AA:
-                diff = 'AA'+str(args.alphaDir)
-            else:
-                diff = 'AAt'+str(args.alphaDir)
-            net_to_print = net_to_print + '_diff'+diff + '_jk'+str(args.jk)+'_norm'+args.inci_norm
-        else:
-            net_to_print = net_to_print +'_part'+str(args.alphaDir)+'_'+ str(args.betaDir)+'_'+str(
-                args.gamaDir)+'_sloop'+str(args.First_self_loop)+str(args.rm_gen_sloop)+'_jk'+str(args.jk)+'_norm'+args.inci_norm
     if args.net == 'GAT':
         net_to_print += '_ofc' + str(args.originGAT)
     if args.r20_per_class:

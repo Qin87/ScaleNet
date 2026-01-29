@@ -1,5 +1,5 @@
 ################################
-# this version to ensure that when I stop the process half way, it still could print the result.
+# GAT Variants and DiGib Variants, clean version
 ################################
 import os
 import signal
@@ -11,17 +11,12 @@ import uuid
 
 import torch
 import torch.nn.functional as F
-from torch_sparse import SparseTensor
 
 from args import parse_args
 from data.data_utils import keep_all_data, seed_everything, set_device
-from edge_nets.edge_data import get_second_directed_adj, get_second_directed_adj_union, \
-    WCJ_get_directed_adj, Qin_get_second_directed_adj, Qin_get_directed_adj, get_appr_directed_adj2, Qin_get_second_directed_adj0, Qin_get_second_adj, Qin_get_all_directed_adj, normalize_row_edges
-from data_model import CreatModel, log_file, get_name, load_dataset, feat_proximity, delete_edges, make_imbalanced, count_homophilic_nodes, remove_inner_class_edge
-from nets.DiG_NoConv import union_edges
-from nets.src2 import laplacian
-from nets.src2.quaternion_laplacian import process_quaternion_laplacian
-from data.preprocess import  F_in_out, F_in_out0
+from edge_nets.edge_data import get_second_directed_adj, \
+    WCJ_get_directed_adj, Qin_get_second_directed_adj, Qin_get_directed_adj, get_appr_directed_adj2, Qin_get_second_directed_adj0, Qin_get_second_adj
+from data_model import CreatModel, log_file, get_name, load_dataset, count_homophilic_nodes, remove_inner_class_edge
 from utils import CrossEntropy, use_best_hyperparams
 from sklearn.metrics import balanced_accuracy_score, f1_score
 
@@ -34,7 +29,6 @@ def signal_handler(sig, frame):
     global end_time
     end_time = time.time()
     print("Process interrupted!")
-    # calculate_time()
     log_results()
     sys.exit(0)
 
@@ -73,8 +67,7 @@ def log_results():
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
-def train(edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight, X_real, X_img, Sigedge_index, norm_real, norm_imag,
-          X_img_i, X_img_j, X_img_k,norm_img_i,norm_img_j, norm_img_k, Quaedge_index):
+def train(SparseEdges, edge_weight):
     global class_num_list, idx_info, prev_out, biedges
     global data_train_mask, data_val_mask, data_test_mask
     new_edge_index=None
@@ -82,38 +75,17 @@ def train(edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight, X_
     new_y = None
     new_y_train = None
     model.train()
-    if args.net.endswith('ymN1'):   # without 1st-order edges
-        biedges = edge_in
     optimizer.zero_grad()
-    if args.net.startswith(('Sym', 'addSym', '1ym', 'addQym')):
-        out = model(data_x, biedges, edge_in, in_weight, edge_out, out_weight)
-    elif args.net.startswith(('Di', 'Ui', 'Ri', 'Ai')) and not args.net.startswith('Dir'):
+    if args.net.startswith(('Di', 'Ui', 'Ri', 'Ai')) and not args.net.startswith('Dir'):
         out = model(data_x, SparseEdges, edge_weight)
-    elif args.net.startswith('Mag'):
-        out = model(X_real, X_img, edges, args.q, edge_weight)  # (1,5,183)
-    elif args.net.startswith('Sig'):
-        out = model(X_real, X_img, norm_real, norm_imag, Sigedge_index)
-    elif args.net.startswith('Qua'):
-        out = model(X_real, X_img_i, X_img_j, X_img_k,norm_img_i, norm_img_j, norm_img_k, norm_real,Quaedge_index)
     else:
         out = model(data_x, edges)
     criterion(out[data_train_mask], data_y[data_train_mask]).backward()
 
     with torch.no_grad():
         model.eval()
-        if args.net.startswith(('Sym', 'addSym', '1ym', 'addQym')):
-            out = model(data_x, biedges, edge_in, in_weight, edge_out, out_weight)
-        elif args.net.startswith(('Di', 'Ui', 'Ri', 'Ai')) and not args.net.startswith('Dir'):
-            if args.net[3:].startswith(('Sym', '1ym')):
-                out = model(data_x, biedges, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight)
-            else:
-                out = model(data_x, SparseEdges, edge_weight)
-        elif args.net.startswith('Mag'):
-            out = model(X_real, X_img, edges, args.q, edge_weight)
-        elif args.net.startswith('Sig'):
-            out = model(X_real, X_img, norm_real, norm_imag, Sigedge_index)
-        elif args.net.startswith('Qua'):  #
-            out = model(X_real, X_img_i, X_img_j, X_img_k,norm_img_i, norm_img_j, norm_img_k, norm_real,Quaedge_index)
+        if args.net.startswith(('Di', 'Ui', 'Ri', 'Ai')) and not args.net.startswith('Dir'):
+            out = model(data_x, SparseEdges, edge_weight)
         else:
             out = model(data_x, edges)
         val_loss = F.cross_entropy(out[data_val_mask], data_y[data_val_mask])
@@ -127,19 +99,8 @@ def train(edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight, X_
 def test():
     global edge_in, in_weight, edge_out, out_weight
     model.eval()
-    if args.net.startswith(('Sym', 'addSym', '1ym', 'addQym')):
-        logits = model(data_x, biedges, edge_in, in_weight, edge_out, out_weight)
-    elif args.net.startswith(('Di', 'Ui', 'Ri', 'Ai')) and not args.net.startswith('Dir'):
-        if args.net[3:].startswith(('Sym', '1ym')):
-            logits = model(data_x, biedges, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight)
-        else:
-            logits = model(data_x, SparseEdges, edge_weight)
-    elif args.net.startswith('Mag'):
-        logits = model(X_real, X_img, edges, args.q, edge_weight)
-    elif args.net.startswith('Sig'):  #
-        logits = model(X_real, X_img, norm_real, norm_imag, Sigedge_index)
-    elif args.net.startswith('Qua'):  #
-        logits = model(X_real, X_img_i, X_img_j, X_img_k, norm_imag_i, norm_imag_j, norm_imag_k, norm_real, Quaedge_index)
+    if args.net.startswith(('Di', 'Ui', 'Ri', 'Ai')) and not args.net.startswith('Dir'):
+        logits = model(data_x, SparseEdges, edge_weight)
     else:
         logits = model(data_x, edges[:, train_edge_mask])
     accs, baccs, f1s = [], [], []
@@ -165,7 +126,6 @@ net_to_print, dataset_to_print = get_name(args, IsDirectedGraph)
 load_time = time.time()
 
 
-
 log_directory, log_file_name_with_timestamp = log_file(net_to_print, dataset_to_print, args)
 if not os.path.exists(log_directory):
     os.makedirs(log_directory)
@@ -184,20 +144,8 @@ edge_out = None
 out_weight = None
 SparseEdges = None
 edge_weight = None
-X_img = None
-X_real = None
 edge_Qin_in_tensor = None
 edge_Qin_out_tensor = None
-Sigedge_index = None
-norm_real = None
-norm_imag = None
-norm_imag_i =None
-norm_imag_j = None
-norm_imag_k = None
-Quaedge_index = None
-X_img_i = None
-X_img_j = None
-X_img_k = None
 
 gcn = True
 IsExhaustive = False
@@ -225,9 +173,6 @@ criterion = CrossEntropy().to(device)
 n_cls = data_y.max().item() + 1
 
 if args.net.startswith(('Ui', 'Ri', 'Di', 'Ai')) and not args.net.startswith('Dir'):
-    if args.feat_proximity:
-        average_distance, threshold_value = feat_proximity(edges, data_x)
-        proximity_threshold = threshold_value
     if args.net.startswith('Ri'):
         edge_index1, edge_weights1 = WCJ_get_directed_adj(args, edges.long(), data_y.size(-1), data_x.dtype)
     elif args.net.startswith(('Ui', 'Ai')):
@@ -241,28 +186,28 @@ if args.net.startswith(('Ui', 'Ri', 'Di', 'Ai')) and not args.net.startswith('Di
             k = 2
         else:
             k = int(args.net[-1])
-        if IsDirectedGraph:
-            if args.net[-2] == 'i':
-                if k == 2 and args.net.startswith('Di'):
-                    edge_list = []
-                    if args.net.startswith('Di'):
-                        edge_index_tuple, edge_weights_tuple = get_second_directed_adj(args, edges.long(), data_y.size(-1), data_x.dtype)
-                    else:   # just for debug
-                        edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj0(edges.long(), data_y.size(-1), data_x.dtype)
-                    edge_list.append(edge_index_tuple)
-                    edge_index_tuple = tuple(edge_list)
-                    edge_weights_tuple = (edge_weights_tuple, )
-                    del edge_list
-                else:
-                    edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj(args, edges.long(), data_y.size(-1), k, IsExhaustive, mode='intersection', norm=args.inci_norm)
-            elif args.net[-2] == 'u':
-                edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj(args, edges.long(), data_y.size(-1), k, IsExhaustive, mode='union', norm=args.inci_norm)
-            elif args.net[-2] == 's':  # separate tuple for A_in, and A_out
-                edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj(args, edges.long(), data_y.size(-1), k, IsExhaustive, mode='separate', norm=args.inci_norm)
+        # if IsDirectedGraph:
+        if args.net[-2] == 'i':
+            if k == 2 and args.net.startswith('Di'):
+                edge_list = []
+                if args.net.startswith('Di'):
+                    edge_index_tuple, edge_weights_tuple = get_second_directed_adj(args, edges.long(), data_y.size(-1), data_x.dtype)
+                else:   # just for debug
+                    edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj0(edges.long(), data_y.size(-1), data_x.dtype)
+                edge_list.append(edge_index_tuple)
+                edge_index_tuple = tuple(edge_list)
+                edge_weights_tuple = (edge_weights_tuple, )
+                del edge_list
             else:
-                raise NotImplementedError("Not Implemented" + args.net)
-        else:    # undirected graph
-            edge_index_tuple, edge_weights_tuple = Qin_get_second_adj(edges.long(), data_y.size(-1), k, IsExhaustive)
+                edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj(args, edges.long(), data_y.size(-1), k, IsExhaustive, mode='intersection', norm=args.inci_norm)
+        elif args.net[-2] == 'u':
+            edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj(args, edges.long(), data_y.size(-1), k, IsExhaustive, mode='union', norm=args.inci_norm)
+        elif args.net[-2] == 's':  # separate tuple for A_in, and A_out
+            edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj(args, edges.long(), data_y.size(-1), k, IsExhaustive, mode='separate', norm=args.inci_norm)
+        else:
+            raise NotImplementedError("Not Implemented" + args.net)
+        # else:    # undirected graph
+        #     edge_index_tuple, edge_weights_tuple = Qin_get_second_adj(edges.long(), data_y.size(-1), k, IsExhaustive)
         SparseEdges = (edge_index1,) + edge_index_tuple
         edge_weight = (edge_weights1,) + edge_weights_tuple
         del edge_index_tuple, edge_weights_tuple
@@ -270,47 +215,7 @@ if args.net.startswith(('Ui', 'Ri', 'Di', 'Ai')) and not args.net.startswith('Di
         SparseEdges = edge_index1
         edge_weight = edge_weights1
     del edge_index1, edge_weights1
-    if args.feat_proximity:
-        if not isinstance(SparseEdges, tuple):
-            SparseEdges = delete_edges(SparseEdges, data_x, threshold_value).to(device)
-            edge_weight = normalize_row_edges(SparseEdges, data_x.size()[0]).to(device)
-            # SparseEdges = (SparseEdges,)  normalize_row_edges(edge_index, num_nodes, edge_weight)
-        else:
-            proximity_edges = []
-            proximity_weights = []
-            for edge_index1 in SparseEdges:
-                filtered_edges = delete_edges(edge_index1, data_x, threshold_value).to(device)
-                filtered_edge_weights = normalize_row_edges(filtered_edges, data_x.size()[0]).to(device)
-                print("num_edge change from {} to {}".format(edge_index1.shape[1], filtered_edge_weights.shape[0]))
-                proximity_edges.append(filtered_edges)
-                proximity_weights.append(filtered_edge_weights)
-            SparseEdges = tuple(proximity_edges)
-            edge_weight = tuple(proximity_weights)
-            del proximity_edges, proximity_weights
 
-    if args.net[3:].startswith('1ym'):
-        biedges, edge_in, in_weight, edge_out, out_weight = F_in_out(edges.long(), data_y.size(-1), edges_weight)
-    elif args.net[3:].startswith('Sym'):
-        biedges, edge_in, in_weight, edge_out, out_weight = F_in_out0(edges.long(), data_y.size(-1), edges_weight)
-
-elif args.net.startswith(('Sym', 'addSym', '1ym', 'addQym')):
-    if args.net.startswith(('1ym', 'addQym')):
-        biedges, edge_in, in_weight, edge_out, out_weight = F_in_out(edges.long(),data_y.size(-1),edges_weight)
-    else:
-        biedges, edge_in, in_weight, edge_out, out_weight = F_in_out0(edges.long(),data_y.size(-1),edges_weight)
-elif args.net.startswith(('Mag', 'Sig', 'Qua')):
-    data_x_cpu = data_x.cpu()
-    X_img_i = torch.FloatTensor(data_x_cpu).to(device)
-    X_img_j = torch.FloatTensor(data_x_cpu).to(device)
-    X_img_k = torch.FloatTensor(data_x_cpu).to(device)
-    X_img = torch.FloatTensor(data_x_cpu).to(device)
-    X_real = torch.FloatTensor(data_x_cpu).to(device)
-    if args.net.startswith('Sig'):
-        Sigedge_index, norm_real, norm_imag = laplacian.process_magnetic_laplacian(edge_index=edges, gcn=gcn, net_flow=args.netflow, x_real=X_real, edge_weight=edge_weight,
-                                                                                   normalization='sym', return_lambda_max=False)
-    elif args.net.startswith('Qua'):
-        Quaedge_index, norm_real, norm_imag_i, norm_imag_j, norm_imag_k = process_quaternion_laplacian(edge_index=edges, x_real=X_real, edge_weight=edge_weight,
-                                                                                                    normalization='sym', return_lambda_max=False)
 else:
     pass
 try:
@@ -328,20 +233,14 @@ preprocess_time = time.time()
 try:
     with open(log_directory + log_file_name_with_timestamp, 'a') as log_file:
         print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=log_file)
-
         print('Using Device: ', device, file=log_file)
-
         for split in range(num_run):
-
             model = CreatModel(args, num_features, n_cls, data_x, device).to(device)
             if split==0:
                 print('no_in, homo_in, no_out, homo_out:', no_in, homo_ratio_A, no_out, homo_ratio_At, file=log_file)
                 print(model, file=log_file)
                 print(model)
-                if args.net.startswith('ym'):
-                    print('Sym edge size(biedge, edge_in, edge_out):', biedges.size(),  in_weight.size(),  out_weight.size(), file=log_file)
-                    print('Sym edge size(biedge, edge_in, edge_out):', biedges.size(),  in_weight.size(),  out_weight.size())
-                elif args.net[1:].startswith('i'):
+                if args.net[1:].startswith('i'):
                     print(args.net, 'edge size:', end=' ', file=log_file)
                     print(args.net, 'edge size:', end=' ')
                     if isinstance(edge_weight, tuple):
@@ -353,7 +252,6 @@ try:
                             print(edge_weight.size()[0], end=' ', file=log_file)
                             print(edge_weight.size()[0], end=' ')
 
-            # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.l2)
             if hasattr(model, 'coefs'):     # parameter without weight_decay will typically change faster
                 optimizer = torch.optim.Adam(
                     [dict(params=model.reg_params, lr=args.lr, weight_decay=5e-4), dict(params=model.non_reg_params, lr=args.lr, weight_decay=0),
@@ -396,27 +294,11 @@ try:
             for i in range(n_cls):
                 data_num = (stats == i).sum()
                 n_data.append(int(data_num.item()))
-            # idx_info = get_idx_info(data_y, n_cls, data_train_mask, device)  # torch: all train nodes for each class
             node_train = torch.sum(data_train_mask).item()
 
-            if args.MakeImbalance:
-                print("make imbalanced")
-                print("make imbalanced", file=log_file)
-                class_num_list, data_train_mask, idx_info, train_node_mask, train_edge_mask = \
-                    make_imbalanced(edges, data_y, n_data, n_cls, args.imb_ratio, data_train_mask.clone())
-                if split==0:
-                    print(dataset_to_print + '\ttotalNode_' + str(data_train_mask.size()[0]) + '\t trainNodeBal_' + str(node_train) + '\t trainNodeImbal_' + str(torch.sum(
-                        data_train_mask).item()), file=log_file)
-                    print(dataset_to_print + '\ttotalEdge_' + str(edges.size()[1]) + '\t trainEdgeBal_' + str(train_edge_mask.size()[0]) + '\t trainEdgeImbal_' + str(torch.sum(
-                        train_edge_mask).item()), file=log_file)
-                    print(dataset_to_print + '\ttotalNode_' + str(data_train_mask.size()[0]) + '\t trainNodeBal_' + str(node_train) + '\t trainNodeImbal_' + str(torch.sum(
-                        data_train_mask).item()))
-                    print(dataset_to_print + '\ttotalEdge_' + str(edges.size()[1]) + '\t trainEdgeBal_' + str(train_edge_mask.size()[0]) + '\t trainEdgeImbal_' + str(torch.sum(
-                        train_edge_mask).item()))
-            else:
-                class_num_list, data_train_mask, idx_info, train_node_mask, train_edge_mask = \
-                    keep_all_data(edges, data_y, n_data, n_cls, data_train_mask)
-                if split == 0:
+            class_num_list, data_train_mask, idx_info, train_node_mask, train_edge_mask = \
+                keep_all_data(edges, data_y, n_data, n_cls, data_train_mask)
+            if split == 0:
                     print(dataset_to_print + '\ttotalNode_' + str(data_train_mask.size()[0]) + '\t trainNode_' + str(node_train), file=log_file)
                     print(dataset_to_print + '\ttotalEdge_' + str(edges.size()[1]) + '\t trainEdge_' + str(train_edge_mask.size()[0]), file=log_file)
                     print(dataset_to_print + '\ttotalNode_' + str(data_train_mask.size()[0]) + '\t trainNodeBal_' + str(node_train) + '\t trainNodeNow_' + str(torch.sum(
@@ -434,8 +316,6 @@ try:
                 if sorted_list[-1]:
                     imbalance_ratio_origin = sorted_list_original[0] / sorted_list_original[-1]
                     print('Origin Imbalance ratio is {:.1f}'.format(imbalance_ratio_origin))
-                    # imbalance_ratio = sorted_list[0] / sorted_list[-1]
-                    # print('New    Imbalance ratio is {:.1f}'.format(imbalance_ratio))
                 else:
                     print('the minor class has no training sample')
 
@@ -461,8 +341,7 @@ try:
             end_epoch = 0
 
             for epoch in range(args.epoch):
-                val_loss, new_edge_index, new_x, new_y, new_y_train = train(edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight, X_real, X_img, Sigedge_index, norm_real,norm_imag,
-                                                                                X_img_i, X_img_j, X_img_k,norm_imag_i, norm_imag_j, norm_imag_k, Quaedge_index)
+                val_loss, new_edge_index, new_x, new_y, new_y_train = train(SparseEdges, edge_weight)
                 accs, baccs, f1s = test()
                 train_acc, val_acc, tmp_test_acc = accs
                 train_f1, val_f1, tmp_test_f1 = f1s

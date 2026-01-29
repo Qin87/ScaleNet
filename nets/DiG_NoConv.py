@@ -7,9 +7,7 @@ from torch.nn import Parameter, Linear
 from torch_geometric.nn import MessagePassing, JumpingKnowledge, GATConv
 from torch_geometric.nn.inits import glorot, zeros
 
-# from nets.edge_data import normalize_row_edges
-from nets.Sym_Reg import DGCNConv
-from typing import Union, Tuple, Optional
+from typing import  Optional
 from torch_geometric.typing import (OptPairTensor, Adj, Size, OptTensor)
 from torch import Tensor
 
@@ -74,22 +72,17 @@ class InceptionBlock_Di(torch.nn.Module):
     def __init__(self, m, in_dim, out_dim, args):
         super().__init__()
         head = args.heads
-        K = args.K
         self.dropout = args.dropout
-        self.fusion_mode = args.fs
-        alpha_dir = args.alphaDir
 
         tuple_num = 2
         self.ln = Linear(in_dim, out_dim)
         if m == 'S':
             self.convx = nn.ModuleList([DiSAGEConv(in_dim, out_dim) for _ in range(tuple_num)])
-        elif m in ['RiGib', 'UiGib']:
+        elif m in ['RiGib', 'UiGib', 'DiGib']:
             self.convx = nn.ModuleList([DIGCNConv(in_dim, out_dim) for _ in range(tuple_num)])
             # self.convx = nn.ModuleList([DirGCNConv(in_dim, out_dim, alpha_dir) for _ in range(20)])
             # self.convx = nn.ModuleList([DirGCNConv(in_dim, out_dim) for _ in range(20)])
             # self.convx = DirGCNConv(in_dim, out_dim)
-        elif m == 'C':
-            self.convx = nn.ModuleList([DIChebConv(in_dim, out_dim, K) for _ in range(tuple_num)])
         elif m in ['AiGib']:
             num_head = 1
             head_dim = out_dim // num_head
