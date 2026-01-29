@@ -194,8 +194,6 @@ if args.net.startswith(('Ui', 'Ri', 'Di', 'Ai')) and not args.net.startswith('Di
                     edge_index_tuple, edge_weights_tuple = get_second_directed_adj(args, edges.long(), data_y.size(-1), data_x.dtype)
                 # elif args.net.startswith('Ui'):   # just for debug
                 #     edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj0(edges.long(), data_y.size(-1), data_x.dtype)
-                # elif args.net.startswith('Ri'):
-                #     edge_index_tuple, edge_weights_tuple = WCJ_get_second_directed_adj0(args, edges.long(), data_y.size(-1), data_x.dtype)
 
                 edge_list.append(edge_index_tuple)
                 edge_index_tuple = tuple(edge_list)

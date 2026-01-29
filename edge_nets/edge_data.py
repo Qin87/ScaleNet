@@ -388,7 +388,6 @@ def Qin_get_directed_adj(args, edge_index, edge_weight=None):
     edge_index = torch.cat([edge_index, edge_index.flip(0)], dim=1)
     edge_index = torch.unique(edge_index, dim=1).to(device)
 
-    # type 1: conside different inci-norm
     if args.net.startswith(('Ui')):
         row, col = edge_index
         adj_norm = get_norm_adj(SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
