@@ -389,7 +389,7 @@ def Qin_get_directed_adj(args, edge_index, edge_weight=None):
     edge_index = torch.unique(edge_index, dim=1).to(device)
 
     # type 1: conside different inci-norm
-    if norm in ['dir', 'row', '0', 'sym']:
+    if args.net.startswith(('Ui')):
         row, col = edge_index
         adj_norm = get_norm_adj(SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
         edge_weight = adj_norm.storage.value()
@@ -1126,8 +1126,11 @@ def Qin_get_second_directed_adj(args, edge_index, num_nodes, k, IsExhaustive, mo
         if args.net.startswith('Ui'):
             adj_norm = get_norm_adj(SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
         elif args.net.startswith('Ri'):
-            edge_weight = get_custom_edge_weight(args, L._indices())  # Jan29
-            adj_norm = get_norm_adj(SparseTensor(row=row, col=col, value=edge_weight, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
+            edge_weightL = get_custom_edge_weight(args, L._indices())  # Jan29
+            adj_norm = get_norm_adj(SparseTensor(row=row, col=col, value=edge_weightL, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
+        elif args.net.startswith('Ai'):
+            edge_weightL = torch.ones(L._indices().size(1), dtype=torch.bool).to(device)
+            adj_norm = SparseTensor(row=row, col=col, value=edge_weightL, sparse_sizes=(num_nodes, num_nodes))
         all_hop_edge_index.append(torch.stack(adj_norm.coo()[:2]))
         all_hops_weight.append(adj_norm.storage.value())
 

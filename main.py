@@ -176,7 +176,7 @@ if args.net.startswith(('Ui', 'Ri', 'Di', 'Ai')) and not args.net.startswith('Di
     if args.net.startswith('Ri'):
         edge_index1, edge_weights1 = WCJ_get_directed_adj(args, edges.long(), data_x.dtype)
     elif args.net.startswith(('Ui', 'Ai')):
-        edge_index1, edge_weights1 = Qin_get_directed_adj(args, edges.long(), data_x.dtype)
+        edge_index1, edge_weights1 = Qin_get_directed_adj(args, edges.long())
     elif args.net.startswith('Di'):
         edge_index1, edge_weights1 = get_appr_directed_adj2(args.First_self_loop, args.alpha, edges.long(), data_y.size(-1), data_x.dtype)  # consumiing for large graph
     else:
@@ -201,7 +201,7 @@ if args.net.startswith(('Ui', 'Ri', 'Di', 'Ai')) and not args.net.startswith('Di
                 edge_index_tuple = tuple(edge_list)
                 edge_weights_tuple = (edge_weights_tuple, )
                 del edge_list
-            elif args.net.startswith(('Ui', 'Ri')):
+            elif args.net.startswith(('Ui', 'Ri', 'Ai')):
                 edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj(args, edges.long(), data_y.size(-1), k, IsExhaustive, mode='intersection', norm=args.inci_norm)
 
         elif args.net[-2] == 'u':
