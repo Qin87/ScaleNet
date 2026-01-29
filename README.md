@@ -1,4 +1,4 @@
-# Position: Attention Mechanism might be Dispensable for Node Classification
+# Position: Attention Offers Little Benefit for Graph Node Classification
 
 ## Requirements
 
@@ -27,7 +27,6 @@ Specify the name of the dataset you want to use. The available datasets are cate
     - `cora_ml/`
     - `WikiCS/`
     - `telegram/telegram`
-    - `dgl/pubmed`
 
 - **Undirected Datasets**:  
   - `Amazon-Photo`
@@ -51,6 +50,8 @@ Specify the name of the dataset you want to use. The available datasets are cate
   - `DiGib`
   - `UiGib`
   - `RiGib`
+  
+  set --inci_norm: softmax  dir sym row 0 for different normalizations
 
 
 
@@ -60,11 +61,11 @@ Specify the name of the dataset you want to use. The available datasets are cate
   - On original datasets:
 
     ```
-    python3 main.py  --net='RAT' --use_best_hyperparams=1  --Dataset='cora_ml/'
+    python3 main.py  --net='RAT' --use_best_hyperparams=1  --Dataset='cora_ml/'   --inci_norm='sym'
     ```
   
     ```
-    python3 main.py --net='UAT' --use_best_hyperparams=1   --Dataset='citeseer/'
+    python3 main.py --net='UAT' --use_best_hyperparams=1   --Dataset='citeseer/'   --inci_norm='softmax'
     
     ```
 
