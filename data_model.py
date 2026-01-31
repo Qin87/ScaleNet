@@ -14,7 +14,7 @@ from gens import test_directed
 from nets import create_sage
 
 from data.data_utils import random_planetoid_splits, load_directedData
-from nets.DiG_NoConv import (create_Di_IB_nhid, DiGCN_IB_XBN_nhid_para, Di_IB_XBN_nhid_ConV,
+from nets.DiG_NoConv import (create_Di_IB_nhid,  Di_IB_XBN_nhid_ConV,
                              DiSAGE_x_nhid, DiSAGE_xBN_nhid)
 import torch.nn.init as init
 

@@ -79,6 +79,7 @@ class UnifiedGATRATConv(MessagePassing):
         else:
             self.attention_mode = 'gat'
         self.inci_norm = args.inci_norm
+        self.num_nodes= args.num_nodes
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -283,7 +284,7 @@ class UnifiedGATRATConv(MessagePassing):
             alpha = self.edge_updater(edge_index, alpha=alpha, edge_attr=edge_attr,size=size)
         else:
             if self.attention_mode == 'rat':
-                alpha = torch.empty((E, self.heads),   device=index.device).uniform_(1e-4, 1e4)
+                alpha = torch.empty((E, self.heads),  device=index.device).uniform_(1e-4, 1e4)
             elif self.attention_mode == 'uat':
                 alpha = torch.ones((E, self.heads),device=index.device)
             else:
@@ -295,7 +296,25 @@ class UnifiedGATRATConv(MessagePassing):
         if self.inci_norm == 'softmax':
             alpha = softmax(alpha, index, ptr, dim_size)
         else:
-            alpha = self._alpha_from_adj(edge_index, norm=self.inci_norm)
+            if hasattr(edge_index, 'coo'):
+                row, col, _ = edge_index.coo()
+                edge_index = torch.stack([row, col], dim=0)
+            elif hasattr(edge_index, 'row') and hasattr(edge_index, 'col'):
+                row = edge_index.row
+                col = edge_index.col
+                edge_index = torch.stack([row, col], dim=0)
+            else:
+                # Already standard edge_index tensor
+                pass
+            row, col = edge_index
+            alpha = alpha.squeeze(-1)
+            adj = SparseTensor(row=row, col=col, value=alpha, sparse_sizes=(self.num_nodes, self.num_nodes))
+            # adj = torch.sparse_coo_tensor(
+            #     indices=torch.stack([row, col], dim=0),
+            #     values=alpha,
+            #     size=(num_nodes, num_nodes)
+            # )
+            alpha = self._alpha_from_adj(adj, norm=self.inci_norm)
 
         alpha = F.dropout(alpha, p=self.dropout, training=self.training)
 
@@ -351,7 +370,6 @@ class UnifiedGATRATConv(MessagePassing):
         # edge weights live in the SparseTensor storage
         edge_weight = norm_adj.storage.value()
         if edge_weight is None:
-            # just in case: if values are missing, assume 1s (shouldn't happen here)
             edge_weight = torch.ones(norm_adj.nnz(), device=norm_adj.device())
 
         alpha = edge_weight.view(-1, 1).repeat(1, self.heads)  # [E, H]
