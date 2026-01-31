@@ -304,16 +304,10 @@ class UnifiedGATRATConv(MessagePassing):
                 col = edge_index.col
                 edge_index = torch.stack([row, col], dim=0)
             else:
-                # Already standard edge_index tensor
                 pass
             row, col = edge_index
             alpha = alpha.squeeze(-1)
             adj = SparseTensor(row=row, col=col, value=alpha, sparse_sizes=(self.num_nodes, self.num_nodes))
-            # adj = torch.sparse_coo_tensor(
-            #     indices=torch.stack([row, col], dim=0),
-            #     values=alpha,
-            #     size=(num_nodes, num_nodes)
-            # )
             alpha = self._alpha_from_adj(adj, norm=self.inci_norm)
 
         alpha = F.dropout(alpha, p=self.dropout, training=self.training)
