@@ -24,9 +24,6 @@ class InceptionBlock_Di(torch.nn.Module):
         self.ln = Linear(in_dim, out_dim)
         if m in ['RiGib', 'UiGib', 'DiGib']:
             self.convx = nn.ModuleList([DIGCNConv(in_dim, out_dim) for _ in range(tuple_num)])
-            # self.convx = nn.ModuleList([DirGCNConv(in_dim, out_dim, alpha_dir) for _ in range(20)])
-            # self.convx = nn.ModuleList([DirGCNConv(in_dim, out_dim) for _ in range(20)])
-            # self.convx = DirGCNConv(in_dim, out_dim)
         elif m in ['AiGib']:
             num_head = 1
             head_dim = out_dim // num_head

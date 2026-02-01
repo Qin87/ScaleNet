@@ -158,7 +158,7 @@ bacc_list = []
 device = set_device(args)
 
 data_x = data_x.to(device)
-print(data_x[0])
+# print(data_x[0])
 print(min(data_x[0]), max(data_x[0]), max(data_x[1]))
 data_y = data_y.to(device)
 edges = edges.to(device)
