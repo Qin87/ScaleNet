@@ -401,7 +401,6 @@ def WCJ_get_directed_adj(args, edge_index, dtype=torch.float32):
     norm = args.inci_norm
     num_nodes = args.num_nodes
     self_loop = args.First_self_loop
-    W_degree = args.W_degree
     edge_weight = torch.ones((edge_index.size(1), ), dtype=dtype,
                                      device=edge_index.device)
     if self_loop == 'add':
@@ -431,9 +430,6 @@ def WCJ_get_directed_adj(args, edge_index, dtype=torch.float32):
         adj_norm = get_norm_adj(SparseTensor(row=row, col=col, value=edge_weight, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
         # all_hop_edge_index.append(torch.stack(adj_norm.coo()[:2]))
         edge_weight = adj_norm.storage.value()
-
-        # type 2: only GCN_norm
-        # edge_weight = normalize_row_edges(edge_index, num_nodes).to(device)
 
     min_val = torch.min(edge_weight).item()
     max_val = torch.max(edge_weight).item()

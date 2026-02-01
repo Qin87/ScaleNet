@@ -21,7 +21,7 @@ def parse_args():
     # for DirGNN
     parser.add_argument("--conv_type", type=str, help="DirGNN Model", default="dir-gcn")
     parser.add_argument("--normalize", type=int, help="whether use layer normalization in ScaleNet, model:0/1", default=1)
-    parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', '0', 'softmax'], default='sym')
+    parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', '0', 'softmax'], default='row')
     parser.add_argument('--num_split', type=int, default=20, help='num of run in spite of many splits')
 
     parser.add_argument('--net', type=str, default='RAT', help='GAT, RAT, UAT, DiGib, AiGib, UiGib')
@@ -38,7 +38,7 @@ def parse_args():
 
     parser.add_argument('--lr', type=float, default=0.01, help='learning rate')
     parser.add_argument('--l2', type=float, default=5e-4, help='l2 regularizer, 5e-4')
-    parser.add_argument('-hds', '--heads', default=1, type=int)
+    parser.add_argument('-hds', '--heads', default=2, type=int)
 
     parser.add_argument('--epochs', type=int, default=1500, help='training epochs')
 
@@ -47,7 +47,7 @@ def parse_args():
 
     parser.add_argument('--W_degree', type=int, default=5, help='using in-degree_0, out-degree_1, full-degree_2 for DiG edge-weight, 3 is random[1,100], 4 is random[0.1,1], 5 is random[0.0001, '
                                                                 '10000], 50 is abs(sin(random5))')
-    parser.add_argument('--to_undirected', '-tud', type=int, default=0, help='if convert graph to undirected')
+    parser.add_argument('--to_undirected', '-tud', type=int, default=1, help='if convert graph to undirected')
 
 
     args = parser.parse_args()

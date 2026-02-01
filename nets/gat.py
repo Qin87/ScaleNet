@@ -306,8 +306,19 @@ class UnifiedGATRATConv(MessagePassing):
             else:
                 pass
             row, col = edge_index
-            alpha = alpha.squeeze(-1)
-            adj = SparseTensor(row=row, col=col, value=alpha, sparse_sizes=(self.num_nodes, self.num_nodes))
+            # print(f"alpha.shape before squeeze: {alpha.shape}")
+            # print(f"alpha.shape after squeeze: {alpha.squeeze(-1).shape}")
+            for i in range(alpha.shape[1]):
+                alpha_i = alpha[:, i]
+                # alpha = alpha.squeeze(-1)
+                adj = SparseTensor(row=row, col=col, value=alpha_i, sparse_sizes=(self.num_nodes, self.num_nodes))
+                # print("type:", type(adj))   # debug
+                # print("sizes:", getattr(adj, 'sizes', lambda: None)())  # for SparseTensor [web:17]
+                # try:
+                #     print("shape:", adj.shape)
+                # except AttributeError:
+                #     pass
+
             alpha = self._alpha_from_adj(adj, norm=self.inci_norm)
 
         alpha = F.dropout(alpha, p=self.dropout, training=self.training)
@@ -358,7 +369,6 @@ class UnifiedGATRATConv(MessagePassing):
         return alpha
 
     def _alpha_from_adj(self, adj_t: SparseTensor, norm='dir') -> Tensor:
-        # adj_t is SparseTensor in COO/CSR form
         norm_adj = get_norm_adj(adj_t, norm=norm)  # uses gcn_norm(adj, add_self_loops=0)
 
         # edge weights live in the SparseTensor storage
