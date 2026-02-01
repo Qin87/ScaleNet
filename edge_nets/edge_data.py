@@ -1129,6 +1129,11 @@ def Qin_get_second_directed_adj(args, edge_index, num_nodes, k, IsExhaustive, mo
         all_hop_edge_index.append(torch.stack(adj_norm.coo()[:2]))
         all_hops_weight.append(adj_norm.storage.value())
 
+        norm_edge_weight = adj_norm.storage.value()  # debug
+        min_val = torch.min(norm_edge_weight).item()
+        max_val = torch.max(norm_edge_weight).item()
+        print(f"Normalized Edge weight range: [{min_val}, {max_val}]")
+
     return tuple(all_hop_edge_index), tuple(all_hops_weight)
 
 
