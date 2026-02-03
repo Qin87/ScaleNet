@@ -14,3 +14,15 @@
 *.idea
 *.iml
 /data/film
+
+*.iml
+.idea/*
+.idea/GraphSHA.iml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
+.idea/inspection/Project_Default.xml
+
+# Python
+__pycache__/
+*.pyc

@@ -79,6 +79,7 @@ class UnifiedGATRATConv(MessagePassing):
         else:
             self.attention_mode = 'gat'
         self.inci_norm = args.inci_norm
+        self.num_nodes= args.num_nodes
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -283,7 +284,7 @@ class UnifiedGATRATConv(MessagePassing):
             alpha = self.edge_updater(edge_index, alpha=alpha, edge_attr=edge_attr,size=size)
         else:
             if self.attention_mode == 'rat':
-                alpha = torch.empty((E, self.heads),   device=index.device).uniform_(1e-4, 1e4)
+                alpha = torch.empty((E, self.heads),  device=index.device).uniform_(1e-4, 1e4)
             elif self.attention_mode == 'uat':
                 alpha = torch.ones((E, self.heads),device=index.device)
             else:
@@ -295,7 +296,30 @@ class UnifiedGATRATConv(MessagePassing):
         if self.inci_norm == 'softmax':
             alpha = softmax(alpha, index, ptr, dim_size)
         else:
-            alpha = self._alpha_from_adj(edge_index, norm=self.inci_norm)
+            if hasattr(edge_index, 'coo'):
+                row, col, _ = edge_index.coo()
+                edge_index = torch.stack([row, col], dim=0)
+            elif hasattr(edge_index, 'row') and hasattr(edge_index, 'col'):
+                row = edge_index.row
+                col = edge_index.col
+                edge_index = torch.stack([row, col], dim=0)
+            else:
+                pass
+            row, col = edge_index
+            # print(f"alpha.shape before squeeze: {alpha.shape}")
+            # print(f"alpha.shape after squeeze: {alpha.squeeze(-1).shape}")
+            for i in range(alpha.shape[1]):
+                alpha_i = alpha[:, i]
+                # alpha = alpha.squeeze(-1)
+                adj = SparseTensor(row=row, col=col, value=alpha_i, sparse_sizes=(self.num_nodes, self.num_nodes))
+                # print("type:", type(adj))   # debug
+                # print("sizes:", getattr(adj, 'sizes', lambda: None)())  # for SparseTensor [web:17]
+                # try:
+                #     print("shape:", adj.shape)
+                # except AttributeError:
+                #     pass
+
+            alpha = self._alpha_from_adj(adj, norm=self.inci_norm)
 
         alpha = F.dropout(alpha, p=self.dropout, training=self.training)
 
@@ -345,13 +369,11 @@ class UnifiedGATRATConv(MessagePassing):
         return alpha
 
     def _alpha_from_adj(self, adj_t: SparseTensor, norm='dir') -> Tensor:
-        # adj_t is SparseTensor in COO/CSR form
         norm_adj = get_norm_adj(adj_t, norm=norm)  # uses gcn_norm(adj, add_self_loops=0)
 
         # edge weights live in the SparseTensor storage
         edge_weight = norm_adj.storage.value()
         if edge_weight is None:
-            # just in case: if values are missing, assume 1s (shouldn't happen here)
             edge_weight = torch.ones(norm_adj.nnz(), device=norm_adj.device())
 
         alpha = edge_weight.view(-1, 1).repeat(1, self.heads)  # [E, H]

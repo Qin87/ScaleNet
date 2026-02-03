@@ -7,29 +7,15 @@ from torch_scatter import scatter_add
 
 from nets.gat import StandGATXBN
 from nets.gcn import StandGCNXBN
-from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model
-from nets.models import JKNet, create_MLP, create_SGC, create_pgnn, GPRGNNNet1
+from nets.models import create_MLP
 
-from nets.Signum_quaternion import QuaNet_node_prediction_one_laplacian_Qin
-from nets.Signum import SigMaNet_node_prediction_one_laplacian_Qin
 from edge_nets.edge_data import to_undirectedBen
 from gens import test_directed
-from nets import  create_sage
+from nets import create_sage
 
 from data.data_utils import random_planetoid_splits, load_directedData
-from nets.APPNP_Ben import APPNP_Model, ChebModel, SymModel
-# from nets.DGCN import SymModel
-# from nets.DiGCN import DiModel, DiGCN_IB
-from nets.DiG_NoConv import (create_DiG_MixIB_SymCat_Sym_nhid,
-                             create_DiG_MixIB_SymCat_nhid, create_DiG_IB_SymCat_nhid, create_DiG_IB_Sym_nhid, create_DiG_IB_Sym_nhid_para,
-                             create_Di_IB_nhid, DiGCN_IB_XBN_nhid_para, Di_IB_XBN_nhid_ConV,
-                             DiSAGE_x_nhid, DiSAGE_xBN_nhid,
-                          DiGCN_IB_X_nhid_para_Jk, Di_IB_XBN_nhid_ConV_JK)
-# from nets.DiG_NoConv import  create_DiG_IB
-from nets.GIN_Ben import create_GIN
-from nets.Sym_Reg import create_SymReg_add, create_SymReg_para_add
-# from nets.UGCL import UGCL_Model_Qin
-from nets.sparse_magnet import ChebNet_Ben, ChebNet_BenQin, ChebNet_Ben_05
+from nets.DiG_NoConv import (create_Di_IB_nhid,  Di_IB_XBN_nhid_ConV,
+                             DiSAGE_x_nhid, DiSAGE_xBN_nhid)
 import torch.nn.init as init
 
 
@@ -50,48 +36,8 @@ def init_model(model):
             module.reset_parameters()  # Res
 
 def CreatModel(args, num_features, n_cls, data_x,device):
-    if args.net.lower() == 'pgnn':
-        model = create_pgnn(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls,
-                            mu=args.mu,
-                            p=args.p,
-                            K=args.K,
-                            dropout=args.dropout, layer =args.layer)
-    elif args.net.lower() == 'mlp':
+    if args.net.lower() == 'mlp':
         model = create_MLP(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, nlayer=args.layer)
-    elif args.net.lower() == 'sgc':
-        model = create_SGC(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, nlayer=args.layer,K=args.K)
-    elif args.net == 'Dir-GNN':
-        model = get_model(num_features,  n_cls, args)
-    elif args.net.lower() == 'jk':
-        model = JKNet(in_channels=num_features,
-                        out_channels=n_cls,
-                        num_hid=args.hid_dim,
-                        K=args.K,
-                        alpha=args.alpha,
-                        dropout=args.dropout, layer=args.layer)
-    elif args.net.lower() == 'gprgnn':
-        # model = GPRGNNNet1_Qin(in_channels=num_features,      # a bit worse
-        model = GPRGNNNet1(in_channels=num_features,
-                            out_channels=n_cls,
-                            num_hid=args.hid_dim,
-                            ppnp=args.ppnp,
-                            K=args.K,
-                            alpha=args.alpha,
-                            Init=args.Init,
-                            Gamma=args.Gamma,
-                            dprate=args.dprate,
-                            dropout=args.dropout)
-
-    elif args.net == 'GIN':
-        model = create_GIN(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, nlayer=args.layer).to(device)
-    elif args.net == 'Cheb':
-        model = ChebModel(num_features, n_cls, K=args.K,filter_num=args.hid_dim, dropout=args.dropout,layer=args.layer).to(device)
-    elif args.net == 'ScaleNet':
-        model = GCN_JKNet(nfeat=num_features, nclass=n_cls, args=args)
-    elif args.net == 'GPRGNN':
-        model = GPRGNN(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, args= args)
-    elif args.net == 'APPNP':
-        model = APPNP_Model(num_features, n_cls,args.hid_dim, alpha=args.alpha,dropout=args.dropout, layer=args.layer).to(device)
     elif args.net.startswith(('Di', 'Ui', 'Ri', 'Ai')):        # GCN  -->  SAGE
         if len(args.net) < 4 :
             if args.BN_model:
@@ -99,30 +45,10 @@ def CreatModel(args, num_features, n_cls, data_x,device):
             else:
                 model = DiSAGE_x_nhid(args.net, num_features, n_cls, args).to(device)     # July 24  keep it: the original DiG paper
         else:
-            if args.paraD:
-                model = DiGCN_IB_XBN_nhid_para(args.net[2], num_features,  n_cls,  args).to(device)        # July 25
+            if args.net.startswith('Di'):
+                model = create_Di_IB_nhid(m=args.net, nfeat=num_features, nclass=n_cls, args=args).to(device)    # keep this: original DiGib paper
             else:
-                if args.net.startswith('Di'):
-                    model = create_Di_IB_nhid(m=args.net[2], nfeat=num_features, nclass=n_cls, args=args).to(device)    # keep this: original DiGib paper
-                else:
-                        model = Di_IB_XBN_nhid_ConV(m=args.net, input_dim=num_features, out_dim=n_cls, args=args).to(device)     # July 24: 1 BN
-    elif args.net.startswith('Mag'):
-        if args.net[3:].startswith('Qin'):
-            model = ChebNet_BenQin(num_features, K=args.K, label_dim=n_cls, layer=args.layer,
-                                activation=args.activation, num_filter=args.hid_dim, dropout=args.dropout).to(device)
-        if args.net[3:].startswith('0_5'):      # 0.5
-            model = ChebNet_Ben_05(num_features, K=args.K, label_dim=n_cls, layer=args.layer,
-                                activation=args.activation, num_filter=args.hid_dim, dropout=args.dropout).to(device)
-        else:
-            model = ChebNet_Ben(num_features, K=args.K, label_dim=n_cls, layer=args.layer,
-                            activation=args.activation, num_filter=args.hid_dim, dropout=args.dropout).to(device)
-    elif args.net.startswith('Sig'):
-        model = SigMaNet_node_prediction_one_laplacian_Qin(num_features, K=args.K, hidden=args.hid_dim, label_dim=n_cls,i_complex=args.i_complex, layer=args.layer,
-                                                           activation=args.activation,follow_math=args.follow_math, gcn=args.gcn, net_flow=args.netflow, unwind=True).to(device)
-    elif args.net.startswith('Qua'):
-        model = QuaNet_node_prediction_one_laplacian_Qin(device, num_features, K=args.K, hidden=args.hid_dim, label_dim=n_cls,
-                                                     layer=args.layer, unwind=True,
-                                                     quaternion_weights=args.qua_weights, quaternion_bias=args.qua_bias).to(device)
+                model = Di_IB_XBN_nhid_ConV(m=args.net, input_dim=num_features, out_dim=n_cls, args=args).to(device)     # July 24: 1 BN
 
     else:
         if args.net == 'GCN':
@@ -148,20 +74,15 @@ def get_name(args, IsDirectedGraph=1):
         dataset_to_print = dataset_to_print + 'Direct'
     if args.net.startswith('Ri'):
         net_to_print = args.net + str(args.W_degree) + '_'
-    elif args.net.startswith('Mag'):
-        net_to_print = args.net + str(args.q)
     else:
         net_to_print = args.net
-    if args.net[:2] == 'Ai' or args.net == 'GAT':
+    if args.net[:2] == 'Ai' or args.net in ['GAT', 'RAT', 'UAT']:
         net_to_print = net_to_print + '_Head' + str(args.heads)
     if args.BN_model:
         net_to_print = 'LNorm_' + net_to_print
     else:
         net_to_print = 'NoLNorm_' + net_to_print
     if args.net[1] == 'i':
-        if args.paraD:
-            net_to_print = net_to_print + 'paraD' + str(args.coeflr)
-
         if args.First_self_loop == 'add':
             net_to_print = net_to_print + '_AddSloop'
         elif args.First_self_loop == 'remove':
@@ -169,24 +90,8 @@ def get_name(args, IsDirectedGraph=1):
         else:
             net_to_print = net_to_print + '_NoSloop'
 
-        # if args.feat_proximity:
-        #     net_to_print = net_to_print + '_feaProx'
     if args.hid_dim != 64:
-        net_to_print = net_to_print + str(args.hid_dim) + 'hid_'
-    if args.MakeImbalance:
-        net_to_print = net_to_print + '_Imbal' + str(args.imb_ratio)
-    else:
-        net_to_print = net_to_print + '_Bal'
-    if args.net == 'ScaleNet':
-        if args.differ_AA or args.differ_AAt:
-            if args.differ_AA:
-                diff = 'AA'+str(args.alphaDir)
-            else:
-                diff = 'AAt'+str(args.alphaDir)
-            net_to_print = net_to_print + '_diff'+diff + '_jk'+str(args.jk)+'_norm'+args.inci_norm
-        else:
-            net_to_print = net_to_print +'_part'+str(args.alphaDir)+'_'+ str(args.betaDir)+'_'+str(
-                args.gamaDir)+'_sloop'+str(args.First_self_loop)+str(args.rm_gen_sloop)+'_jk'+str(args.jk)+'_norm'+args.inci_norm
+        net_to_print = net_to_print + '_hid' + str(args.hid_dim)
     if args.net == 'GAT':
         net_to_print += '_ofc' + str(args.originGAT)
     if args.r20_per_class:
@@ -198,7 +103,7 @@ def get_name(args, IsDirectedGraph=1):
 def log_file(net_to_print, dataset_to_print, args):
     log_file_name = dataset_to_print+'_'+net_to_print+'_lay'+str(args.layer)+'_lr'+str(args.lr)+'_NoImp'+str(args.NotImproved)+'_norm'+args.inci_norm
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    log_file_name_with_timestamp = f"{log_file_name}_{timestamp}.log"
+    log_file_name_with_timestamp = f"{log_file_name}_{timestamp}_c.log"
 
     log_directory = "~/Documents/Benlogs/"  # Change this to your desired directory
     log_directory = os.path.expanduser(log_directory)
@@ -318,149 +223,6 @@ def load_dataset(args):
             print("Converted to undirected data")
 
     return data_x, data_y, edges, edges_weight, dataset_num_features,data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph
-
-def feat_proximity(edge_index1, data_x):
-    distances = []
-    for i in range(edge_index1.size(1)):
-        a = edge_index1[0, i]
-        b = edge_index1[1, i]
-    # for edge in edges:
-    #     a, b = edge
-        node_a_features = data_x[a]
-        node_b_features = data_x[b]
-        distance = torch.sum(torch.abs(node_a_features - node_b_features)).item()
-        distances.append(distance)
-
-    # Calculate the average distance
-    average_distance = sum(distances) / len(distances)
-
-    sorted_distances = sorted(distances)
-
-    # Calculate the threshold for the first 80%
-    threshold_index = int(len(sorted_distances) * 0.8) - 1
-    threshold_value = sorted_distances[threshold_index]
-    return average_distance, threshold_value
-
-
-def delete_edges(edge_index1, data_x, threshold_value):
-    filtered_edges = []
-    for i in range(edge_index1.size(1)):
-        a = edge_index1[0, i]
-        b = edge_index1[1, i]
-        node_a_features = data_x[a]
-        node_b_features = data_x[b]
-        distance = torch.sum(torch.abs(node_a_features - node_b_features)).item()
-        if distance < threshold_value:
-            filtered_edges.append([a, b])
-
-    # Convert filtered edges back to a tensor
-    filtered_edge_index1 = torch.tensor(filtered_edges).t()
-    return filtered_edge_index1
-
-def make_imbalanced(edge_index, label, n_data, n_cls, ratio, train_mask):
-    """
-    training split don't influence edge, but make_imbalance will cut edge.
-    :param edge_index: all edges in the graph
-    :param label: classes of all nodes
-    :param n_data:num of train in each class
-    :param n_cls:
-    :param ratio:
-    :param train_mask:
-    :return: list(class_num_list), train_mask, idx_info, node_mask, edge_mask
-    """
-    # Sort from major to minor
-    device = edge_index.device
-    n_data = torch.tensor(n_data)   # from list to tensor
-    sorted_n_data, indices = torch.sort(n_data, descending=True)
-    inv_indices = np.zeros(n_cls, dtype=np.int64)
-    for i in range(n_cls):
-        inv_indices[indices[i].item()] = i
-    assert (torch.arange(len(n_data))[indices][torch.tensor(inv_indices)] - torch.arange(len(n_data))).sum().abs() < 1e-12
-
-    # Compute the number of nodes for each class following LT rules
-    ratio = torch.tensor(ratio, dtype=torch.float32)   # for mu to convert to numpy
-    # Move the tensor to CPU before using it in numpy operations
-    if not isinstance(n_cls, int):
-        ratio = ratio.cpu()
-        n_cls = n_cls.cpu()
-    mu = np.power(1/ratio.detach().cpu().numpy(), 1/(n_cls - 1))            # mu is ratio of two classes, while args.ratio is ratio of major to minor
-    mu = torch.tensor(mu, dtype=torch.float32, device=ratio.device)
-
-    n_round = []
-    class_num_list = []
-    for i in range(n_cls):
-        # assert int(sorted_n_data[0].item() * np.power(mu, i)) >= 1
-        temp = int(sorted_n_data[0].item() * np.power(mu, i))
-        if temp< 1:
-            temp = 1
-        class_num_list.append(int(min(temp, sorted_n_data[i])))
-        """
-        Note that we remove low degree nodes sequentially (10 steps)
-        since degrees of remaining nodes are changed when some nodes are removed
-        """
-        if i < 1:  # We do not remove any nodes of the most frequent class
-            n_round.append(1)
-        else:
-            n_round.append(10)
-    class_num_list = np.array(class_num_list)   # from list to np.array
-    class_num_list = class_num_list[inv_indices]    # sorted
-    n_round = np.array(n_round)[inv_indices]        # sorted  #
-
-    # Compute the number of nodes which would be removed for each class
-    remove_class_num_list = [n_data[i].item()-class_num_list[i] for i in range(n_cls)]
-    remove_idx_list = [[] for _ in range(n_cls)]
-    # print(remove_idx_list)  # [[], [], [], [], [], [], []]
-    cls_idx_list = []   # nodes belong to class i
-    index_list = torch.arange(len(train_mask)).to(device)
-    original_mask = train_mask.clone()
-    for i in range(n_cls):
-        cls_idx_list.append(index_list[(label == i) & original_mask])
-
-    for i in indices.numpy():
-        for r in range(1, n_round[i]+1):
-            # Find removed nodes
-            node_mask = label.new_ones(label.size(), dtype=torch.bool).to(device)
-            # new_ones is a PyTorch function used to create a new tensor of ones with the specified shape and data type.
-            # print("Initialize all true: ", node_mask[:10])
-            node_mask[sum(remove_idx_list, [])] = False
-            # print("Setting some as false", node_mask[:10])
-
-            # Remove connection with removed nodes
-            row, col = edge_index[0].to(device), edge_index[1].to(device)
-            # print("row is ", row.shape, row[:10])
-            # # torch.Size([10556]) tensor([0, 0, 0, 1, 1, 1, 2, 2, 2, 2])
-            # print("col is ", row.shape, col[:10])
-            # # torch.Size([10556]) tensor([ 633, 1862, 2582,    2,  652,  654,    1,  332, 1454, 1666])
-            row_mask = node_mask[row]
-            col_mask = node_mask[col]
-            edge_mask = row_mask & col_mask  # elementwise "and"
-
-            # Compute degree
-            degree = scatter_add(torch.ones_like(col[edge_mask]), col[edge_mask], dim_size=label.size(0)).to(row.device)
-            degree = degree[cls_idx_list[i]]
-            _, remove_idx = torch.topk(degree, (r*remove_class_num_list[i])//n_round[i], largest=False)
-            remove_idx = cls_idx_list[i][remove_idx]
-
-            # remove_idx_list[i] = list(remove_idx.numpy())
-            remove_idx_list[i] = list(remove_idx.cpu().numpy())     # Ben for GPU
-
-    # Find removed nodes
-    node_mask = label.new_ones(label.size(), dtype=torch.bool)
-    node_mask[sum(remove_idx_list, [])] = False
-
-    # Remove connection with removed nodes
-    row, col = edge_index[0], edge_index[1]
-    row_mask = node_mask[row]
-    col_mask = node_mask[col]
-    edge_mask = row_mask & col_mask     #
-
-    train_mask = node_mask & train_mask
-    idx_info = []
-    for i in range(n_cls):
-        cls_indices = index_list[(label == i) & train_mask]
-        idx_info.append(cls_indices)
-
-    return list(class_num_list), train_mask, idx_info, node_mask, edge_mask
 
 
 def count_homophilic_nodes(edge_index, y):

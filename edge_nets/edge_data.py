@@ -6,59 +6,21 @@ import torch
 import numpy as np
 import pickle as pk
 import networkx as nx
-from matplotlib import pyplot as plt
 from scipy.sparse import coo_matrix, csr_matrix
-from torch_geometric.data import Data
 from torch import Tensor
 from torch_sparse import SparseTensor, coalesce
-# from stellargraph.data import EdgeSplitter    # can't install Ben
 from sklearn.model_selection import train_test_split
-from torch_geometric.utils import negative_sampling, dropout_adj
-from torch_geometric.data import Data
-from torch_geometric.utils import is_undirected, to_networkx
-from networkx.algorithms.components import is_weakly_connected
+from torch_geometric.utils import negative_sampling
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 import scipy
 import os
 from joblib import Parallel, delayed
-from torch_geometric.utils import add_remaining_self_loops, add_self_loops, remove_self_loops
+from torch_geometric.utils import add_self_loops, remove_self_loops
 from torch_scatter import scatter_add
 
 from nets.geometric_baselines import get_norm_adj
 
 
-def fast_sparse_boolean_multi_hop(A, k):
-    row, col = A._indices()     # the non-zero elements in the sparse tensor
-    n = A.size(0)
-
-    # Create dictionary for fast lookup
-    neighbors = {i: set() for i in range(n)}        # Initializes a dictionary neighbors :  key i represents a node, and the corresponding value is an empty set
-    for r, c in zip(row.tolist(), col.tolist()):
-        neighbors[r].add(c)     # store the neighbors (nodes directly connected by edges) for each node
-
-    def k_hop_neighbors(node, hops):
-        if hops == 0:
-            return {node}       # Returns a set containing only the node itself
-        if hops == 1:
-            return set(neighbors[node])     # Returns the set of immediate neighbors of the node
-        prev_hop = k_hop_neighbors(node, hops - 1)
-        current_hop = set()
-        for prev_node in prev_hop:
-            current_hop.update(neighbors[prev_node])
-        return current_hop
-
-    all_hops = []
-    for hop in range(1, k + 1):
-        new_edges = set()
-        for node in range(n):
-            hop_neighbors = k_hop_neighbors(node, hop)
-            new_edges.update((node, h) for h in hop_neighbors if h != node)
-
-        new_indices = torch.tensor(list(new_edges), dtype=torch.long).t()
-        values = torch.ones(new_indices.size(1), dtype=torch.bool)
-        all_hops.append(torch.sparse_coo_tensor(new_indices, values, (n, n)).coalesce())
-
-    return tuple(all_hops)
 
 def sub_adj(edge_index, prob, seed):
     sub_train, sub_test = train_test_split(edge_index.T, test_size=prob, random_state=seed)
@@ -66,9 +28,6 @@ def sub_adj(edge_index, prob, seed):
     return sub_train.T, sub_val.T, sub_test.T
 
 
-def edges_positive(edge_index):
-    # return true edges and reverse edges
-    return edge_index, edge_index[[1, 0]]
 
 
 def edges_negative(edge_index):
@@ -101,79 +60,6 @@ def split_negative(edge_index, prob, seed, neg_sampling=True):
     sub_train, sub_val = train_test_split(sub_train, test_size=0.2, random_state=seed)
     return sub_train.T, sub_val.T, sub_test.T
 
-
-def label_pairs_gen(pos, neg):
-    pairs = torch.cat((pos, neg), axis=-1)
-    label = np.r_[np.ones(len(pos[0])), np.zeros(len(neg[0]))]
-    return pairs, label
-
-
-def generate_dataset_2class(edge_index, splits=10, test_prob=0.6):
-    # this function doesn't consider the connectivity during removing edges for validation/testing
-    from torch_geometric.utils import to_undirected
-    datasets = {}
-
-    for i in range(splits):
-        train, val, test = sub_adj(edge_index, prob=test_prob, seed=i * 10)
-        train_neg, val_neg, test_neg = split_negative(edge_index, seed=i * 10, prob=test_prob)
-        ############################################
-        # training data
-        ############################################
-        # positive edges, reverse edges, negative edges
-        datasets[i] = {}
-
-        datasets[i]['graph'] = train
-        datasets[i]['undirected'] = to_undirected(train).numpy().T
-
-        rng = np.random.default_rng(i)
-
-        datasets[i]['train'] = {}
-        pairs, label = label_pairs_gen(train, train_neg)
-        perm = rng.permutation(len(pairs[0]))
-        datasets[i]['train']['pairs'] = pairs[:, perm].numpy().T
-        datasets[i]['train']['label'] = label[perm]
-
-        ############################################
-        # validation data
-        ############################################
-        # positive edges, reverse edges, negative edges
-
-        datasets[i]['validate'] = {}
-        pairs, label = label_pairs_gen(val, val_neg)
-        perm = rng.permutation(len(pairs[0]))
-        datasets[i]['validate']['pairs'] = pairs[:, perm].numpy().T
-        datasets[i]['validate']['label'] = label[perm]
-        ############################################
-        # test data
-        ############################################
-        # positive edges, reverse edges, negative edges
-
-        datasets[i]['test'] = {}
-        pairs, label = label_pairs_gen(test, test_neg)
-        perm = rng.permutation(len(pairs[0]))
-        datasets[i]['test']['pairs'] = pairs[:, perm].numpy().T
-        datasets[i]['test']['label'] = label[perm]
-    return datasets
-
-
-# in-out degree calculation
-# def in_out_degree(edge_index, size):
-#     A = coo_matrix((np.ones(len(edge_index)), (edge_index[:, 0], edge_index[:, 1])), shape=(size, size), dtype=np.float32).tocsr()
-#     out_degree = np.sum(A, axis=0).T
-#     in_degree = np.sum(A, axis=1)
-#     degree = torch.from_numpy(np.c_[in_degree, out_degree]).float()
-#     return degree
-
-def in_out_degree(edge_index, size, weight=None):
-    if weight is None:
-        A = coo_matrix((np.ones(len(edge_index)), (edge_index[0], edge_index[1])), shape=(size, size), dtype=np.float32).tocsr()
-    else:
-        A = coo_matrix((weight, (edge_index[0], edge_index[1])), shape=(size, size), dtype=np.float32).tocsr()
-
-    out_degree = np.sum(np.abs(A), axis = 0).T
-    in_degree = np.sum(np.abs(A), axis = 1)
-    degree = torch.from_numpy(np.c_[in_degree, out_degree]).float()
-    return degree
 
 
 def undirected_label2directed_label(adj, edge_pairs, task):
@@ -218,114 +104,6 @@ def undirected_label2directed_label(adj, edge_pairs, task):
     return new_edge_pairs[labels >= 0], labels[labels >= 0]
 
 
-def generate_dataset_3class(edge_index, size, save_path, splits=10, probs=[0.15, 0.05], task=2, label_dim=2):
-    # print(os.getcwd())
-    # print(sys.argv[0])
-    script_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
-    os.chdir(script_directory)
-    save_file = save_path + 'task' + str(task) + 'dim' + str(label_dim) + 'prob' + str(int(probs[0] * 100)) + '_' + str(int(probs[1] * 100)) + '.pk'
-    if os.path.exists(save_file):
-        print('File exists!')
-        d_results = pk.load(open(save_file, 'rb'))
-        return d_results
-
-    row, col = edge_index[0], edge_index[1]
-    # adj = coo_matrix((np.ones(len(row)), (row, col)), shape=(size, size), dtype=np.float32).tocsr()
-    # A_dense = np.array(adj.todense())
-    # edge_num = np.sum(A_dense)
-    # print( "undirected rate:", 1.0*np.sum(A_dense * A_dense.T)/edge_num )
-
-    A = coo_matrix((np.ones(len(row)), (row, col)), shape=(size, size), dtype=np.float32).tocsr()
-    # G = nx.from_scipy_sparse_matrix(A)  # create an undirected graph based on the adjacency
-    G = nx.from_scipy_sparse_array(A)  # create an undirected graph based on the adjacency
-
-    def iteration(ind):
-        datasets = {}
-        edge_splitter_test = EdgeSplitter(G)
-        G_test, ids_test, _ = edge_splitter_test.train_test_split(p=float(probs[0]), method="global", keep_connected=True, seed=ind)
-        ids_test, labels_test = undirected_label2directed_label(A, ids_test, task)
-
-        edge_splitter_val = EdgeSplitter(G_test)
-        G_val, ids_val, _ = edge_splitter_val.train_test_split(p=float(probs[1]), method="global", keep_connected=True, seed=ind)
-        ids_val, labels_val = undirected_label2directed_label(A, ids_val, task)
-
-        edge_splitter_train = EdgeSplitter(G_val)
-        _, ids_train, _ = edge_splitter_train.train_test_split(p=0.99, method="global", keep_connected=False, seed=ind)
-        ids_train, labels_train = undirected_label2directed_label(A, ids_train, task)
-
-        # observation after removing edges for training/validation/testing
-        edges = [e for e in G_val.edges]
-        # convert back to directed graph
-        oberved_edges = np.zeros((len(edges), 2), dtype=np.int32)
-        undirected_edges = np.zeros((2 * len(G.edges), 2), dtype=np.int32)
-
-        for i, e in enumerate(edges):
-            if A[e[0], e[1]] > 0:
-                oberved_edges[i, 0] = int(e[0])
-                oberved_edges[i, 1] = int(e[1])
-            if A[e[1], e[0]] > 0:
-                oberved_edges[i, 0] = int(e[1])
-                oberved_edges[i, 1] = int(e[0])
-
-        for i, e in enumerate(G.edges):
-            if A[e[0], e[1]] > 0 or A[e[1], e[0]] > 0:
-                undirected_edges[i, :] = [int(e[1]), e[0]]
-                undirected_edges[i + len(edges), :] = [int(e[0]), e[1]]
-        if label_dim == 2:
-            ids_train = ids_train[labels_train < 2]
-            labels_train = labels_train[labels_train < 2]
-            ids_test = ids_test[labels_test < 2]
-            labels_test = labels_test[labels_test < 2]
-            ids_val = ids_val[labels_val < 2]
-            labels_val = labels_val[labels_val < 2]
-        ############################################
-        # training data
-        ############################################
-        datasets[ind] = {}
-        datasets[ind]['graph'] = torch.from_numpy(oberved_edges.T).long()
-        datasets[ind]['undirected'] = undirected_edges
-
-        datasets[ind]['train'] = {}
-        datasets[ind]['train']['pairs'] = ids_train
-        datasets[ind]['train']['label'] = labels_train
-        ############################################
-        # validation data
-        ############################################
-        datasets[ind]['validate'] = {}
-        datasets[ind]['validate']['pairs'] = ids_val
-        datasets[ind]['validate']['label'] = labels_val
-        ############################################
-        # test data
-        ############################################
-        datasets[ind]['test'] = {}
-        datasets[ind]['test']['pairs'] = ids_test
-        datasets[ind]['test']['label'] = labels_test
-        return datasets
-
-    # use larger n_jobs if the number of cpus is enough
-    try:
-        p_data = Parallel(n_jobs=4)(delayed(iteration)(ind) for ind in range(20))
-    except:
-        p_data = Parallel(n_jobs=1)(delayed(iteration)(ind) for ind in range(20))
-
-    d_results = {}
-    for ind in p_data:
-        split = list(ind.keys())[0]
-        d_results[split] = ind[split]
-
-    if os.path.isdir(save_path) == False:
-        try:
-            os.makedirs(save_path)
-        except FileExistsError:
-            print('Folder exists!')
-
-    if os.path.exists(save_file) == False:
-        try:
-            pk.dump(d_results, open(save_file, 'wb'), protocol=pk.HIGHEST_PROTOCOL)
-        except FileExistsError:
-            print('File exists!')
-
-    return d_results
 
 
 #################################################################################
@@ -500,98 +278,17 @@ def get_second_directed_adj(selfloop, edge_index, num_nodes, dtype):
     return edge_index, deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
 
 
-
-def Qin_get_second_directed_adj0(edge_index, num_nodes, dtype):
-    edge_weight = torch.ones((edge_index.size(1),), dtype=dtype,
-                             device=edge_index.device)
-    fill_value = 1
-    edge_index, edge_weight = add_self_loops(
-        edge_index, edge_weight, fill_value, num_nodes)
-    p_dense = torch.sparse.FloatTensor(edge_index, edge_weight, torch.Size([num_nodes, num_nodes])).to_dense()
-
-    L_in = torch.mm(p_dense.t(), p_dense)
-    L_out = torch.mm(p_dense, p_dense.t())
-
-    L = L_in
-    L[L_out == 0] = 0        # intersection
-
-    # L[torch.isnan(L)] = 0
-    L_indices = torch.nonzero(L, as_tuple=False).t()
-    edge_index = L_indices
-    edge_weight = torch.ones((edge_index.size(1),), dtype=dtype,
-                             device=edge_index.device)
-
-    # row normalization
-    row, col = edge_index
-    deg = scatter_add(edge_weight, row, dim=0, dim_size=num_nodes)
-    deg_inv_sqrt = deg.pow(-0.5)
-    deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0
-
-    return edge_index, deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
-
-def union_edge_index(edge_index):
-    # Concatenate the original edge_index with its reverse
-    union = torch.cat([edge_index, edge_index.flip(0)], dim=1)
-
-    # Remove duplicates
-    union = torch.unique(union, dim=1)
-
-    return union
-
-def Qin_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
-    selfloop = args.First_self_loop
-    norm = args.inci_norm
+def get_custom_edge_weight(args, edge_index, dtype=torch.float32):
     device = edge_index.device
-    if selfloop == 'add':
-        edge_index, _ = add_self_loops(edge_index.long(), fill_value=1, num_nodes=num_nodes)       # with selfloop, QiG get better
-    elif selfloop == 'remove':
-        edge_index, _ = remove_self_loops(edge_index)
-    edge_index = torch.unique(edge_index, dim=1).to(device)
-    edge_index = torch.cat([edge_index, edge_index.flip(0)], dim=1)
-    edge_index = torch.unique(edge_index, dim=1).to(device)
-
-    # type 1: conside different inci-norm
-    if norm in ['dir', 'row', '0', 'sym']:
-        row, col = edge_index
-        adj_norm = get_norm_adj(SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
-        edge_weight = adj_norm.storage.value()
-    # elif norm == 'sym':
-    #     # type 2: only GCN_norm
-    #     edge_weight = normalize_row_edges(edge_index, num_nodes).to(device)
-
-    if edge_weight is None:
-        edge_weight = torch.ones((edge_index.size(1),), dtype=torch.float, device=device)
-    return edge_index,  edge_weight
-
-def WCJ_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
-    norm = args.inci_norm
-    # norm = 'sym'
-    self_loop = args.First_self_loop
     W_degree = args.W_degree
-    # random value to edge weights
-    device = edge_index.device
-    if edge_weight is None:
-        edge_weight = torch.ones((edge_index.size(1), ), dtype=dtype,
-                                     device=edge_index.device)
-    if self_loop == 'add':
-        edge_index, edge_weight = add_self_loops(edge_index.long(), edge_weight, fill_value=1, num_nodes=num_nodes)  # with selfloop, QiG get better
-    elif self_loop == 'remove':
-        edge_index, _ = remove_self_loops(edge_index)
+    num_nodes = args.num_nodes
+    edge_weight = torch.ones((edge_index.size(1),), dtype=dtype,
+                             device=edge_index.device)
     row, col = edge_index
     deg0 = scatter_add(edge_weight, row, dim=0, dim_size=num_nodes).to(device)  # row degree
     deg1 = scatter_add(edge_weight, col, dim=0, dim_size=num_nodes).to(device)  # col degree
     deg2 = deg0 + deg1
 
-    # plt.hist(deg0.cpu(), bins=50, edgecolor='k')
-    # plt.xlabel('degree')
-    # plt.ylabel('Frequency')
-    # plt.title('Original Distribution of  degree0:NPZ')  # Shuffled Absolute Value-Transformed Edge Weights
-    # plt.show()
-
-    edge_index = torch.cat([edge_index, edge_index.flip(0)], dim=1)
-    edge_index = torch.unique(edge_index, dim=1)
-
-    # edge_weight = torch.ones((edge_index.size(1),), dtype=dtype, device=edge_index.device)
     if W_degree == 0:  # in-degree
         edge_weight = deg0[edge_index[0]] + deg0[edge_index[1]]
         print("Using deg0")
@@ -647,29 +344,92 @@ def WCJ_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
     else:
         NotImplementedError('Not Implemented edge-weight type')
 
+    return edge_weight
+
+def Qin_get_second_directed_adj0(edge_index, num_nodes, dtype):
+    edge_weight = torch.ones((edge_index.size(1),), dtype=dtype,
+                             device=edge_index.device)
+    fill_value = 1
+    edge_index, edge_weight = add_self_loops(
+        edge_index, edge_weight, fill_value, num_nodes)
+    p_dense = torch.sparse.FloatTensor(edge_index, edge_weight, torch.Size([num_nodes, num_nodes])).to_dense()
+
+    L_in = torch.mm(p_dense.t(), p_dense)
+    L_out = torch.mm(p_dense, p_dense.t())
+
+    L = L_in
+    L[L_out == 0] = 0        # intersection
+
+    # L[torch.isnan(L)] = 0
+    L_indices = torch.nonzero(L, as_tuple=False).t()
+    edge_index = L_indices
+    edge_weight = torch.ones((edge_index.size(1),), dtype=dtype,
+                             device=edge_index.device)
+
+    # row normalization
+    row, col = edge_index
+    deg = scatter_add(edge_weight, row, dim=0, dim_size=num_nodes)
+    deg_inv_sqrt = deg.pow(-0.5)
+    deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0
+
+    return edge_index, deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
+
+
+def Qin_get_directed_adj(args, edge_index, edge_weight=None):
+    selfloop = args.First_self_loop
+    num_nodes = args.num_nodes
+    norm = args.inci_norm
+    device = edge_index.device
+    if selfloop == 'add':
+        edge_index, _ = add_self_loops(edge_index.long(), fill_value=1, num_nodes=num_nodes)       # with selfloop, QiG get better
+    elif selfloop == 'remove':
+        edge_index, _ = remove_self_loops(edge_index)
+    edge_index = torch.unique(edge_index, dim=1).to(device)
+    edge_index = torch.cat([edge_index, edge_index.flip(0)], dim=1)
+    edge_index = torch.unique(edge_index, dim=1).to(device)
+
+    if args.net.startswith(('Ui')):
+        row, col = edge_index
+        adj_norm = get_norm_adj(SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
+        edge_weight = adj_norm.storage.value()
+
+    if edge_weight is None:
+        edge_weight = torch.ones((edge_index.size(1),), dtype=torch.float, device=device)
+    return edge_index,  edge_weight
+
+def WCJ_get_directed_adj(args, edge_index, dtype=torch.float32):
+    norm = args.inci_norm
+    num_nodes = args.num_nodes
+    self_loop = args.First_self_loop
+    edge_weight = torch.ones((edge_index.size(1), ), dtype=dtype,
+                                     device=edge_index.device)
+    if self_loop == 'add':
+        edge_index, edge_weight = add_self_loops(edge_index.long(), edge_weight, fill_value=1, num_nodes=num_nodes)  # with selfloop, QiG get better
+    elif self_loop == 'remove':
+        edge_index, _ = remove_self_loops(edge_index)
+
+    # plt.hist(deg0.cpu(), bins=50, edgecolor='k')
+    # plt.xlabel('degree')
+    # plt.ylabel('Frequency')
+    # plt.title('Original Distribution of  degree0:NPZ')  # Shuffled Absolute Value-Transformed Edge Weights
+    # plt.show()
+
+    edge_index = torch.cat([edge_index, edge_index.flip(0)], dim=1)
+    edge_index = torch.unique(edge_index, dim=1)
+
+    edge_weight = get_custom_edge_weight(args, edge_index, dtype)
     # plt.hist(edge_weight.cpu(), bins=50, edgecolor='k')
     # plt.xlabel('Absolute Edge Weight')
     # plt.ylabel('Frequency')
     # plt.title('Original Distribution of  WiG-2 edge weights_F1=()')  # Shuffled Absolute Value-Transformed Edge Weights
     # plt.show()
 
-    if norm == 'sym':
-        # row normalization
-        row, col = edge_index
-        deg = scatter_add(edge_weight, row, dim=0, dim_size=num_nodes)
-        deg_inv_sqrt = deg.pow(-0.5)
-        deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0
-
-        edge_weight = deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
-    elif norm in ['dir', 'row', 'softmax']:
+    if norm in ['dir', 'row', 'softmax', 'sym']:
         # type 1: conside different inci-norm
         row, col = edge_index
-        adj_norm = get_norm_adj(SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
+        adj_norm = get_norm_adj(SparseTensor(row=row, col=col, value=edge_weight, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
         # all_hop_edge_index.append(torch.stack(adj_norm.coo()[:2]))
         edge_weight = adj_norm.storage.value()
-
-        # type 2: only GCN_norm
-        # edge_weight = normalize_row_edges(edge_index, num_nodes).to(device)
 
     min_val = torch.min(edge_weight).item()
     max_val = torch.max(edge_weight).item()
@@ -684,30 +444,6 @@ def WCJ_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
     # plt.show()
 
     return edge_index,  edge_weight
-
-# def Qin_get_appr_directed_adj0(alpha, edge_index, num_nodes, dtype, edge_weight=None):
-#     """
-#     based on get_appr_directed_adj, all weights to 1, this is equal to GCN(norm inside GCNConV is False, and better than GCN with norm)
-#     QinDiG worked for telegram
-#         alpha:
-#         edge_index:
-#         num_nodes:
-#         dtype:
-#         edge_weight:
-#
-#     Returns:
-#
-#     """
-#
-#     device = edge_index.device
-#     if edge_weight is None:
-#         edge_weight = torch.ones((edge_index.size(1), ), dtype=dtype,
-#                                      device=edge_index.device)
-#     fill_value = 1
-#     edge_index, edge_weight = add_self_loops(edge_index.long(), edge_weight, fill_value, num_nodes)
-#     edge_index = edge_index.to(device)
-#
-#     return edge_index,  edge_weight
 
 
 def get_appr_directed_adj2(selfloop, alpha, edge_index, num_nodes, dtype, edge_weight=None):
@@ -1382,11 +1118,25 @@ def Qin_get_second_directed_adj(args, edge_index, num_nodes, k, IsExhaustive, mo
     all_hops_weight = []
     for L in L_tuple:  # Skip L1 if not needed
         row, col = L._indices()
-        adj_norm = get_norm_adj(SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
+        if args.net.startswith('Ui'):
+            adj_norm = get_norm_adj(SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
+        elif args.net.startswith('Ri'):
+            edge_weightL = get_custom_edge_weight(args, L._indices())  # Jan29
+            adj_norm = get_norm_adj(SparseTensor(row=row, col=col, value=edge_weightL, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
+        elif args.net.startswith('Ai'):
+            edge_weightL = torch.ones(L._indices().size(1), dtype=torch.bool).to(device)
+            adj_norm = SparseTensor(row=row, col=col, value=edge_weightL, sparse_sizes=(num_nodes, num_nodes))
         all_hop_edge_index.append(torch.stack(adj_norm.coo()[:2]))
         all_hops_weight.append(adj_norm.storage.value())
 
+        norm_edge_weight = adj_norm.storage.value()  # debug
+        min_val = torch.min(norm_edge_weight).item()
+        max_val = torch.max(norm_edge_weight).item()
+        print(f"Normalized Edge weight range: [{min_val}, {max_val}]")
+
     return tuple(all_hop_edge_index), tuple(all_hops_weight)
+
+
 
 def dir_normalize_edge_weights_origin(edge_index, num_nodes, edge_weights=None):
 # from DirGNN
