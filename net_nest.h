@@ -1,9 +1,9 @@
 #!/bin/bash
 
 net_values=" UiGib RiGib  "
-layer_values=" 2  "
+layer_values=" 3  "
 incinorm="dir  row  sym softmax 0"   #   dir row sym
-lr0=" 0.005 "
+lr0=" 0.01 "
 
 while pgrep -x python3 >/dev/null; do
     sleep 30
@@ -12,7 +12,7 @@ done
 # # PubMed, Coauthor-physics, , Amazon-Computers, , 'Amazon-Computers' 'Coauthor-CS'   'PubMed' 'Coauthor-CS'
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'   'WikiCS/' 'WikipediaNetwork/squirrel'
 # 'WikipediaNetwork/chameleon'   'telegram/'   'dgl/pubmed'  'citeseer/'   #"$inci"
-Direct_dataset=(  'Coauthor-CS'   'PubMed' 'Coauthor-CS'    ) # 'Coauthor-CS'   'PubMed' 'Coauthor-CS'    )
+Direct_dataset=(   'cora_ml/'     ) # 'Coauthor-CS'   'PubMed' 'Coauthor-CS'    )
 Direct_dataset_filename=$(echo $Direct_dataset | sed 's/\//_/g')
 generate_timestamp() {
   date +"%d%H%Ms%S"
