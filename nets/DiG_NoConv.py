@@ -370,6 +370,7 @@ class Di_IB_2_nhid(torch.nn.Module):
 class Di_IB_XBN_nhid_ConV(torch.nn.Module):
     def __init__(self, m, input_dim, out_dim, args):
         super().__init__()
+        self.nonlinear = args.nonlinear
         self._cached_adj_t = None
         self._dropout = args.dropout
         nhid = args.hid_dim
@@ -409,12 +410,14 @@ class Di_IB_XBN_nhid_ConV(torch.nn.Module):
             x = Conv_Out(x, self.Conv)
             return x
 
-        x = F.relu(x)
+        if self.nonlinear:
+            x = F.relu(x)
         if self.layer > 2:
             for iter_layer in self.ibx:
                 x = F.dropout(x, p=self._dropout, training=self.training)
                 x = iter_layer(x, edge_index_tuple, edge_weight_tuple)
-                x = F.relu(x)
+                if self.nonlinear:
+                    x = F.relu(x)
 
         x = self.ib2(x, edge_index_tuple, edge_weight_tuple)
         if self.BN_model:

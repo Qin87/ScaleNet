@@ -75,7 +75,7 @@ Amazon-Photo:
   BN_model: 0
 #  layer: 3 # or 1
   First_self_loop: 'add'
-  lr: 0.005
+#  lr: 0.005
 
 Amazon-Computers:
   BN_model: 1  # sure
