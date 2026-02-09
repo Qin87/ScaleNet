@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', '0', 'softmax'], default='row')
     parser.add_argument('--num_split', type=int, default=10, help='num of run in spite of many splits')
 
-    parser.add_argument('--net', type=str, default='UiGib', help='GAT, RAT, UAT, RiGib, AiGib, UiGib')
+    parser.add_argument('--net', type=str, default='AiGib', help='GAT, RAT, UAT, RiGib, AiGib, UiGib')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
     parser.add_argument('--Dataset', type=str, default='citeseer/', help='telegram/ ,citeseer/,  cora_ml/, telegram/,  WikiCS/'
                 'PubMed, Coauthor-physics, Coauthor-CS, Amazon-Computers, Amazon-Photo')
