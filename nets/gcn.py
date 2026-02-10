@@ -105,11 +105,9 @@ def gcn_norm(edge_index, edge_weight=None, num_nodes=None, improved=False,
 
     else:
         num_nodes = maybe_num_nodes(edge_index, num_nodes)
-
         if edge_weight is None:
             edge_weight = torch.ones((edge_index.size(1), ), dtype=dtype,
                                      device=edge_index.device)
-
         if add_self_loops == 1:
             edge_index, tmp_edge_weight = add_remaining_self_loops(
                 edge_index, edge_weight, fill_value, num_nodes)

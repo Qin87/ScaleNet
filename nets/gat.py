@@ -74,8 +74,6 @@ class UnifiedGATRATConv(MessagePassing):
         super().__init__(node_dim=0, **kwargs)
         if args.net in ['GAT', 'RAT', 'UAT']:
             self.attention_mode = args.net.lower()
-        # elif args.net.lower() in ['AiG']:
-        #     self.attention_mode = args.net.lower()[-1]+'at'
         else:
             self.attention_mode = 'gat'
         self.inci_norm = args.inci_norm
@@ -153,7 +151,6 @@ class UnifiedGATRATConv(MessagePassing):
             self.lin_edge.reset_parameters()
         if self.res is not None:
             self.res.reset_parameters()
-
         if self.attention_mode == "gat":
             glorot(self.att_src)
             glorot(self.att_dst)
@@ -283,7 +280,7 @@ class UnifiedGATRATConv(MessagePassing):
         if self.attention_mode == 'gat':
             alpha = self.edge_updater(edge_index, alpha=alpha, edge_attr=edge_attr,size=size)
         else:
-            if self.attention_mode == 'rat':
+            if self.attention_mode == 'rat':   # TODO check heads
                 alpha = torch.empty((E, self.heads),  device=index.device).uniform_(1e-4, 1e4)
             elif self.attention_mode == 'uat':
                 alpha = torch.ones((E, self.heads),device=index.device)
@@ -298,34 +295,27 @@ class UnifiedGATRATConv(MessagePassing):
         else:
             if hasattr(edge_index, 'coo'):
                 row, col, _ = edge_index.coo()
-                edge_index = torch.stack([row, col], dim=0)
+                edge_index1 = torch.stack([row, col], dim=0)
             elif hasattr(edge_index, 'row') and hasattr(edge_index, 'col'):
                 row = edge_index.row
                 col = edge_index.col
-                edge_index = torch.stack([row, col], dim=0)
+                edge_index1 = torch.stack([row, col], dim=0)
             else:
                 pass
-            row, col = edge_index
-            # print(f"alpha.shape before squeeze: {alpha.shape}")
-            # print(f"alpha.shape after squeeze: {alpha.squeeze(-1).shape}")
+            row, col = edge_index1
+            # del edge_index1
+            alphas = []
             for i in range(alpha.shape[1]):
                 alpha_i = alpha[:, i]
-                # alpha = alpha.squeeze(-1)
                 adj = SparseTensor(row=row, col=col, value=alpha_i, sparse_sizes=(self.num_nodes, self.num_nodes))
-                # print("type:", type(adj))   # debug
-                # print("sizes:", getattr(adj, 'sizes', lambda: None)())  # for SparseTensor [web:17]
-                # try:
-                #     print("shape:", adj.shape)
-                # except AttributeError:
-                #     pass
-
-            alpha = self._alpha_from_adj(adj, norm=self.inci_norm)
+                alpha_i_out = self._alpha_from_adj(adj, norm=self.inci_norm)
+                alphas.append(alpha_i_out)
+            alpha = torch.stack(alphas, dim=1)
 
         alpha = F.dropout(alpha, p=self.dropout, training=self.training)
 
-
         # ---- Message passing (unchanged) ----
-        out = self.propagate(edge_index, x=x, alpha=alpha, size=size)
+        out = self.propagate(edge_index, x=x, alpha=alpha, size=size)   # TODO edge_index
 
         if self.concat:
             out = out.view(-1, self.heads * self.out_channels)
@@ -376,8 +366,7 @@ class UnifiedGATRATConv(MessagePassing):
         if edge_weight is None:
             edge_weight = torch.ones(norm_adj.nnz(), device=norm_adj.device())
 
-        alpha = edge_weight.view(-1, 1).repeat(1, self.heads)  # [E, H]
-        return alpha
+        return edge_weight
 
     def message(self, x_j: Tensor, alpha: Tensor) -> Tensor:
         return alpha.unsqueeze(-1) * x_j
@@ -393,6 +382,7 @@ class UnifiedGATRATConv(MessagePassing):
 class StandGATXBN(nn.Module):
     def __init__(self, nfeat, nhid, nclass, dropout,args):
         super().__init__()
+        self.nonlinear = args.nonlinear
         self.Conv = nn.Conv1d(nhid, nclass, kernel_size=1)
         self._cached_adj_t = None
 
@@ -409,7 +399,7 @@ class StandGATXBN(nn.Module):
             self.convx = nn.ModuleList([GATConv(nhid, head_dim, heads=head, concat=False) for _ in range(args.layer - 2)])
         else:
             self.conv1 = ConvClass(nfeat, head_dim, heads=args.heads, args=args, concat=False)
-            self.conv2 = ConvClass(nhid, head_dim, heads=head, args= args, concat=False)
+            self.conv2 = ConvClass(nhid, head_dim, heads=head, args=args, concat=False)
             self.convx = nn.ModuleList([ConvClass(nhid, head_dim, heads=head, args= args, concat=False) for _ in range(args.layer-2)])
         self.dropout_p = dropout
         self.is_add_self_loops = True
@@ -433,14 +423,16 @@ class StandGATXBN(nn.Module):
         if self.layer == 1:
             return self.tran_lin(x)
 
-        x = F.relu(x)
+        if self.nonlinear:
+            x = F.relu(x)
 
         if self.layer>2:
             for iter_layer in self.convx:
                 x = F.dropout(x, p= self.dropout_p, training=self.training)
                 x = iter_layer(x, edge_index)
                 x = self.batch_norm3(x)
-                x = F.relu(x)
+                if self.nonlinear:
+                    x = F.relu(x)
 
         x = F.dropout(x,p= self.dropout_p,  training=self.training)
         x= self.conv2(x, edge_index)

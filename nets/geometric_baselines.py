@@ -1398,11 +1398,11 @@ def get_norm_adj(adj, norm, rm_gen_sLoop=0):
     elif norm == "softmax":
         logsumexp = sparselogsumexp(adj, dim=1)
         return logsumexp
-        # return mul(adj, torch.exp(adj - logsumexp.view(-1, 1)))
-        # alpha = softmax(alpha, index, ptr, size_i)
-        # return softmax(adj)
     elif norm is None or norm=="0":
-        return adj.set_value(torch.ones(adj.nnz(), device=adj.device()))
+        if adj.has_value():  # adj stores values already
+            return adj
+        else:
+            return adj.set_value(torch.ones(adj.nnz(), device=adj.device()))
     else:
         raise ValueError(f"{norm} normalization is not supported")
 
