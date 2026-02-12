@@ -34,8 +34,10 @@ def row_norm(adj):
     values = out.storage.value()
     fixed_values = torch.where(torch.isinf(values), torch.zeros_like(values), values)
     out = out.set_value(fixed_values, layout='coo')
+    values = out.storage.value()
 
     if torch.isnan(values).any():
+        print(values)
         raise RuntimeError("NaN or Inf detected in normalized adjacency — stopping training.")
 
     return out
