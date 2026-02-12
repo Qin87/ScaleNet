@@ -1,6 +1,5 @@
 # 96.8±2.1(0.5,-1,-1)
 telegram/:
-  conv_type: "dir-gcn"
 #  nonlinear: 1
   hid_dim: 128
 #  layer: 4
@@ -39,7 +38,6 @@ citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.
 # 79.1±0.8-----
 WikiCS/:
   num_split: 20
-  conv_type: "dir-gcn"
 #  nonlinear: 1
 #  layer: 2
 #  lr: 0.01
