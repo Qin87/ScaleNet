@@ -1,7 +1,7 @@
 # 96.8±2.1(0.5,-1,-1)
 telegram/:
   conv_type: "dir-gcn"
-  nonlinear: 1
+#  nonlinear: 1
   hid_dim: 128
 #  layer: 4
 #  lr: 0.01
@@ -15,7 +15,7 @@ telegram/:
 
 #
 cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
-  nonlinear: 1
+#  nonlinear: 1
   hid_dim: 128   # better than 64
   layer: 3   # 2(80), 3(75), 4(79.8), 5(79.6)
   lr: 0.01    # 0.1(79), 0.01(80.7)
@@ -26,7 +26,7 @@ cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
 
 #
 citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.0_0.0_0.5----2.0_0.0_0.0----2.0_2.0_0.5-----0.5_2.0_0.5---0.0_0.5_2.0--0.5_2.0_2.0
-  nonlinear: 0    # 0(68.3), 1(67.6)
+#  nonlinear: 0    # 0(68.3), 1(67.6)
   hid_dim: 128
   layer: 3     # 1(65.3),2(64.8), 3(62.6), 4(64.0), 5(64.4)
   lr: 0.01
@@ -40,7 +40,7 @@ citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.
 WikiCS/:
   num_split: 20
   conv_type: "dir-gcn"
-  nonlinear: 1
+#  nonlinear: 1
 #  layer: 2
 #  lr: 0.01
   normalize: 1
@@ -75,7 +75,7 @@ Amazon-Photo:
   BN_model: 0
 #  layer: 3 # or 1
   First_self_loop: 'add'
-  lr: 0.005
+#  lr: 0.005
 
 Amazon-Computers:
   BN_model: 1  # sure

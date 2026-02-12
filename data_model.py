@@ -101,9 +101,15 @@ def get_name(args, IsDirectedGraph=1):
 
 
 def log_file(net_to_print, dataset_to_print, args):
+    if args.inci_norm == 'row':
+        args.inci_norm = 'rowe-12'
     log_file_name = dataset_to_print+'_'+net_to_print+'_lay'+str(args.layer)+'_lr'+str(args.lr)+'_NoImp'+str(args.NotImproved)+'_norm'+args.inci_norm
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    log_file_name_with_timestamp = f"{log_file_name}_{timestamp}_c.log"
+    if args.nonlinear:
+        log_file_name_with_timestamp = f"{log_file_name}_{timestamp}_c.log"
+    else:
+        log_file_name_with_timestamp = f"{log_file_name}_{timestamp}_d.log"
+    # d is no relu, e is hid relu for *iGib
 
     log_directory = "~/Documents/Benlogs/"  # Change this to your desired directory
     log_directory = os.path.expanduser(log_directory)
