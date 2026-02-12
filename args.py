@@ -19,7 +19,6 @@ def parse_args():
     parser.add_argument('--patience', type=int, default=80, help='patience to reduce lr,')
 
     # for DirGNN
-    parser.add_argument("--conv_type", type=str, help="DirGNN Model", default="dir-gcn")
     parser.add_argument("--normalize", type=int, help="whether use layer normalization in ScaleNet, model:0/1", default=1)
     parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', '0', 'softmax'], default='softmax')
     parser.add_argument('--num_split', type=int, default=10, help='num of run in spite of many splits')
