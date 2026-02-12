@@ -29,16 +29,11 @@ def row_norm(adj):
         \mathbf{D}_{out}^{-1} \mathbf{A}
     """
     row_sum = sparsesum(adj, dim=1)
+
+    eps = 1e-12
+    row_sum = torch.clamp(row_sum, min=eps)   # preventing: if sum=0 or neg, got inf or nan.
+
     out = mul(adj, 1 / row_sum.view(-1, 1))
-
-    values = out.storage.value()
-    fixed_values = torch.where(torch.isinf(values), torch.zeros_like(values), values)
-    out = out.set_value(fixed_values, layout='coo')
-    values = out.storage.value()
-
-    if torch.isnan(values).any():
-        print(values)
-        raise RuntimeError("NaN or Inf detected in normalized adjacency — stopping training.")
 
     return out
 
