@@ -7,10 +7,10 @@ def parse_args():
     parser.add_argument('--new_edge', type=int, default=0, help='1 remove edges connect inter-class nodes')
     parser.add_argument('--r20_per_class', type=int, default=0, help='1 train split is random 20 nodes_per_class')
 
-    parser.add_argument('--originGAT', type=int, default=1, help='1 use official GAT')
+    parser.add_argument('--originGAT', type=int, default=0, help='1 use official GAT')
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
     parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=0)
-    parser.add_argument("--nonlinear", type=int, help="whether use activation(relu) in ScaleNet model:0/1", default=1)
+    parser.add_argument("--nonlinear", type=int, help="whether use activation(relu) in ScaleNet model:0/1", default=0)
     parser.add_argument("--First_self_loop", type=str, choices=["add", "remove",  0], default=0, help="Whether to add self-loops to the graph")
     parser.add_argument("--rm_gen_sloop", type=str, choices=["remove", 0], default=0, help="Whether to remove generated self-loops to the graph")
 
@@ -29,7 +29,7 @@ def parse_args():
     parser.add_argument('--Dataset', type=str, default='PubMed', help='telegram/ ,citeseer/,  cora_ml/, telegram/,  WikiCS/'
                 'PubMed, Coauthor-physics, Coauthor-CS, Amazon-Computers, Amazon-Photo')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout prob')
-    parser.add_argument('--layer', type=int, default=3, help='number of layers (2 or 3), default: 2')
+    parser.add_argument('--layer', type=int, default=2, help='number of layers (2 or 3), default: 2')
     parser.add_argument('--alpha', type=float, default=0.1, help='alpha teleport prob')
 
     parser.add_argument('--hid_dim', type=int, default=128, help='feature dimension')
@@ -38,7 +38,7 @@ def parse_args():
 
     parser.add_argument('--lr', type=float, default=0.01, help='learning rate')
     parser.add_argument('--l2', type=float, default=5e-4, help='l2 regularizer, 5e-4')
-    parser.add_argument('-hds', '--heads', default=4, type=int)
+    parser.add_argument('-hds', '--heads', default=2, type=int)
 
     parser.add_argument('--epochs', type=int, default=1500, help='training epochs')
 
