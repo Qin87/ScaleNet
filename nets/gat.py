@@ -242,6 +242,11 @@ class UnifiedGATRATConv(MessagePassing):
             alpha_src = (x_src * self.att_src).sum(dim=-1)
             alpha_dst = None if x_dst is None else (x_dst * self.att_dst).sum(-1)
             alpha = (alpha_src, alpha_dst)
+            for item in alpha:  # TODO debug
+                if torch.is_tensor(item) and torch.isnan(item).any():
+                    print("NaNs found in new alpha tuple")
+                if torch.is_tensor(item) and torch.isinf(item).any():
+                    print("Infs found in new alpha tuple")
 
 
         # ---- Self-loops (unchanged) ----
@@ -307,16 +312,46 @@ class UnifiedGATRATConv(MessagePassing):
             alphas = []
             for i in range(alpha.shape[1]):
                 alpha_i = alpha[:, i]
+                if torch.isnan(alpha_i).any():  # TODO debug
+                    print("NaNs in alpha", i)
+                if torch.isinf(alpha_i).any():  # TODO debug
+                    print("Infs in alpha", i)
                 adj = SparseTensor(row=row, col=col, value=alpha_i, sparse_sizes=(self.num_nodes, self.num_nodes))
                 alpha_i_out = self._alpha_from_adj(adj, norm=self.inci_norm)
+                if torch.isnan(alpha_i_out).any():  # TODO debug
+                    print("NaNs in alpha_i_out", i)
+                if torch.isinf(alpha_i_out).any():  # TODO debug
+                    print("Infs in alpha_i_out", i)
                 alphas.append(alpha_i_out)
             alpha = torch.stack(alphas, dim=1)
 
         alpha = F.dropout(alpha, p=self.dropout, training=self.training)
-
+        if torch.isnan(alpha).any():  # TODO debug
+            print("NaNs in alpha")
+        if torch.isinf(alpha).any():  # TODO debug
+            print("Infs in alpha")
+        for item in x:   # TODO debug
+            if torch.is_tensor(item) and torch.isnan(item).any():
+                print("NaNs found in x tuple")
+            if torch.is_tensor(item) and torch.isinf(item).any():
+                print("Infs found in x tuple")
         # ---- Message passing (unchanged) ----
         out = self.propagate(edge_index, x=x, alpha=alpha, size=size)   # TODO edge_index
+        if torch.isinf(out).any():  # TODO debug
+            print("INFs in new out")
+            for item in x:  # TODO debug
+                if torch.is_tensor(item) and torch.isnan(item).any():
+                    print("out: NaNs found in x tuple")
+                if torch.is_tensor(item) and torch.isinf(item).any():
+                    print("out: Infs found in x tuple")
+            if torch.isnan(alpha).any():  # TODO debug
+                print("out: NaNs in alpha")
+            if torch.isinf(alpha).any():  # TODO debug
+                print("out: Infs in alpha")
 
+            raise RuntimeError(out, '\n x:', x,'\n alpha:', alpha, '\n size:',size, '\n edge:',edge_index)
+        if torch.isnan(out).any():  # TODO debug
+            print("NaNs in new out")
         if self.concat:
             out = out.view(-1, self.heads * self.out_channels)
         else:
@@ -327,6 +362,11 @@ class UnifiedGATRATConv(MessagePassing):
         if self.bias is not None:
             out = out + self.bias
 
+        if torch.isnan(out).any():  # TODO debug
+            print("NaNs in end out_1")
+        if torch.isinf(out).any():  # TODO debug
+            print("INFs in end out_1")
+
         if isinstance(return_attention_weights, bool):
             if isinstance(edge_index, Tensor):
                 if is_torch_sparse_tensor(edge_index):
@@ -334,7 +374,8 @@ class UnifiedGATRATConv(MessagePassing):
                     return out, (adj, alpha)
                 return out, (edge_index, alpha)
             return out, edge_index.set_value(alpha, layout='coo')
-
+        if torch.isnan(out).any():  # TODO debug
+            print("NaNs in end out_2")
         return out
 
     def edge_update(self, alpha_j: Tensor, alpha_i: OptTensor,
@@ -361,7 +402,6 @@ class UnifiedGATRATConv(MessagePassing):
     def _alpha_from_adj(self, adj_t: SparseTensor, norm='dir') -> Tensor:
         norm_adj = get_norm_adj(adj_t, norm=norm)  # uses gcn_norm(adj, add_self_loops=0)
 
-        # edge weights live in the SparseTensor storage
         edge_weight = norm_adj.storage.value()
         if edge_weight is None:
             edge_weight = torch.ones(norm_adj.nnz(), device=norm_adj.device())
@@ -369,6 +409,10 @@ class UnifiedGATRATConv(MessagePassing):
         return edge_weight
 
     def message(self, x_j: Tensor, alpha: Tensor) -> Tensor:
+        if torch.isinf(x_j).any():  # TODO debug
+            print("INFs in x_j")
+        if torch.isinf(alpha).any():  # TODO debug
+            print("INFs in alpha")
         return alpha.unsqueeze(-1) * x_j
 
 
