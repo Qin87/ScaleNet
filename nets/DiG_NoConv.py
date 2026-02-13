@@ -43,8 +43,6 @@ class InceptionBlock_Di(torch.nn.Module):
         x0 = self.ln(x)
         for i in range(len(edge_index_tuple)):
             x0 += F.dropout(self.convx[i](x, edge_index_tuple[i], edge_weight_tuple[i]), p=0.6, training=self.training)
-            if torch.isnan(x0).any():  # TODO debug
-                print("NaNs in after convx", i)
             torch.cuda.empty_cache()
 
         return x0
@@ -412,8 +410,6 @@ class Di_IB_XBN_nhid_ConV(torch.nn.Module):
                 x = self.batch_norm1(x)
             x = Conv_Out(x, self.Conv)
             return x
-        if torch.isnan(x).any():    # TODO debug
-            print("NaNs in x(1layer)")
 
         if self.nonlinear:
             x = F.relu(x)
@@ -423,22 +419,12 @@ class Di_IB_XBN_nhid_ConV(torch.nn.Module):
                 x = iter_layer(x, edge_index_tuple, edge_weight_tuple)
                 if self.nonlinear:
                     x = F.relu(x)
-        if torch.isnan(x).any():   # TODO debug
-            print("NaNs in x(mid_layer)")
 
         x = self.ib2(x, edge_index_tuple, edge_weight_tuple)
-        if torch.isnan(x).any():   # TODO debug
-            print("NaNs in x(end_layer after ib)")
         if self.BN_model:
             x = self.batch_norm2(x)
-        if torch.isnan(x).any():   # TODO debug
-            print("NaNs in x(end_layer after bn)")
         x = Conv_Out(x, self.Conv)
         x = F.dropout(x, p=self._dropout, training=self.training)
-
-        if torch.isnan(x).any():   # TODO debug
-            print("NaNs in x(endlayer)")
-
         return x
 
 
