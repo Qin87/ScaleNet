@@ -8,13 +8,12 @@ def parse_args():
     parser.add_argument('--r20_per_class', type=int, default=0, help='1 train split is random 20 nodes_per_class')
 
     parser.add_argument('--originGAT', type=int, default=1, help='1 use official GAT')
-    parser.add_argument('--posweight', type=str, default='abs', help='positive attention: abs, 2, e for exp,or 0 for None')
+    parser.add_argument('--posweight', type=str, default='0', help='positive attention: abs, 2, e for exp,or 0 for None')
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
     parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=0)
     parser.add_argument("--nonlinear", type=int, help="whether use activation(relu) in ScaleNet model:0/1", default=1)
     parser.add_argument("--First_self_loop", type=str, choices=["add", "remove",  0], default=0, help="Whether to add self-loops to the graph")
     parser.add_argument("--rm_gen_sloop", type=str, choices=["remove", 0], default=0, help="Whether to remove generated self-loops to the graph")
-
 
     parser.add_argument("--has_scheduler", type=int, default=1, help="Whether Optimizer has a scheduler")
     parser.add_argument('--patience', type=int, default=80, help='patience to reduce lr,')
