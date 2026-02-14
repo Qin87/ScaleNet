@@ -8,6 +8,7 @@ def parse_args():
     parser.add_argument('--r20_per_class', type=int, default=0, help='1 train split is random 20 nodes_per_class')
 
     parser.add_argument('--originGAT', type=int, default=1, help='1 use official GAT')
+    parser.add_argument('--posweight', type=str, default='abs', help='positive attention: abs, 2, e for exp,or 0 for None')
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
     parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=0)
     parser.add_argument("--nonlinear", type=int, help="whether use activation(relu) in ScaleNet model:0/1", default=1)
@@ -20,7 +21,7 @@ def parse_args():
 
     # for DirGNN
     parser.add_argument("--normalize", type=int, help="whether use layer normalization in ScaleNet, model:0/1", default=1)
-    parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', '0', 'softmax'], default='row')
+    parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', '0', 'softmax'], default='dir')
     parser.add_argument('--num_split', type=int, default=10, help='num of run in spite of many splits')
 
     parser.add_argument('--net', type=str, default='AiGib', help='GAT, RAT, UAT, RiGib, AiGib, UiGib')

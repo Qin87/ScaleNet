@@ -119,9 +119,9 @@ def gcn_norm(edge_index, edge_weight=None, num_nodes=None, improved=False,
         row, col = edge_index[0], edge_index[1]
         deg = scatter_add(edge_weight, col, dim=0, dim_size=num_nodes)
         deg_inv_sqrt = deg.pow_(-0.5)
+        deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0)
         if torch.isnan(deg_inv_sqrt).any():
             raise RuntimeError("NaN detected in deg_inv_sqrt(maybe due to negative degree) — stopping training to prevent corrupt gradients.")
-        deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0)
         return edge_index, deg_inv_sqrt[col] * edge_weight * deg_inv_sqrt[col]
 
 

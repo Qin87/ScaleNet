@@ -72,6 +72,7 @@ class UnifiedGATRATConv(MessagePassing):
     ):
         kwargs.setdefault('aggr', 'add')
         super().__init__(node_dim=0, **kwargs)
+        self.posweight = args.posweight
         if args.net in ['GAT', 'RAT', 'UAT']:
             self.attention_mode = args.net.lower()
         else:
@@ -306,6 +307,8 @@ class UnifiedGATRATConv(MessagePassing):
             alphas = []
             for i in range(alpha.shape[1]):
                 alpha_i = alpha[:, i]
+                if self.posweight in ['e', '2', 'abs']:
+                    alpha_i = self.PositiveAttention(alpha_i)
                 adj = SparseTensor(row=row, col=col, value=alpha_i, sparse_sizes=(self.num_nodes, self.num_nodes))
                 alpha_i_out = self._alpha_from_adj(adj, norm=self.inci_norm)
                 alphas.append(alpha_i_out)
@@ -332,6 +335,21 @@ class UnifiedGATRATConv(MessagePassing):
                 return out, (edge_index, alpha)
             return out, edge_index.set_value(alpha, layout='coo')
         return out
+
+    def PositiveAttention(self, alpha_i):
+        if self.posweight == 'abs':
+            alpha_i = torch.abs(alpha_i)
+
+        elif self.posweight == '2':
+            alpha_i = torch.pow(2.0, alpha_i)  # 2^alpha_i
+
+        elif self.posweight == 'e':
+            alpha_i = torch.exp(alpha_i)  # e^alpha_i
+
+        else:
+            raise NotImplementedError(f"Unknown posweight type: {posweight}")
+
+        return alpha_i
 
     def edge_update(self, alpha_j: Tensor, alpha_i: OptTensor,
                     edge_attr: OptTensor, index: Tensor, ptr: OptTensor,

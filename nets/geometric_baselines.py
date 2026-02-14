@@ -58,9 +58,9 @@ def directed_norm(adj, rm_gen_sLoop=False):
     device = adj.device()
     in_deg = sparsesum(adj, dim=0)
     in_deg_inv_sqrt = in_deg.pow(-0.5)
+    in_deg_inv_sqrt.masked_fill_(in_deg_inv_sqrt == float("inf"), 0.0)
     if torch.isnan(in_deg_inv_sqrt).any():
         raise RuntimeError("NaN detected in in_deg_inv_sqrt — stopping training to prevent corrupt gradients.")
-    in_deg_inv_sqrt.masked_fill_(in_deg_inv_sqrt == float("inf"), 0.0)
 
     out_deg = sparsesum(adj, dim=1)
     out_deg_inv_sqrt = out_deg.pow(-0.5)
