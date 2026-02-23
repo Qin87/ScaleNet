@@ -385,6 +385,7 @@ args.num_features, args.num_classes, args.edge_index, args.num_nodes = data_x.sh
 
 try:
     with open(log_directory + log_file_name_with_timestamp, 'a') as logfile:
+        print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=logfile)
         print('Using Device: ', device, file=logfile)
         print(f"Script: {__file__}", file=logfile)
         print_memory("Start")
