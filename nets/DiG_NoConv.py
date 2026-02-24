@@ -11,6 +11,8 @@ from typing import  Optional
 from torch_geometric.typing import (OptPairTensor, Adj, Size, OptTensor)
 from torch import Tensor
 
+from torch_geometric.utils import spmm
+
 from nets.gat import UnifiedGATRATConv
 
 
@@ -76,6 +78,7 @@ class DIGCNConv(MessagePassing):
         self.out_channels = out_channels
         self.improved = improved
         self.cached = cached
+        self._cached_adj_t = None
 
         self.weight = Parameter(torch.Tensor(in_channels, out_channels))
 
@@ -95,35 +98,18 @@ class DIGCNConv(MessagePassing):
     def forward(self, x, edge_index, edge_weight=None):
         """"""
         x = torch.matmul(x, self.weight)
+        # propagate_type: (x: Tensor, edge_weight: OptTensor)
+        out = self.propagate(edge_index, x=x, edge_weight=edge_weight)
 
-        if self.cached and self.cached_result is not None:
-            if edge_index.size(1) != self.cached_num_edges:
-                raise RuntimeError(
-                    'Cached {} number of edges, but found {}. Please '
-                    'disable the caching behavior of this layer by removing '
-                    'the `cached=True` argument in its constructor.'.format(
-                        self.cached_num_edges, edge_index.size(1)))
-
-        if not self.cached or self.cached_result is None:
-            self.cached_num_edges = edge_index.size(1)
-            if edge_weight is None:
-                raise RuntimeError(
-                    'Normalized adj matrix cannot be None. Please '
-                    'obtain the adj matrix in preprocessing.')
-            else:
-                norm = edge_weight
-            self.cached_result = edge_index, norm
-
-        edge_index, norm = self.cached_result
-        return self.propagate(edge_index, x=x, norm=norm)
-
-    def message(self, x_j, norm):
-        return norm.view(-1, 1) * x_j if norm is not None else x_j
-
-    def update(self, aggr_out):
         if self.bias is not None:
-            aggr_out = aggr_out + self.bias
-        return aggr_out
+            out = out + self.bias
+        return out
+
+    def message(self, x_j: Tensor, edge_weight: OptTensor) -> Tensor:
+        return x_j if edge_weight is None else edge_weight.view(-1, 1) * x_j
+
+    def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
+        return spmm(adj_t, x, reduce=self.aggr)
 
     def __repr__(self):
         return '{}({}, {})'.format(self.__class__.__name__, self.in_channels,
@@ -396,9 +382,15 @@ class Di_IB_XBN_nhid_ConV(torch.nn.Module):
         num_nodes = x.size(0)
         if self._cached_adj_t is None:
             cached_list = []
-            for edge_index in edge_index_tuple:
-                cached_list.append(SparseTensor.from_edge_index(edge_index, sparse_sizes=(num_nodes, num_nodes)).t())
-            self._cached_adj_t = tuple(cached_list)
+            for edge_index, edge_weight in zip(edge_index_tuple, edge_weight_tuple):
+                adj_t = SparseTensor(
+                    row=edge_index[1],  # target
+                    col=edge_index[0],  # source
+                    value=edge_weight,  # normalized weights
+                    sparse_sizes=(num_nodes, num_nodes),
+                )
+                cached_list.append(adj_t)
+                self._cached_adj_t = tuple(cached_list)
 
         edge_index_tuple = self._cached_adj_t
         # layer Normalization best only one at last layer, good for telegram

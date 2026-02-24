@@ -5,13 +5,13 @@ from torch_sparse import mul
 from nets.gcn import gcn_norm
 
 
-def get_norm_adj(adj, norm, rm_gen_sLoop=0):
+def get_norm_adj(adj, norm, exponent=-0.25):
     if norm == "sym":
         return gcn_norm(adj, add_self_loops=0)
     elif norm == "row":
         return row_norm(adj)
     elif norm == "dir":
-        return directed_norm(adj, rm_gen_sLoop=rm_gen_sLoop)
+        return directed_norm(adj, exponent)
     elif norm == "softmax":
         logsumexp = sparselogsumexp(adj, dim=1)
         return logsumexp
@@ -50,32 +50,26 @@ def row_norm(adj):
     return out
 
 
-def directed_norm(adj, rm_gen_sLoop=False):
+def directed_norm(adj, exponent):
     """
     Applies the normalization for directed graphs:
         \mathbf{D}_{out}^{-1/2} \mathbf{A} \mathbf{D}_{in}^{-1/2}.
     """
-    device = adj.device()
     in_deg = sparsesum(adj, dim=0)
-    in_deg = in_deg.clamp(min=1e-12)
-    in_deg_inv_sqrt = in_deg.pow(-0.5)
+    in_deg_inv_sqrt = in_deg.pow(exponent)
     in_deg_inv_sqrt.masked_fill_(in_deg_inv_sqrt == float("inf"), 0.0)
     if torch.isnan(in_deg_inv_sqrt).any():
         raise RuntimeError("NaN detected in in_deg_inv_sqrt — stopping training to prevent corrupt gradients.")
 
     out_deg = sparsesum(adj, dim=1)
     out_deg = out_deg.clamp(min=1e-12)
-    out_deg_inv_sqrt = out_deg.pow(-0.5)
+    out_deg_inv_sqrt = out_deg.pow(exponent)
     out_deg_inv_sqrt.masked_fill_(out_deg_inv_sqrt == float("inf"), 0.0)
-
-    out_deg_inv_sqrt = out_deg_inv_sqrt.to(device)
-    in_deg_inv_sqrt = in_deg_inv_sqrt.to(device)
+    if torch.isnan(out_deg_inv_sqrt).any():
+        raise RuntimeError("NaN detected in in_deg_inv_sqrt — stopping training to prevent corrupt gradients.")
 
     adj0 = mul(adj, out_deg_inv_sqrt.view(-1, 1))
     adj1 = mul(adj0, in_deg_inv_sqrt.view(1, -1))
-
-    # adj0 = torch_sparse.mul(adj, out_deg_inv_sqrt.view(-1, 1))
-    # adj1 = torch_sparse.mul(adj0, in_deg_inv_sqrt.view(1, -1))
 
     return adj1
 
