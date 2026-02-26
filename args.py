@@ -4,7 +4,6 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--use_best_hyperparams", type=int, help="use parameters in best_hyperparameters.yml", default=1)
     parser.add_argument('--GPU', type=int, default=0, help='device')
-    parser.add_argument('--new_edge', type=int, default=0, help='1 remove edges connect inter-class nodes')
     parser.add_argument('--r20_per_class', type=int, default=0, help='1 train split is random 20 nodes_per_class')
 
     parser.add_argument('--originGAT', type=int, default=1, help='1 use official GAT')

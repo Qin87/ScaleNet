@@ -89,6 +89,8 @@ def train(SparseEdges, edge_weight):
         else:
             out = model(data_x, edges)
         val_loss = F.cross_entropy(out[data_val_mask], data_y[data_val_mask])
+        if torch.isnan(val_loss).any():
+            raise RuntimeError("NaN detected in val_loss — stopping training.")
     optimizer.step()
     if args.has_scheduler:
         scheduler.step(val_loss, epoch)
@@ -165,9 +167,6 @@ edges = edges.to(device)
 data_train_maskOrigin = data_train_maskOrigin.to(device)
 data_val_maskOrigin = data_val_maskOrigin.to(device)
 data_test_maskOrigin = data_test_maskOrigin.to(device)
-
-if args.new_edge:
-    edges=remove_inner_class_edge(edges, data_y)
 
 criterion = CrossEntropy().to(device)
 n_cls = data_y.max().item() + 1
