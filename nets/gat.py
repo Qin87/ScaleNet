@@ -302,7 +302,10 @@ class UnifiedGATRATConv(MessagePassing):
                 edge_index1 = torch.stack([row, col], dim=0)
             else:
                 pass
-            row, col = edge_index1
+            try:
+                row, col = edge_index1
+            except:
+                row, col = edge_index
             # del edge_index1
             alphas = []
             for i in range(alpha.shape[1]):
@@ -425,10 +428,10 @@ class StandGATXBN(nn.Module):
         self.non_reg_params = self.conv2.parameters()
 
 
-    def forward(self, x, edge_index, edge_weight=None):
+    def forward(self, x, edge_index):
         num_nodes = x.size(0)
         if self._cached_adj_t is None:
-            self._cached_adj_t = SparseTensor.from_edge_index(edge_index, sparse_sizes=(num_nodes, num_nodes)).t()
+            self._cached_adj_t = SparseTensor.from_edge_index(edge_index, sparse_sizes=(num_nodes, num_nodes)).t()   # checked needing t
 
         edge_index = self._cached_adj_t
         x = self.conv1(x, edge_index)
