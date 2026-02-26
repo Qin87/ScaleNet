@@ -20,7 +20,7 @@ def parse_args():
 
     # for DirGNN
     parser.add_argument("--normalize", type=int, help="whether use layer normalization in ScaleNet, model:0/1", default=1)
-    parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', '0', 'softmax'], default='0')
+    parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', '0', 'softmax'], default='dir')
     parser.add_argument('--num_split', type=int, default=10, help='num of run in spite of many splits')
 
     parser.add_argument('--net', type=str, default='UiGib', help='GAT, RAT, UAT, RiGib, AiGib, UiGib')

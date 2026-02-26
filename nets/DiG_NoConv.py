@@ -378,20 +378,20 @@ class Di_IB_XBN_nhid_ConV(torch.nn.Module):
         self.non_reg_params = self.ib2.parameters()
 
     def forward(self, x, edge_index_tuple, edge_weight_tuple):
-        num_nodes = x.size(0)
-        if self._cached_adj_t is None:
-            cached_list = []
-            for edge_index, edge_weight in zip(edge_index_tuple, edge_weight_tuple):
-                adj_t = SparseTensor(
-                    row=edge_index[0],  # target
-                    col=edge_index[1],  # source
-                    value=edge_weight,  # normalized weights
-                    sparse_sizes=(num_nodes, num_nodes),
-                )
-                cached_list.append(adj_t)
-                self._cached_adj_t = tuple(cached_list)
-
-        edge_index_tuple = self._cached_adj_t
+        # num_nodes = x.size(0)
+        # if self._cached_adj_t is None:
+        #     cached_list = []
+        #     for edge_index, edge_weight in zip(edge_index_tuple, edge_weight_tuple):
+        #         adj_t = SparseTensor(
+        #             row=edge_index[0],  # target
+        #             col=edge_index[1],  # source
+        #             value=edge_weight,  # normalized weights
+        #             sparse_sizes=(num_nodes, num_nodes),
+        #         )
+        #         cached_list.append(adj_t)
+        #         self._cached_adj_t = tuple(cached_list)
+        #
+        # edge_index_tuple = self._cached_adj_t
         # layer Normalization best only one at last layer, good for telegram
         x = self.ib1(x, edge_index_tuple, edge_weight_tuple)
         x = F.dropout(x, p=self._dropout, training=self.training)
