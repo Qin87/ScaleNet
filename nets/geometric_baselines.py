@@ -5,7 +5,7 @@ from torch_sparse import mul
 from nets.gcn import gcn_norm
 
 
-def get_norm_adj(adj, norm, exponent=-0.25):
+def get_norm_adj(adj, norm, exponent=-0.5):
     if norm == "sym":
         return gcn_norm(adj, add_self_loops=0)
     elif norm == "row":
@@ -56,6 +56,7 @@ def directed_norm(adj, exponent):
         \mathbf{D}_{out}^{-1/2} \mathbf{A} \mathbf{D}_{in}^{-1/2}.
     """
     in_deg = sparsesum(adj, dim=0)
+    in_deg = in_deg.clamp(min=1e-12)
     in_deg_inv_sqrt = in_deg.pow(exponent)
     in_deg_inv_sqrt.masked_fill_(in_deg_inv_sqrt == float("inf"), 0.0)
     if torch.isnan(in_deg_inv_sqrt).any():
