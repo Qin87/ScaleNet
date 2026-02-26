@@ -106,9 +106,9 @@ def log_file(net_to_print, dataset_to_print, args):
         log_file_name += 'e-12'
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     if args.nonlinear:
-        log_file_name_with_timestamp = f"{log_file_name}_{timestamp}_cTensor.log"
+        log_file_name_with_timestamp = f"{log_file_name}_{timestamp}_c_SPa.log"
     else:
-        log_file_name_with_timestamp = f"{log_file_name}_{timestamp}_dTensor.log"
+        log_file_name_with_timestamp = f"{log_file_name}_{timestamp}_d_SPa.log"
     # d is no relu, e is hid relu for *iGib
 
     log_directory = "~/Documents/Benlogs/"  # Change this to your desired directory
