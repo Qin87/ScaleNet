@@ -98,7 +98,6 @@ class DIGCNConv(MessagePassing):
     def forward(self, x, edge_index, edge_weight=None):
         """"""
         x = torch.matmul(x, self.weight)
-        # propagate_type: (x: Tensor, edge_weight: OptTensor)
         out = self.propagate(edge_index, x=x, edge_weight=edge_weight)
 
         if self.bias is not None:
@@ -384,8 +383,8 @@ class Di_IB_XBN_nhid_ConV(torch.nn.Module):
             cached_list = []
             for edge_index, edge_weight in zip(edge_index_tuple, edge_weight_tuple):
                 adj_t = SparseTensor(
-                    row=edge_index[1],  # target
-                    col=edge_index[0],  # source
+                    row=edge_index[0],  # target
+                    col=edge_index[1],  # source
                     value=edge_weight,  # normalized weights
                     sparse_sizes=(num_nodes, num_nodes),
                 )
