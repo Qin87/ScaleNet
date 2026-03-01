@@ -287,7 +287,7 @@ class UnifiedGATRATConv(MessagePassing):
             else:
                 raise NotImplementedError(f"Unknown attention_mode: {self.attention_mode}")
 
-        # SAME normalization as GAT
+        # SAME as GAT
         alpha = F.leaky_relu(alpha, self.negative_slope)
 
         if self.inci_norm == 'softmax':
