@@ -34,18 +34,12 @@ def row_norm(adj):
     row_sum = torch.clamp(row_sum, min=eps)  # preventing: if sum=0 or neg, got inf or nan.
     out = mul(adj, 1 / row_sum.view(-1, 1))
 
-    # inv_row_sum = torch.zeros_like(row_sum)
-    # mask = row_sum > eps
-    # inv_row_sum[mask] = 1.0 / row_sum[mask]
-    # out = mul(adj, inv_row_sum.view(-1, 1))   # worse
-
     # Debugging: sanity check
     values = out.storage.value()
     if torch.isnan(values).any():
         raise RuntimeError("NaN detected in out of row_norm — stopping training.")
     if torch.isinf(values).any():
         raise RuntimeError("Inf detected in out of row_norm — stopping training.")
-
 
     return out
 

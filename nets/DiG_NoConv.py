@@ -25,7 +25,7 @@ class InceptionBlock_Di(torch.nn.Module):
         tuple_num = 2
         self.ln = Linear(in_dim, out_dim)
         if m in ['RiGib', 'UiGib', 'DiGib']:
-            self.convx = nn.ModuleList([DIGCNConv(in_dim, out_dim) for _ in range(tuple_num)])
+            self.convx = nn.ModuleList([DIGCNConv(in_dim, out_dim, args) for _ in range(tuple_num)])
         elif m in ['AiGib']:
             num_head = 1
             head_dim = out_dim // num_head
@@ -51,29 +51,15 @@ class InceptionBlock_Di(torch.nn.Module):
 
 
 class DIGCNConv(MessagePassing):
-    r"""The graph convolutional operator takes from Pytorch Geometric.
-    The spectral operation is the same with Kipf's GCN.
-    DiGCN preprocesses the adjacency matrix and does not require a norm operation during the convolution operation.
-    Args:
-        in_channels (int): Size of each input sample.
-        out_channels (int): Size of each output sample.
-        cached (bool, optional): If set to :obj:`True`, the layer will cache
-            the adj matrix on first execution, and will use the
-            cached version for further executions.
-            Please note that, all the normalized adj matrices (including undirected)
-            are calculated in the dataset preprocessing to reduce time comsume.
-            This parameter should only be set to :obj:`True` in transductive
-            learning scenarios. (default: :obj:`False`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
+    r"""
+    Copy from DiGCN, originally only A(XW), we add A(XW)
     """
 
-    def __init__(self, in_channels, out_channels, improved=False, cached=False,
+    def __init__(self, in_channels, out_channels, args, improved=False, cached=False,
                  bias=True, **kwargs):
         super().__init__(aggr='add', **kwargs)
 
+        self.XW = args.XW
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.improved = improved
@@ -96,9 +82,12 @@ class DIGCNConv(MessagePassing):
         self.cached_num_edges = None
 
     def forward(self, x, edge_index, edge_weight=None):
-        """"""
-        x = torch.matmul(x, self.weight)
-        out = self.propagate(edge_index, x=x, edge_weight=edge_weight)
+        if self.XW:
+            x = torch.matmul(x, self.weight)
+            out = self.propagate(edge_index, x=x, edge_weight=edge_weight)
+        else:
+            out = self.propagate(edge_index, x=x, edge_weight=edge_weight)
+            out = torch.matmul(out, self.weight)
 
         if self.bias is not None:
             out = out + self.bias

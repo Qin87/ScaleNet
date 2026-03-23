@@ -275,7 +275,7 @@ class UnifiedGATRATConv(MessagePassing):
             dim_size = edge_index.size(1)
             index = row         # col is wrong!
             ptr = edge_index.storage.rowptr()
-            E = index.numel()
+            E = index.numel()   # total number of edges
 
         if self.attention_mode == 'gat':
             alpha = self.edge_updater(edge_index, alpha=alpha, edge_attr=edge_attr,size=size)
@@ -289,9 +289,14 @@ class UnifiedGATRATConv(MessagePassing):
 
         # SAME as GAT
         alpha = F.leaky_relu(alpha, self.negative_slope)
-
+        # print(alpha.mean(), alpha.std(), alpha.max(), alpha.min())
+        # print('Before softmax, alpha is ', alpha)
         if self.inci_norm == 'softmax':
             alpha = softmax(alpha, index, ptr, dim_size)
+            # print(alpha.mean(), alpha.std(), alpha.max(), alpha.min())
+            # print('After softmax, alpha is ', alpha)
+            # mask = (alpha != 0) & (alpha != 1)
+            # print(alpha[mask], mask.sum().item())
         else:
             if hasattr(edge_index, 'coo'):
                 row, col, _ = edge_index.coo()
@@ -350,7 +355,7 @@ class UnifiedGATRATConv(MessagePassing):
             alpha_i = torch.exp(alpha_i)  # e^alpha_i
 
         else:
-            raise NotImplementedError(f"Unknown posweight type: {posweight}")
+            raise NotImplementedError(f"Unknown posweight type: {self.posweight}")
 
         return alpha_i
 
