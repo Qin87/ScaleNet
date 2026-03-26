@@ -311,7 +311,6 @@ def load_directedData(args):
     elif load_func == 'telegram':
         dataset = load_syn(root='./telegram')
     else:
-        # dataset = load_syn(args.data_path + load_func+ '/'+ subset, None)
         dataset = load_syn(load_func+ '/'+ subset, None)
 
     return dataset
