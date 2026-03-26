@@ -1,10 +1,21 @@
 import os
 import random
+from torch_geometric.datasets import QM9, MalNetTiny, LINKXDataset
+import scipy
+from torch_geometric.data import download_url
+from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
 
 import torch_geometric.transforms as transforms
 from torch_geometric.datasets import Actor
 import torch_geometric.transforms as T
 from ogb.nodeproppred import PygNodePropPredDataset
+from torch_sparse import SparseTensor
+import os.path as osp
+from typing import Callable, Optional
+import gdown
+from torch_geometric.data import Data, InMemoryDataset
+
+from data.pokec_dataset import PokecDataset
 try:
     import dgl
     from dgl.data import CiteseerGraphDataset, CoraGraphDataset, PubmedGraphDataset, CoauthorCSDataset, AmazonCoBuyComputerDataset, AmazonCoBuyPhotoDataset, CoauthorPhysicsDataset, FraudDataset, \
@@ -46,7 +57,112 @@ def get_mask(idx, num_nodes):
 def load_directedData(args):
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     load_func, subset = args.Dataset.split('/')[0], args.Dataset.split('/')[1]
-    if load_func == "Cora" or load_func == "CiteSeer" or load_func == "PubMed":
+    if load_func in ['pokec']:
+        dataset = PokecDataset(root=args.data_path+"pokec")
+        # Convert the first element to homogeneous and assign to _data
+        dataset._data = dataset[0].to_homogeneous(
+            node_attrs=['x', 'y', 'train_mask', 'val_mask', 'test_mask']
+        )
+    elif load_func in ['genius']:
+        dataset = LINKXDataset(root=args.data_path, name=load_func, transform=transforms.NormalizeFeatures())
+        name = load_func
+        num_nodes = dataset._data.y.shape[0]
+
+        github_url = f"https://github.com/CUAI/Non-Homophily-Large-Scale/raw/master/data/splits/"
+        split_file_name = f"{name}-splits.npy"
+        local_dir = os.path.join(args.data_path, name, "raw")
+
+        download_url(os.path.join(github_url, split_file_name), local_dir, log=False)
+        splits = np.load(os.path.join(local_dir, split_file_name), allow_pickle=True)
+        # split_idx = splits[split_number % len(splits)]
+        #
+        # train_mask = get_mask(split_idx["train"], num_nodes)
+        # val_mask = get_mask(split_idx["valid"], num_nodes)
+        # test_mask = get_mask(split_idx["test"], num_nodes)
+
+        train_masks = []
+        val_masks = []
+        test_masks = []
+
+        for split_idx in splits:
+            train_masks.append(get_mask(split_idx["train"], num_nodes))
+            val_masks.append(get_mask(split_idx["valid"], num_nodes))
+            test_masks.append(get_mask(split_idx["test"], num_nodes))
+
+        # Stack into tensors of shape (num_nodes, num_splits)
+        dataset._data.train_mask = torch.stack(train_masks, dim=1)
+        dataset._data.val_mask = torch.stack(val_masks, dim=1)
+        dataset._data.test_mask = torch.stack(test_masks, dim=1)
+
+    elif load_func in ['fb100']:
+        dataset = LINKXDataset(root=args.data_path, name=subset, transform=transforms.NormalizeFeatures())
+        dataset._data.y = dataset._data.y.unsqueeze(-1)
+        num_nodes = dataset._data.y.shape[0]
+
+        # elif name in ["penn94", "genius"]:
+        if subset == "penn94":
+            name = "fb100-Penn94"
+        # Datasets from https://arxiv.org/pdf/2110.14446.pdf have five splits stored
+        # in https://github.com/CUAI/Non-Homophily-Large-Scale/tree/82f8f05c5c3ec16bd5b505cc7ad62ab5e09051e6/data/splits
+        # num_nodes = data["y"].shape[0]
+        github_url = f"https://github.com/CUAI/Non-Homophily-Large-Scale/raw/master/data/splits/"
+        split_file_name = f"{name}-splits.npy"
+        local_dir = os.path.join(args.data_path, name, "raw")
+
+        download_url(os.path.join(github_url, split_file_name), local_dir, log=False)
+        splits = np.load(os.path.join(local_dir, split_file_name), allow_pickle=True)
+        # split_idx = splits[split_number % len(splits)]
+
+        # download_url(os.path.join(github_url, split_file_name), local_dir, log=False)
+        # splits = np.load(os.path.join(local_dir, split_file_name), allow_pickle=True)
+
+        train_masks = []
+        val_masks = []
+        test_masks = []
+
+        for split_idx in splits:
+            train_masks.append(get_mask(split_idx["train"], num_nodes))
+            val_masks.append(get_mask(split_idx["valid"], num_nodes))
+            test_masks.append(get_mask(split_idx["test"], num_nodes))
+
+        # Stack into tensors of shape (num_nodes, num_splits)
+        dataset._data.train_mask = torch.stack(train_masks, dim=1)
+        dataset._data.val_mask = torch.stack(val_masks, dim=1)
+        dataset._data.test_mask = torch.stack(test_masks, dim=1)
+
+    elif load_func in ['arxiv-year']:
+        path = args.data_path
+        # arxiv-year uses the same graph and features as ogbn-arxiv, but with different labels
+        dataset = PygNodePropPredDataset(name="ogbn-arxiv", transform=transforms.ToSparseTensor(), root=path)
+        evaluator = Evaluator(name="ogbn-arxiv")
+        y = even_quantile_labels(dataset._data.node_year.flatten().numpy(), nclasses=5, verbose=False)
+        dataset._data.y = torch.as_tensor(y)
+
+        num_nodes = y.shape[0]
+        github_url = f"https://github.com/CUAI/Non-Homophily-Large-Scale/raw/master/data/splits/"
+        split_file_name = f"{load_func}-splits.npy"
+        local_dir = os.path.join(path, load_func.replace("-", "_"), "raw")
+
+        download_url(os.path.join(github_url, split_file_name), local_dir, log=False)
+        splits = np.load(os.path.join(local_dir, split_file_name), allow_pickle=True)
+
+        train_masks = []
+        val_masks = []
+        test_masks = []
+
+        for split_idx in splits:
+            train_masks.append(get_mask(split_idx["train"], num_nodes))
+            val_masks.append(get_mask(split_idx["valid"], num_nodes))
+            test_masks.append(get_mask(split_idx["test"], num_nodes))
+
+        # Stack into tensors of shape (num_nodes, num_splits)
+        dataset._data.train_mask = torch.stack(train_masks, dim=1)
+        dataset._data.val_mask = torch.stack(val_masks, dim=1)
+        dataset._data.test_mask = torch.stack(test_masks, dim=1)
+
+    elif load_func in ['snap-patents']:
+        dataset = load_snap_patents_mat(n_classes=5, root=args.data_path)
+    elif load_func == "Cora" or load_func == "CiteSeer" or load_func == "PubMed":
         from torch_geometric.datasets import Planetoid
         dataset = Planetoid(args.data_path, load_func, transform=T.NormalizeFeatures(), split='full')
 
@@ -60,6 +176,8 @@ def load_directedData(args):
         num_train_nodes = dataset._data.train_mask.sum().item()
         num_train_nodes0 = dataset._data.val_mask.sum().item()
         num_train_nodes1 = dataset._data.test_mask.sum().item()
+        dataset.y = dataset.y.squeeze()
+        dataset._data.y = dataset._data.y.squeeze()
         print(num_train_nodes, num_train_nodes0, num_train_nodes1)
 
     elif load_func in ["directed-roman-empire"]:
@@ -67,13 +185,19 @@ def load_directedData(args):
     elif load_func == 'WebKB':
         load_func = WebKB
         dataset = load_func(root=args.data_path, name=subset)
+
     elif load_func == 'WikipediaNetwork':
         load_func = WikipediaNetwork
-        dataset = load_func(root=args.data_path, name=subset)
+        if subset not in ['crocodile']:
+            dataset = load_func(root=args.data_path, name=subset)
+        else:
+            dataset = load_func(root=args.data_path, name=subset, geom_gcn_preprocess=False)
     elif load_func == 'WikiCS':
+        args.data_path += load_func
         load_func = WikiCS
         dataset = load_func(root=args.data_path, is_undirected=False)
     elif load_func == 'WikiCS_U':
+        args.data_path += load_func
         load_func = WikiCS
         dataset = load_func(root=args.data_path)        # get undirected
     elif load_func == 'cora_ml':
@@ -81,7 +205,8 @@ def load_directedData(args):
     elif load_func == 'citeseer':
         dataset = citation_datasets(root='./citeseer_npz.npz')
     elif load_func in ['film']:
-        dataset = Actor(root='../data/film', transform=T.NormalizeFeatures())
+        args.data_path += load_func
+        dataset = Actor(root=args.data_path, transform=T.NormalizeFeatures())
 
     elif load_func == 'dgl':    # Ben
         subset = subset.lower()
@@ -264,3 +389,99 @@ def seed_everything(seed):
     torch.backends.cudnn.qinchmark = False
     random.seed(seed)
     np.random.seed(seed)
+
+
+def even_quantile_labels(vals, nclasses, verbose=True):
+    """partitions vals into nclasses by a quantile based split,
+    where the first class is less than the 1/nclasses quantile,
+    second class is less than the 2/nclasses quantile, and so on
+
+    vals is np array
+    returns an np array of int class labels
+    """
+    label = -1 * np.ones(vals.shape[0], dtype=np.int64)
+    interval_lst = []
+    lower = -np.inf
+    for k in range(nclasses - 1):
+        upper = np.nanquantile(vals, (k + 1) / nclasses)
+        interval_lst.append((lower, upper))
+        inds = (vals >= lower) * (vals < upper)
+        label[inds] = k
+        lower = upper
+    label[vals >= lower] = nclasses - 1
+    interval_lst.append((lower, np.inf))
+    if verbose:
+        print("Class Label Intervals:")
+        for class_idx, interval in enumerate(interval_lst):
+            print(f"Class {class_idx}: [{interval[0]}, {interval[1]})]")
+    return label
+
+def load_snap_patents_mat(n_classes=5, root="dataset/"):
+    dataset_drive_url = {"snap-patents": "1ldh23TSY1PwXia6dU0MYcpyEgX-w3Hia"}
+    splits_drive_url = {"snap-patents": "12xbBRqd8mtG_XkNLH8dRRNZJvVM4Pw-N"}
+
+    # Build dataset folder
+    if not os.path.exists(f"{root}snap_patents"):
+        os.mkdir(f"{root}snap_patents")
+
+    # Download the data
+    if not os.path.exists(f"{root}snap_patents/snap_patents.mat"):
+        p = dataset_drive_url["snap-patents"]
+        print(f"Snap patents url: {p}")
+        gdown.download(
+            id=dataset_drive_url["snap-patents"],
+            output=f"{root}snap_patents/snap_patents.mat",
+            quiet=False,
+        )
+
+    # Get data
+    fulldata = scipy.io.loadmat(f"{root}snap_patents/snap_patents.mat")
+    edge_index = torch.tensor(fulldata["edge_index"], dtype=torch.long)
+    node_feat = torch.tensor(fulldata["node_feat"].todense(), dtype=torch.float)
+    num_nodes = int(fulldata["num_nodes"])
+    years = fulldata["years"].flatten()
+    label = even_quantile_labels(years, n_classes, verbose=False)
+    label = torch.tensor(label, dtype=torch.long)
+
+    # Download splits
+    name = "snap-patents"
+    if not os.path.exists(f"{root}snap_patents/{name}-splits.npy"):
+        assert name in splits_drive_url.keys()
+        gdown.download(
+            id=splits_drive_url[name],
+            output=f"{root}snap_patents/{name}-splits.npy",
+            quiet=False,
+        )
+
+    # Get splits
+    splits_lst = np.load(f"{root}snap_patents/{name}-splits.npy", allow_pickle=True)
+    train_mask, val_mask, test_mask = process_fixed_splits(splits_lst, num_nodes)
+    data = Data(
+        x=node_feat,
+        edge_index=edge_index,
+        y=label,
+        num_nodes=num_nodes,
+        train_mask=train_mask,
+        val_mask=val_mask,
+        test_mask=test_mask,
+    )
+
+    dataset = DummyDataset(data, n_classes)
+
+    return dataset
+
+class DummyDataset(object):
+    def __init__(self, data, num_classes):
+        self.data = data
+        self.num_classes = num_classes
+
+def process_fixed_splits(splits_lst, num_nodes):
+    n_splits = len(splits_lst)
+    train_mask = torch.zeros(num_nodes, n_splits, dtype=torch.bool)
+    val_mask = torch.zeros(num_nodes, n_splits, dtype=torch.bool)
+    test_mask = torch.zeros(num_nodes, n_splits, dtype=torch.bool)
+    for i in range(n_splits):
+        train_mask[splits_lst[i]["train"], i] = 1
+        val_mask[splits_lst[i]["valid"], i] = 1
+        test_mask[splits_lst[i]["test"], i] = 1
+    return train_mask, val_mask, test_mask

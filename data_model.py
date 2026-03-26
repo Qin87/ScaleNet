@@ -125,8 +125,8 @@ def load_dataset(args):
         IsDirectedGraph = 1
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    if args.Dataset in ['ogbn-arxiv/', 'directed-roman-empire/']:
-        data = dataset._data
+    if args.Dataset in ['ogbn-arxiv/', 'directed-roman-empire/', 'snap-patents/', 'arxiv-year/']:
+        data = getattr(dataset, '_data', dataset.data)
     else:
         data = dataset[0]
 
