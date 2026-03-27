@@ -25,7 +25,7 @@ def parse_args():
 
     parser.add_argument('--net', type=str, default='GAT', help='GAT, RAT, UAT, RiGib, AiGib, UiGib')
     parser.add_argument('--seed', type=int, default=1, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='snap-patents/', help='telegram/ , cora_ml/, citeseer/,  WikiCS/'
+    parser.add_argument('--Dataset', type=str, default='arxiv-year/', help='telegram/ , cora_ml/, citeseer/,  WikiCS/'
                 'PubMed, Coauthor-physics, Coauthor-CS, Amazon-Computers, Amazon-Photo')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout prob')
     parser.add_argument('--layer', type=int, default=2, help='number of layers (2 or 3), default: 2')
