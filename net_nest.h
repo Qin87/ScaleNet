@@ -5,7 +5,7 @@ layer_values=" 2  "
 incinorm=" dir row sym   0  "   #
 lr0=" 0.005 "
 
-while pgrep -x python3 >/dev/null; do
+while pgrep -f main.py >/dev/null; do
     sleep 30
 done
 

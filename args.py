@@ -23,9 +23,9 @@ def parse_args():
     parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', '0', 'softmax'], default='softmax')
     parser.add_argument('--num_split', type=int, default=10, help='num of run in spite of many splits')
 
-    parser.add_argument('--net', type=str, default='UAT', help='GAT, RAT, UAT, DAT, RiGib, AiGib, UiGib, DATib')
+    parser.add_argument('--net', type=str, default='GAT', help='GAT, RAT, UAT, DAT, RiGib, AiGib, UiGib, DATib')
     parser.add_argument('--seed', type=int, default=1, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='WikipediaNetwork/chameleon', help='telegram/ , cora_ml/, citeseer/,  WikiCS/'
+    parser.add_argument('--Dataset', type=str, default='WikipediaNetwork/squirrel', help='telegram/ , cora_ml/, citeseer/,  WikiCS/'
                 'PubMed, Coauthor-physics, Coauthor-CS, Amazon-Computers, Amazon-Photo')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout prob')
     parser.add_argument('--layer', type=int, default=2, help='number of layers (2 or 3), default: 2')
@@ -37,7 +37,7 @@ def parse_args():
 
     parser.add_argument('--lr', type=float, default=0.01, help='learning rate')
     parser.add_argument('--l2', type=float, default=5e-4, help='l2 regularizer, 5e-4')
-    parser.add_argument('-hds', '--heads', default=2, type=int)
+    parser.add_argument('-hds', '--heads', default=1, type=int)
 
     parser.add_argument('--epochs', type=int, default=1500, help='training epochs')
 
