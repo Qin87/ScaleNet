@@ -26,7 +26,7 @@ class InceptionBlock_Di(torch.nn.Module):
         self.ln = Linear(in_dim, out_dim)
         if m in ['RiGib', 'UiGib', 'DiGib']:
             self.convx = nn.ModuleList([DIGCNConv(in_dim, out_dim, args) for _ in range(tuple_num)])
-        elif m in ['AiGib']:
+        elif m in ['AiGib', 'DATib']:
             num_head = 1
             head_dim = out_dim // num_head
             # self.convx = nn.ModuleList([GATConv(in_dim, head_dim, heads=head) for _ in range(tuple_num)])
@@ -151,9 +151,9 @@ class DiSAGE_xBN_nhid(torch.nn.Module):
         elif m in ['AiG']:
             num_head = 1
             head_dim = nhid // num_head
-            self.conv1 = UnifiedGATRATConv(input_dim, head_dim, heads=head,  args= args,concat=False)
-            self.conv2 = UnifiedGATRATConv(nhid, head_dim, heads=head,  args= args, concat=False)
-            self.convx = nn.ModuleList([UnifiedGATRATConv(nhid, head_dim, heads=head, args= args, concat=False) for _ in range(layer - 2)])
+            self.conv1 = UnifiedGATRATConv(input_dim, head_dim, heads=head,  args=args,concat=False)
+            self.conv2 = UnifiedGATRATConv(nhid, head_dim, heads=head,  args=args, concat=False)
+            self.convx = nn.ModuleList([UnifiedGATRATConv(nhid, head_dim, heads=head, args=args, concat=False) for _ in range(layer - 2)])
         else:
             raise ValueError(f"Model '{m}' not implemented")
 

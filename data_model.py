@@ -38,7 +38,7 @@ def init_model(model):
 def CreatModel(args, num_features, n_cls, data_x,device):
     if args.net.lower() == 'mlp':
         model = create_MLP(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, nlayer=args.layer)
-    elif args.net.startswith(('Di', 'Ui', 'Ri', 'Ai')):        # GCN  -->  SAGE
+    elif args.net.startswith(('Di', 'Ui', 'Ri', 'Ai', 'DATib')):        # GCN  -->  SAGE
         if len(args.net) < 4 :
             if args.BN_model:
                 model = DiSAGE_xBN_nhid(args.net, num_features, n_cls, args).to(device)

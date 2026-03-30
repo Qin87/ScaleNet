@@ -76,7 +76,7 @@ def train(SparseEdges, edge_weight):
     new_y_train = None
     model.train()
     optimizer.zero_grad()
-    if args.net.startswith(('Di', 'Ui', 'Ri', 'Ai')) and not args.net.startswith('Dir'):
+    if args.net.startswith(('Di', 'Ui', 'Ri', 'Ai', 'DATib')) and not args.net.startswith('Dir'):
         out = model(data_x, SparseEdges, edge_weight)
     else:
         out = model(data_x, edges)
@@ -84,7 +84,7 @@ def train(SparseEdges, edge_weight):
 
     with torch.no_grad():
         model.eval()
-        if args.net.startswith(('Di', 'Ui', 'Ri', 'Ai')) and not args.net.startswith('Dir'):
+        if args.net.startswith(('Di', 'Ui', 'Ri', 'Ai', 'DATib')) and not args.net.startswith('Dir'):
             out = model(data_x, SparseEdges, edge_weight)
         else:
             out = model(data_x, edges)
@@ -101,7 +101,7 @@ def train(SparseEdges, edge_weight):
 def test():
     global edge_in, in_weight, edge_out, out_weight
     model.eval()
-    if args.net.startswith(('Di', 'Ui', 'Ri', 'Ai')) and not args.net.startswith('Dir'):
+    if args.net.startswith(('Di', 'Ui', 'Ri', 'Ai', 'DATib')) and not args.net.startswith('Dir'):
         logits = model(data_x, SparseEdges, edge_weight)
     else:
         logits = model(data_x, edges[:, train_edge_mask])
@@ -171,10 +171,10 @@ data_test_maskOrigin = data_test_maskOrigin.to(device)
 criterion = CrossEntropy().to(device)
 n_cls = data_y.max().item() + 1
 args.num_nodes = data_y.size(-1)
-if args.net.startswith(('Ui', 'Ri', 'Di', 'Ai')) and not args.net.startswith('Dir'):
+if args.net.startswith(('Ui', 'Ri', 'Di', 'Ai', 'DATib')) and not args.net.startswith('Dir'):
     if args.net.startswith('Ri'):
         edge_index1, edge_weights1 = WCJ_get_directed_adj(args, edges.long(), data_x.dtype)
-    elif args.net.startswith(('Ui', 'Ai')):
+    elif args.net.startswith(('Ui', 'Ai', 'DATib')):
         edge_index1, edge_weights1 = Qin_get_directed_adj(args, edges.long())
     elif args.net.startswith('Di'):
         edge_index1, edge_weights1 = get_appr_directed_adj2(args.First_self_loop, args.alpha, edges.long(), data_y.size(-1), data_x.dtype)  # consumiing for large graph
@@ -198,7 +198,7 @@ if args.net.startswith(('Ui', 'Ri', 'Di', 'Ai')) and not args.net.startswith('Di
                 edge_index_tuple = tuple(edge_list)
                 edge_weights_tuple = (edge_weights_tuple, )
                 del edge_list
-            elif args.net.startswith(('Ui', 'Ri', 'Ai')):
+            elif args.net.startswith(('Ui', 'Ri', 'Ai', 'DATib')):
                 edge_index_tuple, edge_weights_tuple = Qin_get_second_directed_adj(args, edges.long(), data_y.size(-1), k, IsExhaustive, mode='intersection', norm=args.inci_norm)
 
         elif args.net[-2] == 'u':
