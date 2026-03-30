@@ -52,6 +52,9 @@ class UnifiedGATRATConv(MessagePassing):
     - Learned attention REMOVED
     - Edge weights sampled randomly in [0.0001, 10000]
     - Softmax normalization preserved
+
+    Direct Attention Network:
+    - instead of XW_1W_2 in GAT to get alpha, we define self.alpha as learned parameter itself.
     """
 
     def __init__(
@@ -73,7 +76,7 @@ class UnifiedGATRATConv(MessagePassing):
         kwargs.setdefault('aggr', 'add')
         super().__init__(node_dim=0, **kwargs)
         self.posweight = args.posweight
-        if args.net in ['GAT', 'RAT', 'UAT']:
+        if args.net in ['GAT', 'RAT', 'UAT', 'DAT']:
             self.attention_mode = args.net.lower()
         else:
             self.attention_mode = 'gat'
@@ -111,6 +114,9 @@ class UnifiedGATRATConv(MessagePassing):
         if self.attention_mode == "gat":
             self.att_src = Parameter(torch.empty(1, heads, out_channels))
             self.att_dst = Parameter(torch.empty(1, heads, out_channels))
+        elif self.attention_mode == "dat":
+            self.alpha_src = Parameter(torch.zeros(self.num_nodes, heads))
+            self.alpha_dst = Parameter(torch.zeros(self.num_nodes, heads))
 
         if edge_dim is not None:
             self.lin_edge = Linear(edge_dim, heads * out_channels, bias=False,
@@ -243,6 +249,8 @@ class UnifiedGATRATConv(MessagePassing):
             alpha_src = (x_src * self.att_src).sum(dim=-1)
             alpha_dst = None if x_dst is None else (x_dst * self.att_dst).sum(-1)
             alpha = (alpha_src, alpha_dst)
+        elif self.attention_mode == 'dat':
+            alpha = (self.alpha_src, self.alpha_dst)
 
         # ---- Self-loops (unchanged) ----
         if self.add_self_loops:
@@ -277,7 +285,7 @@ class UnifiedGATRATConv(MessagePassing):
             ptr = edge_index.storage.rowptr()
             E = index.numel()   # total number of edges
 
-        if self.attention_mode == 'gat':
+        if self.attention_mode in ['gat', 'dat']:
             alpha = self.edge_updater(edge_index, alpha=alpha, edge_attr=edge_attr,size=size)
         else:
             if self.attention_mode == 'rat':   # TODO check heads

@@ -53,7 +53,7 @@ def CreatModel(args, num_features, n_cls, data_x,device):
     else:
         if args.net == 'GCN':
             model = StandGCNXBN(num_features, n_cls, args=args)
-        elif args.net in ['GAT', 'RAT', 'UAT']:
+        elif args.net in ['GAT', 'RAT', 'UAT', 'DAT']:
             model = StandGATXBN(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, args=args)
         elif args.net == "SAGE":
             model = create_sage(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout,nlayer=args.layer)
