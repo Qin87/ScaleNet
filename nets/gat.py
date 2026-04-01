@@ -115,8 +115,8 @@ class UnifiedGATRATConv(MessagePassing):
             self.att_src = Parameter(torch.empty(1, heads, out_channels))
             self.att_dst = Parameter(torch.empty(1, heads, out_channels))
         elif self.attention_mode == "dat":
-            self.alpha_src = Parameter(torch.zeros(self.num_nodes, heads))
-            self.alpha_dst = Parameter(torch.zeros(self.num_nodes, heads))
+            self.alpha_src = Parameter(torch.ones(self.num_nodes, heads)*0.5)
+            self.alpha_dst = Parameter(torch.ones(self.num_nodes, heads)*0.5)
 
         if edge_dim is not None:
             self.lin_edge = Linear(edge_dim, heads * out_channels, bias=False,
