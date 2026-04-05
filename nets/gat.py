@@ -19,6 +19,7 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor
 from torch.nn import Parameter
+from torch_geometric.nn import inits
 
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.dense.linear import Linear
@@ -115,8 +116,10 @@ class UnifiedGATRATConv(MessagePassing):
             self.att_src = Parameter(torch.empty(1, heads, out_channels))
             self.att_dst = Parameter(torch.empty(1, heads, out_channels))
         elif self.attention_mode == "dat":
-            self.alpha_src = Parameter(torch.ones(self.num_nodes, heads)*0.5)
+            self.alpha_src = Parameter(torch.empty(self.num_nodes, heads))
+            inits.glorot(self.alpha_src)
             self.alpha_dst = Parameter(torch.ones(self.num_nodes, heads)*0.5)
+            inits.glorot(self.alpha_src)
 
         if edge_dim is not None:
             self.lin_edge = Linear(edge_dim, heads * out_channels, bias=False,
