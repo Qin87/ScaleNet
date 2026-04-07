@@ -179,7 +179,7 @@ WikipediaNetwork/squirrel:
 
 # 93.5±0.3(0.5,-1,-1 Acer), 93.4±0.3(0.5,-1,-1 Dell), --Done!
 directed-roman-empire/:
-#  net: LargeScaleNet
+  net: LargeScaleNet
   num_split: 10  # original dataset
   nonlinear: 1    # must have this, or acc is 85
   has_scheduler: 1
@@ -192,7 +192,7 @@ directed-roman-empire/:
   hid_dim: 256
   layer: 6  # 5:93.4  7:93.1  8:93.0
   jk: "cat"   # >max
-#  dropout: 0.2
+  dropout: 0.2
   alphaDir: 0.5   #
   betaDir: -1     # 0 is 88, 1 is 20
   gamaDir: -1     # all much worse

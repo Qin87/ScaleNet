@@ -4,7 +4,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--monitor", type=str, help="optimiser monitor: val_acc(acc), val_loss(loss)", default="val_acc")
 
-    parser.add_argument("--use_best_hyperparams", type=int, default=0, help="whether use parameters in best_hyperparameters.yml")
+    parser.add_argument("--use_best_hyperparams", type=int, default=1, help="whether use parameters in best_hyperparameters.yml")
     parser.add_argument('--GPU', type=int, default=0, help='GPU device number')
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
     parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=0)
@@ -12,13 +12,15 @@ def parse_args():
 
     # for DirGNN
     parser.add_argument("--conv_type", type=str, help="DirGNN Model, scale, ", default="dir-gcn")
+    parser.add_argument("--att", type=str, help="learned weight in ScaleNet: gat, dat, None", default='gat')
+    parser.add_argument("--att_head", type=int, help="heads of learned weight in ScaleNet", default=8)
     parser.add_argument("--normalize", type=int, help="whether use batch normalization in ScaleNet, model:0/1", default=0)
     parser.add_argument("--Norm_W", type=int, help="whether learnable normalization:0/1", default=0)
     parser.add_argument("--Pre_W", type=int, help="whether adding learnable weights before normalization:0/1", default=1)
-    parser.add_argument("--jk", type=str, choices=["max", "cat", 'weighted',  0], default='max')
+    parser.add_argument("--jk", type=str, choices=["max", "cat", 'weighted',  0], default=0)
     parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', "0"], default="0")
     parser.add_argument("--fs", type=str, choices=["sum", "cat", 'weight_sum', 'linear'], default="dir", help='fusion method')
-    parser.add_argument("--alphaDir", type=float, help="Direction convex combination params", default=0.5)
+    parser.add_argument("--alphaDir", type=float, help="Direction convex combination params", default=0)
     parser.add_argument("--betaDir", type=float, help="Direction convex combination params", default=-1)
     parser.add_argument("--gamaDir", type=float, help="Direction convex combination params", default=-1)
     parser.add_argument("--coef_agg", type=float, help="coef for linear weight", default=10)
@@ -34,13 +36,13 @@ def parse_args():
                     'mlp, link, linkxcat, linkxadd, linkx, linkxgit, Dir-GNN, '
                     'ScaleNet, LargeScaleNet, FaberNet, gps, Polynormer,sgformer ')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='cora_ml/', help=
+    parser.add_argument('--Dataset', type=str, default='directed-roman-empire/', help=
     'telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/, '
         'fb100/penn94, pokec/, genius/ ')
     parser.add_argument('--dropout', type=float, default=0, help='dropout prob')
-    parser.add_argument('--layer', type=int, default=1, help='number of layers (2 or 3), default: 2')
+    parser.add_argument('--layer', type=int, default=2, help='number of layers (2 or 3), default: 2')
     parser.add_argument('--alpha', type=float, default=0.1, help='alpha teleport prob in DiG(ib)')
 
     parser.add_argument('-AP_K', '--AP_K', default=10, type=int)  # for APPNP

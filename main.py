@@ -78,10 +78,6 @@ def train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_wei
           X_img_i, X_img_j, X_img_k,norm_img_i,norm_img_j, norm_img_k, Quaedge_index):
     global class_num_list, idx_info, prev_out, biedges
     global data_train_mask, data_val_mask, data_test_mask
-    new_edge_index=None
-    new_x = None
-    new_y = None
-    new_y_train = None
     model.train()
     if args.net.endswith('ymN1'):   # without 1st-order edges
         biedges = edge_in
@@ -129,7 +125,7 @@ def train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_wei
     if args.has_scheduler:
         scheduler.step(val_loss.item(), epoch)   # Scheduler expects float, not tensor
 
-    return val_loss, new_edge_index, new_x, new_y, new_y_train
+    return val_loss
 # from sklearn.metrics import confusion_matrix
 from collections import Counter
 @torch.no_grad()
@@ -525,7 +521,7 @@ try:
             set_new_opt = True
             print_memory("Before training")
             for epoch in range(args.epoch):
-                val_loss, new_edge_index, new_x, new_y, new_y_train = train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight, X_real, X_img, Sigedge_index, norm_real,norm_imag,
+                val_loss = train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight, X_real, X_img, Sigedge_index, norm_real,norm_imag,
                                                                                 X_img_i, X_img_j, X_img_k,norm_imag_i, norm_imag_j, norm_imag_k, Quaedge_index)
                 accs, baccs, f1s, logits, class_detail = test()
                 train_acc, val_acc, tmp_test_acc = accs

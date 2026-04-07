@@ -4,13 +4,15 @@ import pytorch_lightning as pl
 from torch_sparse import SparseTensor
 import torch.nn.functional as F
 from torch.nn import ModuleList, Linear
+from torch_geometric.nn.dense.linear import Linear as PyGLinear
+from torch_geometric.nn.inits import glorot, zeros
 from torch_geometric.nn import GCNConv
 
 from nets.jumping_weight import JumpingKnowledge
 
 from utils.utils import get_norm_adj
-
-
+from torch.nn import Parameter
+from torch_geometric.utils import softmax
 def get_conv2(input_dim, output_dim, args):
     if args.conv_type2 == "gcn":
         return GCNConv(input_dim, output_dim, add_self_loops=args.self_loops)
@@ -65,10 +67,31 @@ class GNN2(torch.nn.Module):
 
 
 class ScaleConv(torch.nn.Module):
-    def __init__(self, input_dim, output_dim, args):
+    def __init__(self, input_dim, output_dim, args,
+                 negative_slope: float = 0.2, concat: bool = False,
+        dropout: float = 0.0, bias: bool = True):
         super().__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
+        self.heads = args.att_head
+        self.num_nodes = args.num_nodes
+        self.dropout = dropout
+        self.negative_slope = negative_slope
+        self.concat = concat  # using mean, no concat TODO
+
+        if bias:
+            self.bias = Parameter(torch.empty(self.output_dim))
+        else:
+            self.register_parameter('bias', None)
+
+        self.attention = args.att
+        if self.attention == 'dat':
+            self.alpha_src = Parameter(torch.empty(self.num_nodes, self.heads))
+            self.alpha_dst = Parameter(torch.empty(self.num_nodes, self.heads))
+        elif self.attention == 'gat':
+            self.lin = PyGLinear(self.input_dim, self.heads * self.output_dim,bias=False, weight_initializer='glorot')
+            self.att_src = Parameter(torch.empty(1, self.heads, self.output_dim))
+            self.att_dst = Parameter(torch.empty(1, self.heads, self.output_dim))
 
         self.lins_dst_to_src = torch.nn.ModuleList([Linear(input_dim, output_dim) for _ in range(2 * args.k_plus)])
         self.lins_src_to_dst = torch.nn.ModuleList([Linear(input_dim, output_dim) for _ in range(2 * args.k_plus)])
@@ -100,15 +123,51 @@ class ScaleConv(torch.nn.Module):
             self.W1 = nn.Parameter(torch.ones(args.edge_index.shape[1]))
             self.W2 = nn.Parameter(torch.ones(args.edge_index.shape[1]))
 
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        if self.attention == 'gat':
+            glorot(self.att_src)
+            glorot(self.att_dst)
+        elif self.attention == 'dat':
+            glorot(self.alpha_src)
+            glorot(self.alpha_dst)
+        zeros(self.bias)
+
     def forward(self, x, edge_index):
-        if self.adj_norm is None:
-            row, col = edge_index
-            num_nodes = x.shape[0]
+        row, col = edge_index
+        num_nodes = x.shape[0]
 
-            adj = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+        recompute = self.training or self.attention or (self.adj_norm is None)
+
+        if recompute:
+            if self.attention == 'gat':
+                x_src = x_dst = self.lin(x).view(-1, self.heads, self.output_dim)
+                self.alpha_src = (x_src * self.att_src).sum(dim=-1)
+                self.alpha_dst = None if x_dst is None else (x_dst * self.att_dst).sum(-1)
+            if self.attention in ['dat', 'gat']:
+                alpha = self.alpha_src[row] + self.alpha_dst[col]
+                alpha = F.leaky_relu(alpha, self.negative_slope)
+                alpha = softmax(alpha, index=col)
+                alpha = F.dropout(alpha, p=self.dropout, training=self.training)
+                alpha = alpha.mean(dim=1)
+
+                alpha_t = self.alpha_src[col] + self.alpha_dst[row]
+                alpha_t = F.leaky_relu(alpha_t, self.negative_slope)
+                alpha_t = softmax(alpha_t, index=col)
+                alpha_t = F.dropout(alpha_t, p=self.dropout, training=self.training)
+                alpha_t = alpha_t.mean(dim=1)
+
+                adj = SparseTensor(row=row, col=col, value=alpha, sparse_sizes=(num_nodes, num_nodes))
+                adj_t = SparseTensor(row=col, col=row, value=alpha_t, sparse_sizes=(num_nodes, num_nodes))
+
+
+
+            else:
+                adj = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
+                adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
+                
             self.adj_norm = get_norm_adj(adj, norm=self.inci_norm, exponent=self.exponent, W=self.W1)
-
-            adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
             self.adj_t_norm = get_norm_adj(adj_t, norm=self.inci_norm, exponent=self.exponent, W=self.W2)
 
         y = self.adj_norm @ x
@@ -181,6 +240,9 @@ class ScaleConv(torch.nn.Module):
 
         if self.zero_order:
             total = total + self.lin_zero(x)
+
+        if self.bias is not None:
+            total = total + self.bias
 
         return total
 
