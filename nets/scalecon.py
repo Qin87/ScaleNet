@@ -139,12 +139,11 @@ class ScaleConv(torch.nn.Module):
         num_nodes = x.shape[0]
 
         recompute = self.training or self.attention or (self.adj_norm is None)
-
         if recompute:
             if self.attention == 'gat':
                 x_src = x_dst = self.lin(x).view(-1, self.heads, self.output_dim)
                 self.alpha_src = (x_src * self.att_src).sum(dim=-1)
-                self.alpha_dst = None if x_dst is None else (x_dst * self.att_dst).sum(-1)
+                self.alpha_dst = (x_dst * self.att_dst).sum(-1)
             if self.attention in ['dat', 'gat']:
                 alpha = self.alpha_src[row] + self.alpha_dst[col]
                 alpha = F.leaky_relu(alpha, self.negative_slope)
@@ -154,7 +153,7 @@ class ScaleConv(torch.nn.Module):
 
                 alpha_t = self.alpha_src[col] + self.alpha_dst[row]
                 alpha_t = F.leaky_relu(alpha_t, self.negative_slope)
-                alpha_t = softmax(alpha_t, index=col)
+                alpha_t = softmax(alpha_t, index=col)           # TODO change col to row
                 alpha_t = F.dropout(alpha_t, p=self.dropout, training=self.training)
                 alpha_t = alpha_t.mean(dim=1)
 
