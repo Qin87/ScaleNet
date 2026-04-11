@@ -12,7 +12,7 @@ def parse_args():
 
     # for DirGNN
     parser.add_argument("--conv_type", type=str, help="DirGNN Model, scale, ", default="dir-gcn")
-    parser.add_argument("--att", type=str, help="learned weight in ScaleNet: gat, dat, None", default='gat')
+    parser.add_argument("--att", type=str, help="learned weight in ScaleNet: gat, dat, None", default='dat')
     parser.add_argument("--att_head", type=int, help="heads of learned weight in ScaleNet", default=8)
     parser.add_argument("--normalize", type=int, help="whether use batch normalization in ScaleNet, model:0/1", default=0)
     parser.add_argument("--Norm_W", type=int, help="whether learnable normalization:0/1", default=0)
@@ -30,13 +30,13 @@ def parse_args():
     parser.add_argument('--num_split', type=int, default=1, help='num of run in spite of many splits')
 
 
-    parser.add_argument('--net', type=str, default='Dir-GNN', help='Mag, Sig, QuaNet, '
+    parser.add_argument('--net', type=str, default='LargeScaleNet', help='Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc, ParaGCN, SimGAT, SloopNet, tSNE,RandomNet, HFNet '
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym' 
                     'mlp, link, linkxcat, linkxadd, linkx, linkxgit, Dir-GNN, '
                     'ScaleNet, LargeScaleNet, FaberNet, gps, Polynormer,sgformer ')
-    parser.add_argument('--seed', type=int, default=0, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='directed-roman-empire/', help=
+    parser.add_argument('--seed', type=int, default=10, help='random seed')
+    parser.add_argument('--Dataset', type=str, default='WikipediaNetwork/squirrel', help=
     'telegram/, citeseer/ , cora_ml/, dgl/pubmed, WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/, '

@@ -289,7 +289,7 @@ def get_name(args, IsDirectedGraph):
     if args.net == 'LargeScaleNet':
         net_to_print += ('_' + args.conv_type2 + '_part' + str(args.alphaDir) + '_' + str(args.betaDir) + '_' + str(
             args.gamaDir) + '_jk' + str(args.jk) + '_norm' + str(args.inci_norm)
-            + '_zero'+str(args.zero_order) + '_struct'+str(args.structure)) + '_cat'+str(args.cat_A_X)+'_exp'+str(args.exponent)+args.att+str(args.att_head)+'col_col'
+            + '_zero'+str(args.zero_order) + '_struct'+str(args.structure)) + '_cat'+str(args.cat_A_X)+'_exp'+str(args.exponent)+args.att+str(args.att_head)+'col_row'
 
     if args.net in ['ScaleNet', 'Dir-GNN']:
         if args.coef_agg:

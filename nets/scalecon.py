@@ -154,7 +154,7 @@ class ScaleConv(torch.nn.Module):
 
                 alpha_t = self.alpha_src[col] + self.alpha_dst[row]
                 alpha_t = F.leaky_relu(alpha_t, self.negative_slope)
-                alpha_t = softmax(alpha_t, index=col)           # TODO change col to row
+                alpha_t = softmax(alpha_t, index=row)           # TODO change col to row
                 alpha_t = F.dropout(alpha_t, p=self.dropout, training=self.training)
                 alpha_t = alpha_t.mean(dim=1)
 

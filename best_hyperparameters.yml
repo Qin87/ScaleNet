@@ -1,7 +1,7 @@
 # 97.2±2.1,  96.8±2.1(0.5,-1,-1)
 telegram/:
-#  monitor: val_loss  # val_acc is bad when few epoch,
-#  num_split: 10
+  monitor: val_loss  # val_acc is bad when few epoch,
+  num_split: 10
   hid_dim: 64
   l2: 0   # 97.0(0), 95.6(5e-4)
   inci_norm: "0"  # {94.2±4.4(dir) 95.6±3.0(0)}  {93.2(dir), 97.0(0)}
@@ -18,7 +18,7 @@ telegram/:
   BN_model: 1    # sure
   add_selfloop: 1
   jk: 'max'
-#  dropout: 0.0
+  dropout: 0.0
   alphaDir: 0.5     # 0.5, 0.2(94.8)
 #  betaDir: -1
 #  gamaDir: -1
@@ -81,7 +81,6 @@ WikiCS/:
   epoch: 1500
   patience: 80
 #  net: ScaleNet
-  conv_type: "dir-gcn"
   nonlinear: 1
   layer: 2
   lr: 0.001   #0.01
@@ -89,7 +88,7 @@ WikiCS/:
   BN_model: 0  # 0(23), 1(73.5)
   add_selfloop : 1  # add(79.1±0.8),0(77.3±0.8), remove(77.4)
   jk: 'max'   # max(75.9),cat(75.99), 0(73.5)
-#  dropout: 0.5  # 0.5(75.9), 0.0(73.9)
+  dropout: 0.5  # 0.5(75.9), 0.0(73.9)
   alphaDir: 0.5
   betaDir: 2
   gamaDir: -1   # 0(76.5)
