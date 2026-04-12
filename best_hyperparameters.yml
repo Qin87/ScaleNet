@@ -136,7 +136,7 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   has_scheduler: 1
   hid_dim: 128
   conv_type: "dir-gcn"
-  inci_norm: "dir"
+#  inci_norm: "dir"
   dropout: 0.0  # 0.5(acc65), 0.0(acc75)
   nonlinear: 0   #
 #  net: ScaleNet
@@ -161,7 +161,7 @@ WikipediaNetwork/squirrel:
   patience: 400
   has_scheduler: 1
   conv_type: "dir-gcn"
-  inci_norm: "dir"  # 0(70.5),
+#  inci_norm: "dir"  # 0(70.5),
   nonlinear: 1
   dropout: 0.0  # 0.5(acc72.7), 0.0(acc75)
 #  net: ScaleNet
@@ -221,7 +221,7 @@ arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
 #  gamaDir: 0  # 0.5:64.2  1:64.5
   exponent: -0.5  # 0.25:30
   weight_penalty: 'None'  # exp:64.7
-  inci_norm: 'dir'
+#  inci_norm: 'dir'
 
 
 # 71.43(0.5_1_0.5, 6lay)  71.2(0.5,0,1, 4lay)
