@@ -257,9 +257,9 @@ def get_name(args, IsDirectedGraph):
         net_to_print = 'NoBN_' + net_to_print
 
     if args.add_selfloop:
-        net_to_print += '_AddSloop'
+        net_to_print += '_AddSlp'
     else:
-        net_to_print += '_NoSloop'
+        net_to_print += '_NoSlp'
 
     if args.net == 'GCN':
         if args.gcn_norm == 1:

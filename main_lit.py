@@ -1,7 +1,3 @@
-################################
-# PyTorch Lightning Version: Multi-scale Learning for big-sized graph
-################################
-
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -56,7 +52,7 @@ def main():
     evaluator = None
     if len(args.Dataset.split('/')) == 2:
         name = args.Dataset.split('/')[0]
-        if  name in ["ogbn-arxiv", "arxiv-year"] :
+        if name in ["ogbn-arxiv", "arxiv-year"] :
             evaluator = Evaluator(name="ogbn-arxiv")
 
     start_time = time.time()
