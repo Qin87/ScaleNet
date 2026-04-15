@@ -148,13 +148,13 @@ class ScaleConv(torch.nn.Module):
             if self.attention in ['dat', 'gat']:
                 alpha = self.alpha_src[row] + self.alpha_dst[col]
                 alpha = F.leaky_relu(alpha, self.negative_slope)
-                alpha = softmax(alpha, index=col)
+                alpha = softmax(alpha, index=col)       # to make sure positive attention
                 alpha = F.dropout(alpha, p=self.dropout, training=self.training)
                 alpha = alpha.mean(dim=1)
 
                 alpha_t = self.alpha_src[col] + self.alpha_dst[row]
                 alpha_t = F.leaky_relu(alpha_t, self.negative_slope)
-                alpha_t = softmax(alpha_t, index=row)           # TODO change col to row
+                alpha_t = softmax(alpha_t, index=col)           # TODO change col to row
                 alpha_t = F.dropout(alpha_t, p=self.dropout, training=self.training)
                 alpha_t = alpha_t.mean(dim=1)
 
