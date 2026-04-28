@@ -98,14 +98,14 @@ WikiCS/:
 #
 dgl/pubmed:
   num_split: 10
-  net: ScaleNet
+#  net: ScaleNet
   conv_type: "dir-gcn"   # sage
   nonlinear: 1
   layer: 4
   lr: 0.01
   normalize: 0
   BN_model: 0  #
-#  add_selfloop : 1
+  add_selfloop : 1
   jk: 'max'
   dropout: 0.0  #0.5(39), 0.0(77.5)
   alphaDir: 1   # 0.5(72.2), 0(73.2)
@@ -113,7 +113,7 @@ dgl/pubmed:
   gamaDir: 1
   inci_norm: "sym"
   hid_dim: 64
-  to_undirected: 1
+#  to_undirected: 1
 
 #  net: ScaleNet
 #  lr: 0.01
