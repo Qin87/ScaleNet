@@ -68,6 +68,12 @@ class GNN2(torch.nn.Module):
 
 
 class ScaleConv(torch.nn.Module):
+    '''
+    choosing self.attention=None, will be uniform weight
+    choosing self.attention='gat' will apply the attention in GAT model, where alpha=(XWW_src, XWW_des), has 3 learned weights: W, W_src, W_des
+    choosing self.attention='dat' will apply the attention more directly, where alpha=(W_source, W_destin), has 2 learning weights: W_source, W_destin
+
+    '''
     def __init__(self, input_dim, output_dim, args,
                  negative_slope: float = 0.2, concat: bool = False,
         dropout: float = 0.0, bias: bool = True):

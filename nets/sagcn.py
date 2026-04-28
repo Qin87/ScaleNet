@@ -117,7 +117,7 @@ import torch.nn as nn
 class SAGCNXBN(nn.Module):
     def __init__(self, nfeat, nhid, nclass, dropout, nlayer=3, norm=True):
         super().__init__()
-        self.is_add_self_loops = True  # Qin
+        self.is_add_self_loops = False  # Qin
         GCNConv = SAGCN2
         if nlayer == 1:
             self.conv1 = GCNConv(nfeat, nclass, cached= False, normalize=norm, add_self_loops=self.is_add_self_loops)
@@ -142,7 +142,6 @@ class SAGCNXBN(nn.Module):
     def forward(self, x, adj, edge_weight=None):
         edge_index = adj
         x = self.conv1(x, edge_index, edge_weight)
-        # x = self.mlp1(x)
         if self.layer == 1:
             return x
         # x = self.batch_norm1(x)

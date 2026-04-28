@@ -136,20 +136,23 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   has_scheduler: 1
   hid_dim: 128
   conv_type: "dir-gcn"
-#  inci_norm: "dir"
+  inci_norm: "dir"
   dropout: 0.0  # 0.5(acc65), 0.0(acc75)
   nonlinear: 0   #
-#  net: ScaleNet
+  net: ScaleNet
   layer: 5      # 80.1
   lr: 0.005
-#  normalize: 1
+  normalize: 1
   BN_model: 0  #  without layerNorm, very bad(but Dir-GNN prefer no LN)
   add_selfloop: 0
   jk: 'max'
   alphaDir: 1
-#  betaDir: 1
-#  gamaDir: 1
+  betaDir: 1
+  gamaDir: 1
   seed: 101   # tried 2099,
+
+
+
 
 # (1_1_-1) 74.7±2.4,   (1,-1,-1) 75.2±1.7
 WikipediaNetwork/squirrel:
@@ -285,6 +288,57 @@ film/:
 genius/:
   epoch: 10000
   num_split: 5  # original split
+
+
+# (1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5)
+WikipediaNetwork/filter_dir_chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5)
+  num_split: 10  # original dataset
+  l2: 0  # 5e-4 is a bit worse
+  NotImproved: 810
+  epoch: 10000
+  patience: 400
+  has_scheduler: 1
+  hid_dim: 128
+  conv_type: "dir-gcn"
+  inci_norm: "dir"
+  dropout: 0.0  # 0.5(acc65), 0.0(acc75)
+  nonlinear: 0   #
+#  net: ScaleNet
+  layer: 5      # 80.1
+  lr: 0.005
+  normalize: 1
+  BN_model: 0  #  without layerNorm, very bad(but Dir-GNN prefer no LN)
+  add_selfloop: 0
+  jk: 'max'
+  alphaDir: 1
+#  betaDir: 1
+#  gamaDir: 1
+  seed: 101   # tried 2099,
+
+# (1_1_-1) 74.7±2.4,   (1,-1,-1) 75.2±1.7
+WikipediaNetwork/filter_dir_squirrel:
+  num_split: 10  # original dataset
+  hid_dim: 128
+  l2: 0
+  NotImproved: 810
+  epoch: 10000
+  patience: 400
+  has_scheduler: 1
+  conv_type: "dir-gcn"
+  inci_norm: "dir"  # 0(70.5),
+  nonlinear: 1
+  dropout: 0.0  # 0.5(acc72.7), 0.0(acc75)
+#  net: ScaleNet
+  layer: 6
+  lr: 0.01
+#  normalize: 1
+  BN_model: 1 # 0(48.9), 1(72)
+  add_selfloop: 0     # 0 or 1 is worse
+  jk: 'max'
+  alphaDir: 1   # best is 1,1,-1
+#  betaDir: 1    #-1
+#  gamaDir: 1    # -1
+  seed: 11
 
 
 

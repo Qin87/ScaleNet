@@ -160,24 +160,24 @@ class StandGCNXBN(nn.Module):
 
         x = self.conv1(x, adj)
         if self.layer == 1:
-            # x = F.dropout(x,p= self.dropout_p, training=self.training)
-            # if self.BN_model:
-            #     x = self.batch_norm2(x)
+            x = F.dropout(x,p= self.dropout_p, training=self.training)
+            if self.BN_model:
+                x = self.batch_norm2(x)
             return x
         x = F.relu(x)
 
         if self.layer>2:
             for iter_layer in self.convx:
-                # x = F.dropout(x,p= self.dropout_p, training=self.training)
+                x = F.dropout(x,p= self.dropout_p, training=self.training)
                 x = iter_layer(x, adj, edge_weight)
-                # if self.BN_model:
-                #     x= self.batch_norm3(x)
+                if self.BN_model:
+                    x= self.batch_norm3(x)
                 x = F.relu(x)
 
-        # x = F.dropout(x, p= self.dropout_p, training=self.training)
+        x = F.dropout(x, p= self.dropout_p, training=self.training)
         x = self.conv2(x, adj, edge_weight)
-        # if self.BN_model:
-        #     x = self.batch_norm2(x)
+        if self.BN_model:
+            x = self.batch_norm2(x)
         # # x = F.dropout(x, p=self.dropout_p, training=self.training)      # this is the best dropout arrangement
         return x
 

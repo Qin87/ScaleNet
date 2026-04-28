@@ -8,6 +8,8 @@ import torch
 from networkx.readwrite import json_graph
 # from torch_geometric.nn import LINKX
 from torch_scatter import scatter_add
+from torch_geometric.utils import add_self_loops
+import os.path as osp
 
 from GTs_baselines.network.gps_model import GPSModel
 from GTs_baselines.polynormer import Polynormer
@@ -369,8 +371,8 @@ def get_dataset(name, path, split_type='public'):
         raise NotImplementedError("Not Implemented Dataset!")
 
     return dataset
-from torch_geometric.utils import add_self_loops
-import os.path as osp
+
+
 def load_dataset(args):
     if len(args.Dataset.split('/')) < 2:
         path = args.data_path
@@ -382,6 +384,8 @@ def load_dataset(args):
 
     if args.Dataset in ['ogbn-arxiv/', 'directed-roman-empire/', 'snap-patents/', 'arxiv-year/']:
         data = getattr(dataset, '_data', dataset.data)
+    elif args.Dataset in ['WikipediaNetwork/filter_dir_chameleon', 'WikipediaNetwork/filter_dir_squirrel']:
+        data = dataset
     else:
         data = dataset[0]
 
@@ -460,8 +464,8 @@ def load_dataset(args):
         except:
             dataset_num_features = data_x.shape[1]
 
-    IsDirectedGraph = True
-    # IsDirectedGraph = test_directed(edges)        # time consuming
+    # IsDirectedGraph = True
+    IsDirectedGraph = test_directed(edges)        # time consuming
     # print("This is directed graph: ", IsDirectedGraph)
     # print("data_x", data_x.shape)  # [11701, 300])
 
@@ -481,9 +485,25 @@ def load_dataset(args):
         edge_attr = None
         data_batch = None
 
-
-
     return data_x, data_y, edges, edges_weight, dataset_num_features,data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph, edge_attr, data_batch
+
+def test_directed(edge_index):
+    set_edges = set()
+    bi_direct = 0
+    self_loop = 0
+    for i in range(edge_index.shape[1]):
+        if edge_index[1][i].item() == edge_index[0][i].item():
+            self_loop += 1
+        edge_inv = frozenset([edge_index[1][i].item(), edge_index[0][i].item()])
+
+        edge = frozenset([edge_index[0][i].item(), edge_index[1][i].item()])
+        if edge_inv in set_edges:
+            bi_direct += 1
+        set_edges.add(edge)
+    print("selfloop: {}, Num_bidirect_edges: {}, total_num_edges: {}".format(self_loop, bi_direct, edge_index.shape[1]))
+    if bi_direct * 2 == edge_index.shape[1] - self_loop:
+        return False
+    return True
 
 def feat_proximity(edge_index1, data_x):
     distances = []

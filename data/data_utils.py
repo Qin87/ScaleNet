@@ -291,10 +291,14 @@ def load_directedData(args):
 
     elif load_func == 'WikipediaNetwork':
         load_func = WikipediaNetwork
-        if subset not in ['crocodile']:
-            dataset = load_func(root=args.data_path, name=subset)
+        if 'filter' not in subset:
+            if subset not in ['crocodile']:
+                dataset = load_func(root=args.data_path, name=subset)
+            else:
+                dataset = load_func(root=args.data_path, name=subset, geom_gcn_preprocess=False)
         else:
-            dataset = load_func(root=args.data_path, name=subset, geom_gcn_preprocess=False)
+            subset = subset.replace('filter_dir_', '')
+            dataset = load_wiki_new('./geom-gcn/' + subset + '_filtered_directed.npz')
     elif load_func == 'WikiCS':
         args.data_path += load_func
         load_func = WikiCS
@@ -1137,3 +1141,23 @@ def calculate_degree_features(edge_index, degfea, num_nodes=None):
             features[node] = degree
 
     return features
+
+
+def load_wiki_new(data_dir):
+    npz = np.load(data_dir)
+
+    x = torch.tensor(npz["node_features"], dtype=torch.float)
+
+    y = torch.tensor(npz["node_labels"],dtype=torch.long)
+
+    edge_index = torch.tensor(npz["edges"],dtype=torch.long).t().contiguous()  # [2, E]
+
+    train_mask = torch.from_numpy(npz['train_masks']).t().contiguous()
+    val_mask = torch.from_numpy(npz['val_masks']).t().contiguous()
+    test_mask = torch.from_numpy(npz['test_masks']).t().contiguous()
+    print(train_mask.shape)
+
+    data = Data(x=x, edge_index=edge_index, y=y, train_mask=train_mask, val_mask=val_mask, test_mask=test_mask
+    )
+
+    return data
