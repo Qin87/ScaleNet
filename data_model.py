@@ -97,7 +97,7 @@ def get_name(args, IsDirectedGraph=1):
     return net_to_print, dataset_to_print
 
 
-def log_file(net_to_print, dataset_to_print, args):
+def logfile(net_to_print, dataset_to_print, args):
     log_file_name = dataset_to_print+'_'+net_to_print+'_lay'+str(args.layer)+'_lr'+str(args.lr)+'_NoImp'+str(args.NotImproved)+args.posweight+'_norm'+args.inci_norm
     if args.inci_norm == 'row':
         log_file_name += 'e-12'
