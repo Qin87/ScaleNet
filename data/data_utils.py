@@ -9,11 +9,6 @@ import torch_geometric.transforms as transforms
 from torch_geometric.datasets import Actor
 import torch_geometric.transforms as T
 from ogb.nodeproppred import PygNodePropPredDataset
-from torch_sparse import SparseTensor
-import os.path as osp
-from typing import Callable, Optional
-import gdown
-from torch_geometric.data import Data, InMemoryDataset
 
 from data.pokec_dataset import PokecDataset
 try:
@@ -22,10 +17,8 @@ try:
     FlickrDataset, YelpDataset, RedditDataset
 except:
     print("dgl not imported, install chardet!")
-import torch
 from torch_geometric.datasets import WebKB, WikipediaNetwork, WikiCS
 
-from data.Citation import citation_datasets
 from data.preprocess import load_syn
 
 def keep_all_data(edge_index, label, n_data, n_cls, train_mask):
@@ -188,10 +181,14 @@ def load_directedData(args):
 
     elif load_func == 'WikipediaNetwork':
         load_func = WikipediaNetwork
-        if subset not in ['crocodile']:
-            dataset = load_func(root=args.data_path, name=subset)
+        if 'filter' not in subset:
+            if subset not in ['crocodile']:
+                dataset = load_func(root=args.data_path, name=subset)
+            else:
+                dataset = load_func(root=args.data_path, name=subset, geom_gcn_preprocess=False)
         else:
-            dataset = load_func(root=args.data_path, name=subset, geom_gcn_preprocess=False)
+            subset = subset.replace('filter_dir_', '')
+            dataset = load_wiki_new('./geom-gcn/'+subset+'_filtered_directed.npz')
     elif load_func == 'WikiCS':
         args.data_path += load_func
         load_func = WikiCS
@@ -485,3 +482,23 @@ def process_fixed_splits(splits_lst, num_nodes):
         val_mask[splits_lst[i]["valid"], i] = 1
         test_mask[splits_lst[i]["test"], i] = 1
     return train_mask, val_mask, test_mask
+
+
+def load_wiki_new(data_dir):
+    npz = np.load(data_dir)
+
+    x = torch.tensor(npz["node_features"], dtype=torch.float)
+
+    y = torch.tensor(npz["node_labels"],dtype=torch.long)
+
+    edge_index = torch.tensor(npz["edges"],dtype=torch.long).t().contiguous()  # [2, E]
+
+    train_mask = torch.from_numpy(npz['train_masks']).t().contiguous()
+    val_mask = torch.from_numpy(npz['val_masks']).t().contiguous()
+    test_mask = torch.from_numpy(npz['test_masks']).t().contiguous()
+    print(train_mask.shape)
+
+    data = Data(x=x, edge_index=edge_index, y=y, train_mask=train_mask, val_mask=val_mask, test_mask=test_mask
+    )
+
+    return data

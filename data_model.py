@@ -17,7 +17,7 @@ from data.data_utils import random_planetoid_splits, load_directedData
 from nets.DiG_NoConv import (create_Di_IB_nhid,  Di_IB_XBN_nhid_ConV,
                              DiSAGE_x_nhid, DiSAGE_xBN_nhid)
 import torch.nn.init as init
-
+from torch_geometric.utils import add_self_loops
 
 
 def init_model(model):
@@ -127,6 +127,8 @@ def load_dataset(args):
 
     if args.Dataset in ['ogbn-arxiv/', 'directed-roman-empire/', 'snap-patents/', 'arxiv-year/']:
         data = getattr(dataset, '_data', dataset.data)
+    elif args.Dataset in ['WikipediaNetwork/filter_dir_chameleon', 'WikipediaNetwork/filter_dir_squirrel']:
+        data = dataset
     else:
         data = dataset[0]
 
@@ -224,6 +226,11 @@ def load_dataset(args):
             edges = to_undirectedBen(edges)
             IsDirectedGraph = 0
             print("Converted to undirected data")
+
+    if args.First_self_loop == 'add':
+        edges, _ = add_self_loops(edges)
+    if args.to_reverse_edge:
+        edges = edges[torch.tensor([1, 0])]
 
     return data_x, data_y, edges, edges_weight, dataset_num_features,data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph
 

@@ -2,7 +2,6 @@ import typing
 from typing import Any
 
 from nets.geometric_baselines import get_norm_adj
-
 if typing.TYPE_CHECKING:
     from typing import overload
 else:
@@ -40,7 +39,7 @@ from torch_geometric.utils import (
     softmax,
 )
 from torch_geometric.utils.sparse import set_sparse_value
-
+from torch_geometric.utils import softmax as pyg_softmax
 if typing.TYPE_CHECKING:
     from typing import overload
 else:
@@ -299,14 +298,8 @@ class UnifiedGATRATConv(MessagePassing):
 
         # SAME as GAT
         alpha = F.leaky_relu(alpha, self.negative_slope)
-        # print(alpha.mean(), alpha.std(), alpha.max(), alpha.min())
-        # print('Before softmax, alpha is ', alpha)
         if self.inci_norm == 'softmax':
             alpha = softmax(alpha, index, ptr, dim_size)
-            # print(alpha.mean(), alpha.std(), alpha.max(), alpha.min())
-            # print('After softmax, alpha is ', alpha)
-            # mask = (alpha != 0) & (alpha != 1)
-            # print(alpha[mask], mask.sum().item())
         else:
             if hasattr(edge_index, 'coo'):
                 row, col, _ = edge_index.coo()
@@ -354,7 +347,7 @@ class UnifiedGATRATConv(MessagePassing):
             return out, edge_index.set_value(alpha, layout='coo')
         return out
 
-    def PositiveAttention(self, alpha_i):
+    def PositiveAttention(self, alpha_i, index=None, num_nodes=None):
         if self.posweight == 'abs':
             alpha_i = torch.abs(alpha_i)
 
@@ -363,6 +356,16 @@ class UnifiedGATRATConv(MessagePassing):
 
         elif self.posweight == 'e':
             alpha_i = torch.exp(alpha_i)  # e^alpha_i
+
+        elif self.posweight == 'softplus':
+
+            return F.softplus(alpha_i)
+
+        elif self.posweight == 'softmax':
+            # REAL attention softmax: normalize per node group
+            if index is None:
+                raise ValueError("posweight='softmax' requires index (e.g., col) for grouped softmax")
+            return pyg_softmax(alpha_i, index=index, num_nodes=num_nodes)
 
         else:
             raise NotImplementedError(f"Unknown posweight type: {self.posweight}")
