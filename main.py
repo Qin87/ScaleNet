@@ -131,7 +131,6 @@ load_time = time.time()
 log_directory, logfile_name_with_timestamp = logfile(net_to_print, dataset_to_print, args)
 if not os.path.exists(log_directory):
     os.makedirs(log_directory)
-print(args)
 
 seed_everything(args.seed)
 
@@ -231,6 +230,8 @@ num_run = args.num_split if args.num_split<splits else splits
 preprocess_time = time.time()
 try:
     with open(log_directory + logfile_name_with_timestamp, 'a') as logfile:
+        print(args)
+        print(args, file=logfile)
         print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=logfile)
         print('Using Device: ', device, file=logfile)
         print('Running Branch July25', file=logfile)
