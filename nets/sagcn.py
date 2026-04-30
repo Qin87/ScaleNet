@@ -111,13 +111,20 @@ import torch
 import torch.nn.functional as F
 from typing import Optional
 from torch_sparse import SparseTensor
-
-
 import torch.nn as nn
+
+
 class SAGCNXBN(nn.Module):
-    def __init__(self, nfeat, nhid, nclass, dropout, nlayer=3, norm=True):
+    def __init__(self, nfeat, nclass, args):
         super().__init__()
-        self.is_add_self_loops = False  # Qin
+        is_add_self_loops = args.add_selfloop
+        self.is_add_self_loops = is_add_self_loops
+        self.BN_model = args.BN_model
+        norm = args.gcn_norm
+        nhid = args.hid_dim
+        dropout = args.dropout
+        nlayer = args.layer
+
         GCNConv = SAGCN2
         if nlayer == 1:
             self.conv1 = GCNConv(nfeat, nclass, cached= False, normalize=norm, add_self_loops=self.is_add_self_loops)
@@ -144,19 +151,22 @@ class SAGCNXBN(nn.Module):
         x = self.conv1(x, edge_index, edge_weight)
         if self.layer == 1:
             return x
-        # x = self.batch_norm1(x)
+        if self.BN_model:
+            x = self.batch_norm1(x)
         x = F.relu(x)
 
         if self.layer>2:
             for iter_layer in self.convx:
-                # x = F.dropout(x,p= self.dropout_p, training=self.training)
+                x = F.dropout(x,p= self.dropout_p, training=self.training)
                 x = iter_layer(x, edge_index, edge_weight)
-                # x= self.batch_norm3(x)
+                if self.BN_model:
+                    x= self.batch_norm3(x)
                 x = F.relu(x)
 
-        # x = F.dropout(x, p= self.dropout_p, training=self.training)
+        x = F.dropout(x, p= self.dropout_p, training=self.training)
         x = self.conv2(x, edge_index, edge_weight)
-        # x = self.batch_norm2(x)
+        if self.BN_model:
+            x = self.batch_norm2(x)
         # x = F.relu(x)
         # x = F.dropout(x, p=self.dropout_p, training=self.training)      # this is the best dropout arrangement
         return x

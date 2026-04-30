@@ -218,12 +218,8 @@ def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
             model = StandGAT1BN_Qin(data_x.shape[0], num_features, args.hid_dim, n_cls, args.dropout, args.layer, head=args.heads)
         elif args.net == "SAGE":
             model = GraphSAGEXBatNorm(nfeat=num_features,  nclass=n_cls, args=args)
-            # model = create_sage(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout,nlayer=args.layer)
         elif args.net == "SAGCN":
-            model = SAGCNXBN(num_features, args.hid_dim, n_cls, args.dropout, args.layer, norm=True)
-            # model = GraphSAGEXBatNorm(nfeat=num_features, nclass=n_cls, args=args)
-            # model = SAGCN(num_features,  n_cls,  cached= False, normalize=True, add_self_loops=True)
-            # model = SAGCN(nfeat=num_features,  nclass=n_cls, args=args)
+            model = SAGCNXBN(num_features, n_cls, args)
         else:
             raise NotImplementedError("Not Implemented Architecture!"+ args.net)
     model = model.to(device)
