@@ -140,10 +140,6 @@ class SAGCNXBN(nn.Module):
         self.batch_norm2 = nn.BatchNorm1d(nclass)
         self.batch_norm3 = nn.BatchNorm1d(nhid)
 
-
-        self.reg_params = list(self.conv1.parameters()) + list(self.convx.parameters())  # no effect to layer=1,
-        self.non_reg_params = self.conv2.parameters()
-
         self.layer = nlayer
 
     def forward(self, x, adj, edge_weight=None):
@@ -167,6 +163,4 @@ class SAGCNXBN(nn.Module):
         x = self.conv2(x, edge_index, edge_weight)
         if self.BN_model:
             x = self.batch_norm2(x)
-        # x = F.relu(x)
-        # x = F.dropout(x, p=self.dropout_p, training=self.training)      # this is the best dropout arrangement
         return x

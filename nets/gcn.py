@@ -5,6 +5,8 @@ Ref: https://github.com/pyg-team/pytorch_geometric/blob/97d55577f1d0bf33c1bfbe0e
 from typing import Optional, Tuple
 from torch_geometric.typing import Adj, OptTensor, PairTensor
 from torch_geometric.nn import GCNConv, SAGEConv
+from nets.SAGCN2 import SAGCN2
+from nets.SAGCN2 import SpectralMP
 from torch_geometric.utils import add_self_loops, degree, remove_self_loops
 import torch
 import torch.nn as nn
@@ -135,14 +137,21 @@ class StandGCNXBN(nn.Module):
         is_add_self_loops = args.add_selfloop
         norm = args.gcn_norm
         self.is_add_self_loops = is_add_self_loops  # Qin True is the original
-        if nlayer == 1:
-            self.conv1 = GCNConv(nfeat, nclass, cached= False, normalize=norm, add_self_loops=self.is_add_self_loops)
+
+        if args.net == 'SAGCN':
+            conv_cls = SAGCN2
+        elif args.net == 'SpectralMP':
+            conv_cls = SpectralMP
         else:
-            self.conv1 = GCNConv(nfeat, nhid, cached= False, normalize=norm, add_self_loops=self.is_add_self_loops)
+            conv_cls = GCNConv
+        if nlayer == 1:
+            self.conv1 = conv_cls(nfeat, nclass, cached= False, normalize=norm, add_self_loops=self.is_add_self_loops)
+        else:
+            self.conv1 = conv_cls(nfeat, nhid, cached= False, normalize=norm, add_self_loops=self.is_add_self_loops)
 
         self.mlp1 = torch.nn.Linear(nhid, nclass)
-        self.conv2 = GCNConv(nhid, nclass, cached=False, normalize=norm, add_self_loops=self.is_add_self_loops)
-        self.convx = nn.ModuleList([GCNConv(nhid, nhid, cached=False, normalize=norm, add_self_loops=self.is_add_self_loops) for _ in range(nlayer-2)])
+        self.conv2 = conv_cls(nhid, nclass, cached=False, normalize=norm, add_self_loops=self.is_add_self_loops)
+        self.convx = nn.ModuleList([conv_cls(nhid, nhid, cached=False, normalize=norm, add_self_loops=self.is_add_self_loops) for _ in range(nlayer-2)])
         self.dropout_p = dropout
 
         self.batch_norm1 = nn.BatchNorm1d(nhid)
@@ -178,7 +187,6 @@ class StandGCNXBN(nn.Module):
         x = self.conv2(x, adj, edge_weight)
         if self.BN_model:
             x = self.batch_norm2(x)
-        # # x = F.dropout(x, p=self.dropout_p, training=self.training)      # this is the best dropout arrangement
         return x
 
 
