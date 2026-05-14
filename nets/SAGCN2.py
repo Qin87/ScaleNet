@@ -220,7 +220,7 @@ class SAGCN2(MessagePassing):
         return spmm(adj_t, x, reduce=self.aggr)
 
 
-class SpectralMP(MessagePassing):
+class gen_GCN10(MessagePassing):
     _cached_edge_index: Optional[OptPairTensor]
     _cached_adj_t: Optional[SparseTensor]
     def __init__(
@@ -257,7 +257,8 @@ class SpectralMP(MessagePassing):
 
         self.lin = Linear(in_channels, out_channels, bias=False,
                           weight_initializer='glorot')
-        self.h = torch.nn.Parameter(torch.Tensor(1))
+        self.h0 = torch.nn.Parameter(torch.Tensor(1))
+        self.h1 = torch.nn.Parameter(torch.Tensor(1))
 
 
         if bias:
@@ -269,7 +270,8 @@ class SpectralMP(MessagePassing):
 
     def reset_parameters(self):
         super().reset_parameters()
-        self.h.data.fill_(1.0)
+        self.h0.data.fill_(1.0)
+        self.h1.data.fill_(0.0)
         self.lin.reset_parameters()
         zeros(self.bias)
         self._cached_edge_index = None
@@ -306,12 +308,11 @@ class SpectralMP(MessagePassing):
                 else:
                     edge_index = cache
         x = self.lin(x)
-        hx = self.h *x
 
         # propagate_type: (x: Tensor, edge_weight: OptTensor)
         out = self.propagate(edge_index, x=x, edge_weight=edge_weight)
 
-        out = out + hx
+        out = self.h0 * out + self.h1 * x
 
         if self.bias is not None:
             out = out + self.bias

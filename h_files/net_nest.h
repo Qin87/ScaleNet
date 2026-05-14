@@ -1,19 +1,18 @@
 #!/bin/bash
 
-net_values=" sgformer gps Polynormer "    #
+net_values=" gen_GCN   "    #
 layer_values="  5 "
 
 # 'directed-roman-empire/' 'telegram/'  'citeseer/' 'cora_ml/'   'WikiCS/'
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'  'WikipediaNetwork/chameleon' 'WikipediaNetwork/squirrel'
-Direct_dataset=(  'WikipediaNetwork/chameleon' 'WikipediaNetwork/squirrel' )
+Direct_dataset=(  'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'  'WikipediaNetwork/chameleon' 'WikipediaNetwork/squirrel' )
 generate_timestamp() {
   date +"%d%H%Ms%S"
 }
 timestamp=$(generate_timestamp)
 
-while pgrep -x python3 > /dev/null; do
-  echo "Waiting for all python3 processes to finish..."
-  sleep 600
+while pgrep -f main.py >/dev/null || pgrep -f main.py >/dev/null; do
+    sleep 30
 done
 
 # Iterate over each dataset   --net="$net"    --layer="$layer"

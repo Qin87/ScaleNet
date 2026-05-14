@@ -208,7 +208,7 @@ def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
                                                      quaternion_weights=args.qua_weights, quaternion_bias=args.qua_bias).to(device)
 
     else:
-        if args.net in ['GCN', 'SAGCN', 'SpectralMP']:
+        if args.net in ['GCN', 'SAGCN', 'gen_GCN10']:
             model = StandGCNXBN(num_features, n_cls, args=args)
         elif args.net == 'ParaGCN':
             model = ParaGCNXBN(num_node=data_x.shape[0] ,num_edges=num_edges, nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, nlayer=args.layer, norm= args.gcn_norm)

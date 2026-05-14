@@ -6,7 +6,7 @@ from typing import Optional, Tuple
 from torch_geometric.typing import Adj, OptTensor, PairTensor
 from torch_geometric.nn import GCNConv, SAGEConv
 from nets.SAGCN2 import SAGCN2
-from nets.SAGCN2 import SpectralMP
+from nets.SAGCN2 import gen_GCN10
 from torch_geometric.utils import add_self_loops, degree, remove_self_loops
 import torch
 import torch.nn as nn
@@ -140,8 +140,8 @@ class StandGCNXBN(nn.Module):
 
         if args.net == 'SAGCN':
             conv_cls = SAGCN2
-        elif args.net == 'SpectralMP':
-            conv_cls = SpectralMP
+        elif args.net == 'gen_GCN':
+            conv_cls = gen_GCN10
         else:
             conv_cls = GCNConv
         if nlayer == 1:
