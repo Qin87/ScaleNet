@@ -127,7 +127,6 @@ data_x, data_y, edges, edges_weight, num_features, data_train_maskOrigin, data_v
 net_to_print, dataset_to_print = get_name(args, IsDirectedGraph)
 load_time = time.time()
 
-
 log_directory, logfile_name_with_timestamp = logfile(net_to_print, dataset_to_print, args)
 if not os.path.exists(log_directory):
     os.makedirs(log_directory)
@@ -160,14 +159,21 @@ data_x = data_x.to(device)
 # print(data_x[0])
 print(min(data_x[0]), max(data_x[0]), max(data_x[1]))
 data_y = data_y.to(device)
+criterion = CrossEntropy().to(device)
+n_cls = data_y.max().item() + 1
+args.num_nodes = data_y.size(-1)
+
 edges = edges.to(device)
 data_train_maskOrigin = data_train_maskOrigin.to(device)
 data_val_maskOrigin = data_val_maskOrigin.to(device)
 data_test_maskOrigin = data_test_maskOrigin.to(device)
+if args.gt:
+    # Fully connected including self-loops
+    row = torch.arange(args.num_nodes).repeat_interleave(args.num_nodes)
+    col = torch.arange(args.num_nodes).repeat(args.num_nodes)
 
-criterion = CrossEntropy().to(device)
-n_cls = data_y.max().item() + 1
-args.num_nodes = data_y.size(-1)
+    edges = torch.stack([row, col], dim=0).to(device)
+
 if args.net.startswith(('Ui', 'Ri', 'Di', 'Ai', 'DATib')) and not args.net.startswith('Dir'):
     if args.net.startswith('Ri'):
         edge_index1, edge_weights1 = WCJ_get_directed_adj(args, edges.long(), data_x.dtype)

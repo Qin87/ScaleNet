@@ -81,7 +81,7 @@ class UnifiedGATRATConv(MessagePassing):
         else:
             self.attention_mode = 'gat'
         self.inci_norm = args.inci_norm
-        self.num_nodes= args.num_nodes
+        self.num_nodes = args.num_nodes
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -444,7 +444,6 @@ class StandGATXBN(nn.Module):
 
         self.reg_params = list(self.conv1.parameters()) + list(self.convx.parameters())
         self.non_reg_params = self.conv2.parameters()
-
 
     def forward(self, x, edge_index):
         num_nodes = x.size(0)

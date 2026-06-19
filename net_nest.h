@@ -1,8 +1,8 @@
 #!/bin/bash
 
-net_values=" DAT  "
-layer_values=" 2  "
-incinorm=" dir  sym   0  "   #
+net_values=" GAT DAT  "
+layer_values=" 2 "
+incinorm="dir"  # row dir  sym   0  "   #
 lr0=" 0.005 "
 
 while pgrep -f main.py >/dev/null; do
@@ -12,7 +12,7 @@ done
 # # PubMed, Coauthor-physics, 'Amazon-Computers'    'PubMed' 'Coauthor-CS'
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'   'WikiCS/' 'WikipediaNetwork/squirrel'
 # 'WikipediaNetwork/chameleon'   'telegram/'   'dgl/pubmed'  'citeseer/'   #"$inci"
-Direct_dataset=(   'WikipediaNetwork/chameleon'  ) #    'PubMed' 'Coauthor-CS'    )
+Direct_dataset=(   'WikiCS/' ) #    'PubMed' 'Coauthor-CS'    )
 Direct_dataset_filename=$(echo $Direct_dataset | sed 's/\//_/g')
 generate_timestamp() {
   date +"%d%H%Ms%S"
@@ -30,9 +30,9 @@ for Didataset in "${Direct_dataset[@]}"; do
             log_output="${Didataset//\//_}_${timestamp}_${net}_layer${layer}.log"
 
             python3 main.py   --net="$net"  --layer="$layer" --nonlinear=1 \
-            --posweight='abs' \
+            --posweight='abs' --First_self_loop='add'  \
            --use_best_hyperparams=0 --num_split=10   --inci_norm="$inci"  \
-        --heads=1  --hid_dim=64 --seed=0 --originGAT=0 --r20_per_class=0  --to_undirected=1 --lr="$lr" --BN_model=0  \
+        --heads=8  --hid_dim=64 --seed=0 --originGAT=0 --r20_per_class=0  --to_undirected=1 --lr="$lr" --BN_model=0  \
             --Dataset="$Didataset" > "$log_output"
              2>&1
             wait $pid

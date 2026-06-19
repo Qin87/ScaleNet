@@ -23,9 +23,10 @@ def parse_args():
     parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', '0', 'softmax'], default='softmax')
     parser.add_argument('--num_split', type=int, default=10, help='num of run in spite of many splits')
 
-    parser.add_argument('--net', type=str, default='UiGib', help='GAT, RAT, UAT, DAT, RiGib, AiGib, UiGib, DATib')
+    parser.add_argument('--net', type=str, default='GAT', help='GAT, RAT, UAT, DAT, RiGib, AiGib, UiGib, DATib')
+    parser.add_argument('--gt', type=int, default=0, help='whether graph transformer, 1 means all connected graph')
     parser.add_argument('--seed', type=int, default=1, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='WikipediaNetwork/filter_dir_chameleon', help='telegram/ , cora_ml/, citeseer/,  WikiCS/'
+    parser.add_argument('--Dataset', type=str, default='dgl/reddit', help='telegram/ , cora_ml/, citeseer/,  WikiCS/'
                 'PubMed, Coauthor-physics, Coauthor-CS, Amazon-Computers, Amazon-Photo, snap-patents/, WikipediaNetwork/filter_dir_chameleon')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout prob')
     parser.add_argument('--layer', type=int, default=2, help='number of layers (2 or 3), default: 2')
@@ -34,6 +35,8 @@ def parse_args():
     parser.add_argument('--hid_dim', type=int, default=64, help='feature dimension')
     parser.add_argument('--epoch', type=int, default=1500, help='epoch1500,')
     parser.add_argument('--NotImproved', type=int, default=810, help='consecutively Not Improved, break, 500, 450, 410, 210, 60')
+    parser.add_argument('--gcn_norm', '-gcnnorm', type=int, default=1, help='GCNConv forward, normalize edge_index during training')
+
 
     parser.add_argument('--lr', type=float, default=0.005, help='learning rate')
     parser.add_argument('--l2', type=float, default=5e-4, help='l2 regularizer, 5e-4')
@@ -42,7 +45,7 @@ def parse_args():
     parser.add_argument('--epochs', type=int, default=1500, help='training epochs')
 
     parser.add_argument('--log_path', type=str, default='test', help='the path saving model.t7 and the training process, the name of folder will be log/(current time)')
-    parser.add_argument('--data_path', type=str, default='../dataset/data/tmp/', help='data set folder, for default format see dataset/cora/cora.edges and cora.node_labels')
+    parser.add_argument('--data_path', type=str, default='./dataset/', help='data set folder, for default format see dataset/cora/cora.edges and cora.node_labels')
 
     parser.add_argument('--W_degree', type=int, default=5, help='using in-degree_0, out-degree_1, full-degree_2 for DiG edge-weight, 3 is random[1,100], 4 is random[0.1,1], 5 is random[0.0001, '
                                                                 '10000], 50 is abs(sin(random5))')

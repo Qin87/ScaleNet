@@ -19,6 +19,7 @@ except:
     print("dgl not imported, install chardet!")
 from torch_geometric.datasets import WebKB, WikipediaNetwork, WikiCS
 
+from data.Citation import citation_datasets
 from data.preprocess import load_syn
 
 def keep_all_data(edge_index, label, n_data, n_cls, train_mask):
