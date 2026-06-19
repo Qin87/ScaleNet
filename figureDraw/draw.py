@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MultipleLocator
 
-data = 'Telegram'       # CoraML
+data = 'CiteSeer'       # CoraML  Telegram
 Adj = 'Undirect'
 
 # Data

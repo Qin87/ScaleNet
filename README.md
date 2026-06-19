@@ -1,15 +1,6 @@
-The image below shows the performance as the number of layers increases 
-for the Telegram dataset, without adding self-loops. 
-
-The model used is [ScaleNet](https://github.com/Qin87/ScaleNet/tree/July25), 
-which is equivalent to [DirGNN](https://github.com/emalgorithm/directed-graph-neural-network) with bi-directional aggregation, 
-but without the jumping-knowledge function. 
-This ensures that the performance reflects the effect of exactly the specified number of layers.
-
-![tel_400_noloop.png](figureDraw/tel_400_noloop.png)
-
-#  MPNN Demystified
-Our paper [Demystifying MPNNs: Message Passing as Merely Efficient Matrix Multiplication].
+#  Beyond the Isomorphism Trap
+Our paper [Beyond the Isomorphism Trap: A Structure-Feature Dichotomy for GNN
+Expressiveness].
 
 ## Requirements
 
@@ -112,6 +103,16 @@ Specify the name of the dataset you want to use. The available datasets are cate
 
 ### Others
 GCN in this branch used the official GCN, not my revision.
+
+The image below shows the performance as the number of layers increases 
+for the Telegram dataset, without adding self-loops. 
+
+The model used is [ScaleNet](https://github.com/Qin87/ScaleNet/tree/July25), 
+which is equivalent to [DirGNN](https://github.com/emalgorithm/directed-graph-neural-network) with bi-directional aggregation, 
+but without the jumping-knowledge function. 
+This ensures that the performance reflects the effect of exactly the specified number of layers.
+
+![tel_400_noloop.png](figureDraw/tel_400_noloop.png)
 
 
 ## License
