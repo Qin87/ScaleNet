@@ -198,11 +198,7 @@ def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
 
 def get_name(args, IsDirectedGraph):
     dataset_to_print = args.Dataset.replace('/', '_')
-    if args.degfea:
-        dataset_to_print = 'degfea' + str(args.degfea)+ dataset_to_print
-    else:
-        if args.all1:
-            dataset_to_print = 'all1' +str(args.all1d)+ dataset_to_print
+    dataset_to_print = 'feat' + str(args.feat_type) + str(args.X0_feat_dim)+ dataset_to_print
     if not IsDirectedGraph:
         dataset_to_print = dataset_to_print + 'Undire'
     else:

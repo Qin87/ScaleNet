@@ -26,7 +26,8 @@ import torch
 import torch.nn.functional as F
 
 from args import parse_args
-from data.data_utils import keep_all_data, seed_everything, set_device, scaled_edges, find_max_spanning_tree, visualize_tensor_network, visualize_class_relationships, calculate_degree_features
+from data.data_utils import keep_all_data, seed_everything, set_device, scaled_edges, find_max_spanning_tree, \
+    visualize_tensor_network, visualize_class_relationships, calculate_degree_features, generate_features
 from edge_nets.edge_data import get_second_directed_adj, get_second_directed_adj_union, \
     WCJ_get_directed_adj, Qin_get_second_directed_adj, Qin_get_directed_adj, get_appr_directed_adj2, Qin_get_second_directed_adj0, Qin_get_second_adj, Qin_get_all_directed_adj, normalize_row_edges, \
     get_second_directed_adj_weight1, get_second_directed_adj_random
@@ -69,6 +70,7 @@ def log_results():
                 std_dev_acc = statistics.stdev(acc_list)
                 average_bacc = statistics.mean(bacc_list)
                 std_dev_bacc = statistics.stdev(bacc_list)
+                result_str = f"{average_acc:.1f}±{std_dev_acc:.1f}_{len(macro_F1):2d}splits"
                 print(net_to_print +'_'+ str(args.layer) + '_'+dataset_to_print + "_acc" + f"{average_acc:.1f}±{std_dev_acc:.1f}" + "_bacc" + f"{average_bacc:.1f}±{std_dev_bacc:.1f}" + '_MacroF1:' + f"{average:.1f}±{std_dev:.1f},{len(macro_F1):2d}splits")
                 print(net_to_print +'_'+ str(args.layer) + '_'+dataset_to_print + "_acc" + f"{average_acc:.1f}±{std_dev_acc:.1f}" + "_bacc" + f"{average_bacc:.1f}±{std_dev_bacc:.1f}" + '_MacroF1:' + f"{average:.1f}±{std_dev:.1f},{len(macro_F1):2d}splits", file=log_file)
             elif len(macro_F1) == 1:
@@ -76,6 +78,14 @@ def log_results():
                 print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print +"_acc"+f"{acc_list[0]:.1f}"+"_bacc" + f"{bacc_list[0]:.1f}"+'_MacroF1_'+f"{macro_F1[0]:.1f}, 1split")
             else:
                 print("not a single split is finished")
+
+            # Rename log file
+            old_path = os.path.join(log_directory, log_file_name_with_timestamp)
+            new_file_name = f"{result_str}_{log_file_name_with_timestamp}"
+            new_path = os.path.join(log_directory, new_file_name)
+
+            os.rename(old_path, new_path)
+            print(f"Log file renamed to: {new_path}", file=sys.__stdout__)
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
@@ -288,18 +298,11 @@ acc_list = []
 bacc_list = []
 
 device = set_device(args)
-# device = set_device1(args)
 
-if args.all1:
-    all1d = args.all1d
-    if all1d:
-        data_x = torch.ones((data_x.shape[0], all1d))
-        num_features = all1d
-    else:
-        data_x = torch.ones_like(data_x)
-if args.degfea:
-    data_x = calculate_degree_features(edges, args.degfea)
-    num_features = abs(args.degfea)
+data_x, num_features = generate_features(data_x, edges, args)
+
+print(data_x)
+
 data_x = data_x.to(device)
 data_y = data_y.to(device)
 edges = edges.to(device)
@@ -709,6 +712,17 @@ try:
             print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print+"_acc"+f"{average_acc:.1f}±{std_dev_acc:.1f}"+"_bacc"+f"{average_bacc:.1f}±{std_dev_bacc:.1f}"+'_Macro F1:'+f"{average:.1f}±{std_dev:.1f}")
             print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print+"_acc"+f"{average_acc:.1f}±{std_dev_acc:.1f}"+"_bacc"+f"{average_bacc:.1f}±{std_dev_bacc:.1f}"+'_Macro F1:'+f"{average:.1f}±{std_dev:.1f}", file=log_file)
 
+            result_str = f"{average_acc:.2f}±{std_dev_acc:.2f}"
+        else:
+            result_str = f"{test_acc * 100}"
+
+        # Rename log file
+        old_path = os.path.join(log_directory, log_file_name_with_timestamp)
+        new_file_name = f"{result_str}_{log_file_name_with_timestamp}"
+        new_path = os.path.join(log_directory, new_file_name)
+
+        os.rename(old_path, new_path)
+        print(f"Log file renamed to: {new_path}", file=sys.__stdout__)
 
 
 except KeyboardInterrupt:

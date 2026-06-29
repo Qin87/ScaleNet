@@ -1091,3 +1091,31 @@ def calculate_degree_features(edge_index, degfea, num_nodes=None):
             features[node] = degree
 
     return features
+
+def generate_features(data_x, edges, args):
+    N, D = data_x.shape
+
+    feat_type = args.feat_type
+    feat_dim = args.X0_feat_dim if args.X0_feat_dim > 0 else D
+
+    if feat_type == "original":
+        return data_x, D
+
+    elif feat_type == "all1":
+        return torch.ones((N, feat_dim)), feat_dim
+
+    elif feat_type == "random":
+        torch.manual_seed(args.seed)
+        x = 2 * torch.rand((N, feat_dim)) - 1
+        return x, feat_dim
+
+    elif feat_type == "degree":
+        x = calculate_degree_features(edges, args.deg_fea)
+        return x, x.shape[1]
+
+    elif feat_type == "permute":
+        perm = torch.randperm(N)
+        return data_x[perm], D
+
+    else:
+        raise ValueError(f"Unknown feat_type: {feat_type}")

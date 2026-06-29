@@ -7,18 +7,18 @@ telegram/:
   NotImproved: 410
   epoch: 1500
   patience: 80
-#  net: ScaleNet         # 1iGi3
+  net: ScaleNet         # 1iGi3
   conv_type: "dir-gcn"
   nonlinear: 1
-#  layer: 4
+  layer: 4
   lr: 0.01
   normalize: 1
   BN_model: 1    # sure
-#  First_self_loop: 1
-#  jk: 'max'
+  First_self_loop: 1
+  jk: 'max'
   dropout: 0.0
   jk_inner: 0
-#  alphaDir: 0.5     # 0.5, 0.2(94.8)
+  alphaDir: 0.5     # 0.5, 0.2(94.8)
   betaDir: -1
   gamaDir: -1
   seed: 101   # 96.4±2.5(1), 94.8±2.9(11), 97.0±2.2(101)
