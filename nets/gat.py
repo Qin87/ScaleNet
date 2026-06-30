@@ -2,7 +2,6 @@ import typing
 from typing import Any
 
 from nets.geometric_baselines import get_norm_adj
-
 if typing.TYPE_CHECKING:
     from typing import overload
 else:
@@ -19,6 +18,7 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor
 from torch.nn import Parameter
+from torch_geometric.nn import inits
 
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.dense.linear import Linear
@@ -39,7 +39,7 @@ from torch_geometric.utils import (
     softmax,
 )
 from torch_geometric.utils.sparse import set_sparse_value
-
+from torch_geometric.utils import softmax as pyg_softmax
 if typing.TYPE_CHECKING:
     from typing import overload
 else:
@@ -52,6 +52,9 @@ class UnifiedGATRATConv(MessagePassing):
     - Learned attention REMOVED
     - Edge weights sampled randomly in [0.0001, 10000]
     - Softmax normalization preserved
+
+    Direct Attention Network:
+    - instead of XW_1W_2 in GAT to get alpha, we define self.alpha as learned parameter itself.
     """
 
     def __init__(
@@ -73,8 +76,8 @@ class UnifiedGATRATConv(MessagePassing):
         kwargs.setdefault('aggr', 'add')
         super().__init__(node_dim=0, **kwargs)
         self.posweight = args.posweight
-        if args.net in ['GAT', 'RAT', 'UAT']:
-            self.attention_mode = args.net.lower()
+        if args.net[:3] in ['GAT', 'RAT', 'UAT', 'DAT']:
+            self.attention_mode = args.net.lower()[:3]
         else:
             self.attention_mode = 'gat'
         self.inci_norm = args.inci_norm
@@ -111,6 +114,11 @@ class UnifiedGATRATConv(MessagePassing):
         if self.attention_mode == "gat":
             self.att_src = Parameter(torch.empty(1, heads, out_channels))
             self.att_dst = Parameter(torch.empty(1, heads, out_channels))
+        elif self.attention_mode == "dat":
+            self.alpha_src = Parameter(torch.empty(self.num_nodes, heads))
+            inits.glorot(self.alpha_src)
+            self.alpha_dst = Parameter(torch.empty(self.num_nodes, heads))
+            inits.glorot(self.alpha_dst)
 
         if edge_dim is not None:
             self.lin_edge = Linear(edge_dim, heads * out_channels, bias=False,
@@ -157,7 +165,6 @@ class UnifiedGATRATConv(MessagePassing):
             glorot(self.att_dst)
             glorot(self.att_edge)
             zeros(self.bias)
-
 
     @overload
     def forward(
@@ -243,6 +250,8 @@ class UnifiedGATRATConv(MessagePassing):
             alpha_src = (x_src * self.att_src).sum(dim=-1)
             alpha_dst = None if x_dst is None else (x_dst * self.att_dst).sum(-1)
             alpha = (alpha_src, alpha_dst)
+        elif self.attention_mode == 'dat':
+            alpha = (self.alpha_src, self.alpha_dst)
 
         # ---- Self-loops (unchanged) ----
         if self.add_self_loops:
@@ -275,9 +284,9 @@ class UnifiedGATRATConv(MessagePassing):
             dim_size = edge_index.size(1)
             index = row         # col is wrong!
             ptr = edge_index.storage.rowptr()
-            E = index.numel()
+            E = index.numel()   # total number of edges
 
-        if self.attention_mode == 'gat':
+        if self.attention_mode in ['gat', 'dat']:
             alpha = self.edge_updater(edge_index, alpha=alpha, edge_attr=edge_attr,size=size)
         else:
             if self.attention_mode == 'rat':   # TODO check heads
@@ -287,9 +296,8 @@ class UnifiedGATRATConv(MessagePassing):
             else:
                 raise NotImplementedError(f"Unknown attention_mode: {self.attention_mode}")
 
-        # SAME normalization as GAT
+        # SAME as GAT
         alpha = F.leaky_relu(alpha, self.negative_slope)
-
         if self.inci_norm == 'softmax':
             alpha = softmax(alpha, index, ptr, dim_size)
         else:
@@ -302,7 +310,10 @@ class UnifiedGATRATConv(MessagePassing):
                 edge_index1 = torch.stack([row, col], dim=0)
             else:
                 pass
-            row, col = edge_index1
+            try:
+                row, col = edge_index1
+            except:
+                row, col = edge_index
             # del edge_index1
             alphas = []
             for i in range(alpha.shape[1]):
@@ -336,7 +347,7 @@ class UnifiedGATRATConv(MessagePassing):
             return out, edge_index.set_value(alpha, layout='coo')
         return out
 
-    def PositiveAttention(self, alpha_i):
+    def PositiveAttention(self, alpha_i, index=None, num_nodes=None):
         if self.posweight == 'abs':
             alpha_i = torch.abs(alpha_i)
 
@@ -346,8 +357,18 @@ class UnifiedGATRATConv(MessagePassing):
         elif self.posweight == 'e':
             alpha_i = torch.exp(alpha_i)  # e^alpha_i
 
+        elif self.posweight == 'softplus':
+
+            return F.softplus(alpha_i)
+
+        elif self.posweight == 'softmax':
+            # REAL attention softmax: normalize per node group
+            if index is None:
+                raise ValueError("posweight='softmax' requires index (e.g., col) for grouped softmax")
+            return pyg_softmax(alpha_i, index=index, num_nodes=num_nodes)
+
         else:
-            raise NotImplementedError(f"Unknown posweight type: {posweight}")
+            raise NotImplementedError(f"Unknown posweight type: {self.posweight}")
 
         return alpha_i
 
@@ -425,10 +446,10 @@ class StandGATXBN(nn.Module):
         self.non_reg_params = self.conv2.parameters()
 
 
-    def forward(self, x, edge_index, edge_weight=None):
+    def forward(self, x, edge_index):
         num_nodes = x.size(0)
         if self._cached_adj_t is None:
-            self._cached_adj_t = SparseTensor.from_edge_index(edge_index, sparse_sizes=(num_nodes, num_nodes)).t()
+            self._cached_adj_t = SparseTensor.from_edge_index(edge_index, sparse_sizes=(num_nodes, num_nodes)).t()   # checked needing t
 
         edge_index = self._cached_adj_t
         x = self.conv1(x, edge_index)

@@ -124,7 +124,13 @@ def gcn_norm(edge_index, edge_weight=None, num_nodes=None, improved=False,
         deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0)
         if torch.isnan(deg_inv_sqrt).any():
             raise RuntimeError("NaN detected in deg_inv_sqrt(maybe due to negative degree) — stopping training to prevent corrupt gradients.")
-        return edge_index, deg_inv_sqrt[col] * edge_weight * deg_inv_sqrt[col]
+        norm_weight = deg_inv_sqrt[col] * edge_weight * deg_inv_sqrt[col]
+        return SparseTensor(
+            row=row,
+            col=col,
+            value=norm_weight,
+            sparse_sizes=(num_nodes, num_nodes),
+        )
 
 
 class StandGCNXBN(nn.Module):

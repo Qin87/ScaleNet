@@ -5,13 +5,13 @@ from torch_sparse import mul
 from nets.gcn import gcn_norm
 
 
-def get_norm_adj(adj, norm, rm_gen_sLoop=0):
+def get_norm_adj(adj, norm):
     if norm == "sym":
         return gcn_norm(adj, add_self_loops=0)
     elif norm == "row":
         return row_norm(adj)
     elif norm == "dir":
-        return directed_norm(adj, rm_gen_sLoop=rm_gen_sLoop)
+        return directed_norm(adj)
     elif norm == "softmax":
         logsumexp = sparselogsumexp(adj, dim=1)
         return logsumexp
@@ -34,11 +34,6 @@ def row_norm(adj):
     row_sum = torch.clamp(row_sum, min=eps)  # preventing: if sum=0 or neg, got inf or nan.
     out = mul(adj, 1 / row_sum.view(-1, 1))
 
-    # inv_row_sum = torch.zeros_like(row_sum)
-    # mask = row_sum > eps
-    # inv_row_sum[mask] = 1.0 / row_sum[mask]
-    # out = mul(adj, inv_row_sum.view(-1, 1))   # worse
-
     # Debugging: sanity check
     values = out.storage.value()
     if torch.isnan(values).any():
@@ -46,16 +41,14 @@ def row_norm(adj):
     if torch.isinf(values).any():
         raise RuntimeError("Inf detected in out of row_norm — stopping training.")
 
-
     return out
 
 
-def directed_norm(adj, rm_gen_sLoop=False):
+def directed_norm(adj):
     """
     Applies the normalization for directed graphs:
         \mathbf{D}_{out}^{-1/2} \mathbf{A} \mathbf{D}_{in}^{-1/2}.
     """
-    device = adj.device()
     in_deg = sparsesum(adj, dim=0)
     in_deg = in_deg.clamp(min=1e-12)
     in_deg_inv_sqrt = in_deg.pow(-0.5)
@@ -67,15 +60,11 @@ def directed_norm(adj, rm_gen_sLoop=False):
     out_deg = out_deg.clamp(min=1e-12)
     out_deg_inv_sqrt = out_deg.pow(-0.5)
     out_deg_inv_sqrt.masked_fill_(out_deg_inv_sqrt == float("inf"), 0.0)
-
-    out_deg_inv_sqrt = out_deg_inv_sqrt.to(device)
-    in_deg_inv_sqrt = in_deg_inv_sqrt.to(device)
+    if torch.isnan(out_deg_inv_sqrt).any():
+        raise RuntimeError("NaN detected in in_deg_inv_sqrt — stopping training to prevent corrupt gradients.")
 
     adj0 = mul(adj, out_deg_inv_sqrt.view(-1, 1))
     adj1 = mul(adj0, in_deg_inv_sqrt.view(1, -1))
-
-    # adj0 = torch_sparse.mul(adj, out_deg_inv_sqrt.view(-1, 1))
-    # adj1 = torch_sparse.mul(adj0, in_deg_inv_sqrt.view(1, -1))
 
     return adj1
 

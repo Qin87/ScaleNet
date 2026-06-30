@@ -1,14 +1,15 @@
 # 96.8±2.1(0.5,-1,-1)
 telegram/:
-#  nonlinear: 1
+  nonlinear: 0
   hid_dim: 128
-#  layer: 4
-#  lr: 0.01
-#  normalize: 1
+  layer: 4
+  lr: 0.01
+  l2: 0
+  normalize: 1
   BN_model: 1    # sure
   First_self_loop: 'add'
   dropout: 0.0
-#  NotImproved: 410
+  NotImproved: 410
 
 
 
@@ -50,7 +51,7 @@ WikiCS/:
 PubMed:
   BN_model: 0
   First_self_loop: 'add'
-  lr: 0.005
+#  lr: 0.005
 #  layer: 2
   NotImproved: 810
   has_scheduler: 1
@@ -60,7 +61,7 @@ Coauthor-CS:
   BN_model: 0
 #  layer: 2
   First_self_loop: 'add'
-  lr: 0.0005
+#  lr: 0.0005
 
 Coauthor-physics:
   BN_model: 0

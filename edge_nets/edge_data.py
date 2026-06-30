@@ -1123,7 +1123,7 @@ def Qin_get_second_directed_adj(args, edge_index, num_nodes, k, IsExhaustive, mo
         elif args.net.startswith('Ri'):
             edge_weightL = get_custom_edge_weight(args, L._indices())  # Jan29
             adj_norm = get_norm_adj(SparseTensor(row=row, col=col, value=edge_weightL, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
-        elif args.net.startswith('Ai'):
+        elif args.net.startswith(('Ai', 'DATib')):
             edge_weightL = torch.ones(L._indices().size(1), dtype=torch.bool).to(device)
             adj_norm = SparseTensor(row=row, col=col, value=edge_weightL, sparse_sizes=(num_nodes, num_nodes))
         all_hop_edge_index.append(torch.stack(adj_norm.coo()[:2]))

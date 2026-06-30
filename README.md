@@ -1,5 +1,14 @@
 # Position: Attention Offers Little Benefit for Graph Node Classification
 
+
+![img.png](img.png)
+![img_1.png](img_1.png)
+
+Experiments on Heterophilic graphs:
+![img_2.png](img_2.png)
+![img_3.png](img_3.png)
+
+
 ## Requirements
 
 This repository has been tested with the following packages:

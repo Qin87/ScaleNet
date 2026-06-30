@@ -11,6 +11,8 @@ from typing import  Optional
 from torch_geometric.typing import (OptPairTensor, Adj, Size, OptTensor)
 from torch import Tensor
 
+from torch_geometric.utils import spmm
+
 from nets.gat import UnifiedGATRATConv
 
 
@@ -23,8 +25,8 @@ class InceptionBlock_Di(torch.nn.Module):
         tuple_num = 2
         self.ln = Linear(in_dim, out_dim)
         if m in ['RiGib', 'UiGib', 'DiGib']:
-            self.convx = nn.ModuleList([DIGCNConv(in_dim, out_dim) for _ in range(tuple_num)])
-        elif m in ['AiGib']:
+            self.convx = nn.ModuleList([DIGCNConv(in_dim, out_dim, args) for _ in range(tuple_num)])
+        elif m in ['AiGib', 'DATib']:
             num_head = 1
             head_dim = out_dim // num_head
             # self.convx = nn.ModuleList([GATConv(in_dim, head_dim, heads=head) for _ in range(tuple_num)])
@@ -49,33 +51,20 @@ class InceptionBlock_Di(torch.nn.Module):
 
 
 class DIGCNConv(MessagePassing):
-    r"""The graph convolutional operator takes from Pytorch Geometric.
-    The spectral operation is the same with Kipf's GCN.
-    DiGCN preprocesses the adjacency matrix and does not require a norm operation during the convolution operation.
-    Args:
-        in_channels (int): Size of each input sample.
-        out_channels (int): Size of each output sample.
-        cached (bool, optional): If set to :obj:`True`, the layer will cache
-            the adj matrix on first execution, and will use the
-            cached version for further executions.
-            Please note that, all the normalized adj matrices (including undirected)
-            are calculated in the dataset preprocessing to reduce time comsume.
-            This parameter should only be set to :obj:`True` in transductive
-            learning scenarios. (default: :obj:`False`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
+    r"""
+    Copy from DiGCN, originally only A(XW), we add A(XW)
     """
 
-    def __init__(self, in_channels, out_channels, improved=False, cached=False,
+    def __init__(self, in_channels, out_channels, args, improved=False, cached=False,
                  bias=True, **kwargs):
         super().__init__(aggr='add', **kwargs)
 
+        self.XW = args.XW
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.improved = improved
         self.cached = cached
+        self._cached_adj_t = None
 
         self.weight = Parameter(torch.Tensor(in_channels, out_channels))
 
@@ -93,37 +82,22 @@ class DIGCNConv(MessagePassing):
         self.cached_num_edges = None
 
     def forward(self, x, edge_index, edge_weight=None):
-        """"""
-        x = torch.matmul(x, self.weight)
+        if self.XW:
+            x = torch.matmul(x, self.weight)
+            out = self.propagate(edge_index, x=x, edge_weight=edge_weight)
+        else:
+            out = self.propagate(edge_index, x=x, edge_weight=edge_weight)
+            out = torch.matmul(out, self.weight)
 
-        if self.cached and self.cached_result is not None:
-            if edge_index.size(1) != self.cached_num_edges:
-                raise RuntimeError(
-                    'Cached {} number of edges, but found {}. Please '
-                    'disable the caching behavior of this layer by removing '
-                    'the `cached=True` argument in its constructor.'.format(
-                        self.cached_num_edges, edge_index.size(1)))
-
-        if not self.cached or self.cached_result is None:
-            self.cached_num_edges = edge_index.size(1)
-            if edge_weight is None:
-                raise RuntimeError(
-                    'Normalized adj matrix cannot be None. Please '
-                    'obtain the adj matrix in preprocessing.')
-            else:
-                norm = edge_weight
-            self.cached_result = edge_index, norm
-
-        edge_index, norm = self.cached_result
-        return self.propagate(edge_index, x=x, norm=norm)
-
-    def message(self, x_j, norm):
-        return norm.view(-1, 1) * x_j if norm is not None else x_j
-
-    def update(self, aggr_out):
         if self.bias is not None:
-            aggr_out = aggr_out + self.bias
-        return aggr_out
+            out = out + self.bias
+        return out
+
+    def message(self, x_j: Tensor, edge_weight: OptTensor) -> Tensor:
+        return x_j if edge_weight is None else edge_weight.view(-1, 1) * x_j
+
+    def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
+        return spmm(adj_t, x, reduce=self.aggr)
 
     def __repr__(self):
         return '{}({}, {})'.format(self.__class__.__name__, self.in_channels,
@@ -177,9 +151,9 @@ class DiSAGE_xBN_nhid(torch.nn.Module):
         elif m in ['AiG']:
             num_head = 1
             head_dim = nhid // num_head
-            self.conv1 = UnifiedGATRATConv(input_dim, head_dim, heads=head,  args= args,concat=False)
-            self.conv2 = UnifiedGATRATConv(nhid, head_dim, heads=head,  args= args, concat=False)
-            self.convx = nn.ModuleList([UnifiedGATRATConv(nhid, head_dim, heads=head, args= args, concat=False) for _ in range(layer - 2)])
+            self.conv1 = UnifiedGATRATConv(input_dim, head_dim, heads=head,  args=args,concat=False)
+            self.conv2 = UnifiedGATRATConv(nhid, head_dim, heads=head,  args=args, concat=False)
+            self.convx = nn.ModuleList([UnifiedGATRATConv(nhid, head_dim, heads=head, args=args, concat=False) for _ in range(layer - 2)])
         else:
             raise ValueError(f"Model '{m}' not implemented")
 
@@ -396,9 +370,15 @@ class Di_IB_XBN_nhid_ConV(torch.nn.Module):
         num_nodes = x.size(0)
         if self._cached_adj_t is None:
             cached_list = []
-            for edge_index in edge_index_tuple:
-                cached_list.append(SparseTensor.from_edge_index(edge_index, sparse_sizes=(num_nodes, num_nodes)).t())
-            self._cached_adj_t = tuple(cached_list)
+            for edge_index, edge_weight in zip(edge_index_tuple, edge_weight_tuple):
+                adj_t = SparseTensor(
+                    row=edge_index[0],  # target
+                    col=edge_index[1],  # source
+                    value=edge_weight,  # normalized weights
+                    sparse_sizes=(num_nodes, num_nodes),
+                )
+                cached_list.append(adj_t)
+                self._cached_adj_t = tuple(cached_list)
 
         edge_index_tuple = self._cached_adj_t
         # layer Normalization best only one at last layer, good for telegram

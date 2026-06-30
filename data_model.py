@@ -17,7 +17,7 @@ from data.data_utils import random_planetoid_splits, load_directedData
 from nets.DiG_NoConv import (create_Di_IB_nhid,  Di_IB_XBN_nhid_ConV,
                              DiSAGE_x_nhid, DiSAGE_xBN_nhid)
 import torch.nn.init as init
-
+from torch_geometric.utils import add_self_loops
 
 
 def init_model(model):
@@ -38,7 +38,7 @@ def init_model(model):
 def CreatModel(args, num_features, n_cls, data_x,device):
     if args.net.lower() == 'mlp':
         model = create_MLP(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, nlayer=args.layer)
-    elif args.net.startswith(('Di', 'Ui', 'Ri', 'Ai')):        # GCN  -->  SAGE
+    elif args.net.startswith(('Di', 'Ui', 'Ri', 'Ai', 'DATib')):        # GCN  -->  SAGE
         if len(args.net) < 4 :
             if args.BN_model:
                 model = DiSAGE_xBN_nhid(args.net, num_features, n_cls, args).to(device)
@@ -53,11 +53,8 @@ def CreatModel(args, num_features, n_cls, data_x,device):
     else:
         if args.net == 'GCN':
             model = StandGCNXBN(num_features, n_cls, args=args)
-        elif args.net in ['GAT', 'RAT', 'UAT']:
-            if args.net=='GAT' and args.originGAT:
-                model = StandGATXBN(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, args=args)
-            else:
-                model = StandGATXBN(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, args=args)
+        elif args.net in ['GAT', 'RAT', 'UAT', 'DAT']:
+            model = StandGATXBN(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, args=args)
         elif args.net == "SAGE":
             model = create_sage(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout,nlayer=args.layer)
         else:
@@ -76,7 +73,7 @@ def get_name(args, IsDirectedGraph=1):
         net_to_print = args.net + str(args.W_degree) + '_'
     else:
         net_to_print = args.net
-    if args.net[:2] == 'Ai' or args.net in ['GAT', 'RAT', 'UAT']:
+    if args.net[:2] in ['Ai','Ri', 'Ui', 'DA'] or args.net in ['GAT', 'RAT', 'UAT', 'DAT']:
         net_to_print = net_to_print + '_Head' + str(args.heads)
     if args.BN_model:
         net_to_print = 'LNorm_' + net_to_print
@@ -100,15 +97,15 @@ def get_name(args, IsDirectedGraph=1):
     return net_to_print, dataset_to_print
 
 
-def log_file(net_to_print, dataset_to_print, args):
+def logfile(net_to_print, dataset_to_print, args):
     log_file_name = dataset_to_print+'_'+net_to_print+'_lay'+str(args.layer)+'_lr'+str(args.lr)+'_NoImp'+str(args.NotImproved)+args.posweight+'_norm'+args.inci_norm
     if args.inci_norm == 'row':
         log_file_name += 'e-12'
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     if args.nonlinear:
-        log_file_name_with_timestamp = f"{log_file_name}_{timestamp}_c.log"
+        log_file_name_with_timestamp = f"{log_file_name}_{timestamp}_c_SPa.log"
     else:
-        log_file_name_with_timestamp = f"{log_file_name}_{timestamp}_d.log"
+        log_file_name_with_timestamp = f"{log_file_name}_{timestamp}_d_SPa.log"
     # d is no relu, e is hid relu for *iGib
 
     log_directory = "~/Documents/Benlogs/"  # Change this to your desired directory
@@ -128,8 +125,10 @@ def load_dataset(args):
         IsDirectedGraph = 1
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    if args.Dataset in ['ogbn-arxiv/', 'directed-roman-empire/']:
-        data = dataset._data
+    if args.Dataset in ['ogbn-arxiv/', 'directed-roman-empire/', 'snap-patents/', 'arxiv-year/']:
+        data = getattr(dataset, '_data', dataset.data)
+    elif args.Dataset in ['WikipediaNetwork/filter_dir_chameleon', 'WikipediaNetwork/filter_dir_squirrel']:
+        data = dataset
     else:
         data = dataset[0]
 
@@ -227,6 +226,11 @@ def load_dataset(args):
             edges = to_undirectedBen(edges)
             IsDirectedGraph = 0
             print("Converted to undirected data")
+
+    if args.First_self_loop == 'add':
+        edges, _ = add_self_loops(edges)
+    if args.to_reverse_edge:
+        edges = edges[torch.tensor([1, 0])]
 
     return data_x, data_y, edges, edges_weight, dataset_num_features,data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph
 
