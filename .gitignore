@@ -10,10 +10,12 @@
 #*.pk
 *.pt
 *.png
-*.idea
-*.iml
 /data/film
-.idea/*   # JetBrains IDE settings
+
+
+*.iml
 .idea/
+
+
 utils/lightning_logs/*
 utils/checkpoint/*

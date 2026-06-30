@@ -1735,7 +1735,7 @@ def get_model(args):
         num_features=args.num_features,
         hidden_dim=args.hid_dim,
         num_layers=args.layer,
-        num_classes=args.n_cls,
+        num_classes=args.num_classes,
         dropout=args.dropout,
         conv_type=args.conv_type,
         jumping_knowledge=args.jk,

@@ -1,15 +1,15 @@
 # 97.2±2.1,  96.8±2.1(0.5,-1,-1)
 telegram/:
-  monitor: val_loss  # val_acc is bad when few epoch,
+#  monitor: val_loss  # val_acc is bad when few epoch,
   num_split: 10
   hid_dim: 64
   l2: 0   # 97.0(0), 95.6(5e-4)
-  inci_norm: 0  # {94.2±4.4(dir) 95.6±3.0(0)}  {93.2(dir), 97.0(0)}
+#  inci_norm: 0  # {94.2±4.4(dir) 95.6±3.0(0)}  {93.2(dir), 97.0(0)}
   has_scheduler: 1
   patience: 80
   NotImproved: 410
   epoch: 1500
-  net: ScaleNet         # 1iGi3,
+#  net: ScaleNet         # 1iGi3,
   conv_type: "dir-gcn"
   nonlinear: 1
   layer: 4

@@ -87,7 +87,7 @@ def Qin_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
     edge_index = torch.unique(edge_index, dim=1).to(device)
 
     # type 1: conside different inci-norm
-    if norm =='dir':
+    if norm =='dir' or norm =='row':
         row, col = edge_index
         adj_norm = get_norm_adj(SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes)), norm=norm).coalesce()
         # all_hop_edge_index.append(torch.stack(adj_norm.coo()[:2]))
@@ -842,12 +842,7 @@ def sparse_difference(U, I, epsilon=1e-8):
 
 
 def Qin_get_second_directed_adj(args, edge_index, num_nodes, k, IsExhaustive, mode, norm='dir'):     #
-    self_loop = args.add_selfloop
     device = edge_index.device
-    if self_loop == 1:
-        edge_index, _ = add_self_loops(edge_index.long(), fill_value=1, num_nodes=num_nodes)  # with selfloop, QiG get better
-    elif self_loop == -1:
-        edge_index, _ = remove_self_loops(edge_index)
     edge_index = edge_index.to(device)
 
     edge_weight = torch.ones(edge_index.size(1), dtype=torch.bool).to(device)

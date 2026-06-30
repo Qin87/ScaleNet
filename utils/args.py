@@ -4,7 +4,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--monitor", type=str, help="optimiser monitor: val_acc(acc), val_loss(loss)", default="val_acc")
 
-    parser.add_argument("--use_best_hyperparams", type=int, default=0, help="whether use parameters in best_hyperparameters.yml")
+    parser.add_argument("--use_best_hyperparams", type=int, default=1, help="whether use parameters in best_hyperparameters.yml")
     parser.add_argument('--GPU', type=int, default=0, help='GPU device number')
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
     parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=0)
@@ -14,7 +14,7 @@ def parse_args():
     parser.add_argument("--conv_type", type=str, help="DirGNN Model, scale, ", default="dir-gcn")
     parser.add_argument("--normalize", type=int, help="whether use batch normalization in ScaleNet, model:0/1", default=0)
     parser.add_argument("--jk", type=str, choices=["max", "cat", 'weighted',  0], default='max')
-    parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', 0], default="dir")
+    parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', 0], default="row")
     parser.add_argument("--fs", type=str, choices=["sum", "cat", 'weight_sum', 'linear'], default="dir", help='fusion method')
     parser.add_argument("--alphaDir", type=float, help="Direction convex combination params", default=0)
     parser.add_argument("--betaDir", type=float, help="Direction convex combination params", default=-1)
@@ -24,8 +24,7 @@ def parse_args():
     parser.add_argument("--differ_AAt", type=int, default=0,  help="Whether test AAt-A-At")
     parser.add_argument('--num_split', type=int, default=1, help='num of run in spite of many splits')
 
-
-    parser.add_argument('--net', type=str, default='Dir-GNN', help='Mag, Sig, QuaNet, '
+    parser.add_argument('--net', type=str, default='1iGib', help='Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc, ParaGCN, SimGAT, SloopNet, tSNE,RandomNet, HFNet '
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG), Sym, 1ym' 
                     'mlp, link, linkxcat, linkxadd, linkx, linkxgit, Dir-GNN, '
@@ -109,6 +108,7 @@ def parse_args():
     parser.add_argument('--paraD', action='store_true', help='ib is weighted sum')
     parser.add_argument('--gcn_norm', '-gcnnorm', type=int, default=1, help='GCNConv forward, normalize edge_index during training')
     parser.add_argument('--add_selfloop',  type=int, default=1, help='add selfloop in before model')
+    parser.add_argument('--rm_gen_sloop',  type=int, default=0, help='rm selfloop in high order')
 
     parser.add_argument("--all1", type=int, help="feature all 1 ", default=0)
     parser.add_argument('--to_undirected', '-tud', type=int, default=0, help='if convert graph to undirected')
