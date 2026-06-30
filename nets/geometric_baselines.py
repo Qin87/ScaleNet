@@ -2604,7 +2604,7 @@ def get_norm_adj(adj, norm, rm_gen_sLoop=0):
         return row_norm(adj)
     elif norm == "dir":
         return directed_norm(adj, rm_gen_sLoop=rm_gen_sLoop)
-    elif norm is None or norm==0:
+    elif norm is None or norm==0 or norm=="0" :
         return adj
     else:
         raise ValueError(f"{norm} normalization is not supported")

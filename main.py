@@ -45,9 +45,6 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-
-
-
 def signal_handler(sig, frame):
     global end_time
     end_time = time.time()
@@ -55,6 +52,7 @@ def signal_handler(sig, frame):
     # calculate_time()
     log_results()
     sys.exit(0)
+
 
 def log_results():
     global start_time, end_time
@@ -300,8 +298,6 @@ bacc_list = []
 device = set_device(args)
 
 data_x, num_features = generate_features(data_x, edges, args)
-
-print(data_x)
 
 data_x = data_x.to(device)
 data_y = data_y.to(device)
