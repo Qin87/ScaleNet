@@ -4,7 +4,7 @@ telegram/:
   hid_dim: 128
 #  layer: 4
 #  lr: 0.01
-  normalize: 1
+#  normalize: 1
   BN_model: 1    # sure
   First_self_loop: 'add'
   dropout: 0.0
