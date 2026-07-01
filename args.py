@@ -5,7 +5,7 @@ def parse_args():
     parser.add_argument("--monitor", type=str, help="optimiser monitor: val_acc(acc), val_loss(loss)", default="acc")
 
     parser.add_argument("--feat_type", type=str, default="original", choices=["original", "all1", "random", "permute", "degree"])
-    parser.add_argument("--X0_feat_dim", type=int, default=1, help="dimension for random or all1 features")
+    parser.add_argument("--X0_hid_dim", type=int, default=1, help="dimension for random or all1 features")
     parser.add_argument("--deg_fea", type=int, default=1, help="degree mode: 1=in, -1=out, 2=both")
 
     parser.add_argument("--use_best_hyperparams", type=int, default=1, help="whether use parameters in best_hyperparameters.yml")
@@ -45,7 +45,7 @@ def parse_args():
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc,'
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG)''Sym, 1ym')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='directed-roman-empire/', help='citeseer/ , cora_ml/, dgl/pubmed, telegram/,  WikiCS/, dgl/cora ,film/'
+    parser.add_argument('--Dataset', type=str, default='arxiv-year/', help='citeseer/ , cora_ml/, dgl/pubmed, telegram/,  WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WikipediaNetwork/crocodile, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/, Amazon-Photo, Amazon-citeseer/Computers, malnet/tiny, dgl/Flickr, ')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout prob')
@@ -54,7 +54,7 @@ def parse_args():
 
     parser.add_argument('-AP_K', '--AP_K', default=10, type=int)  # for APPNP
 
-    parser.add_argument('--feat_dim', type=int, default=64, help='feature dimension')
+    parser.add_argument('--hid_dim', type=int, default=64, help='feature dimension')
     parser.add_argument('--epoch', type=int, default=1500, help='epoch1500,')
     parser.add_argument('--NotImproved', type=int, default=810, help='consecutively Not Improved, break, 500, 450, 410, 210, 60')
 
@@ -64,6 +64,20 @@ def parse_args():
     parser.add_argument('--wd4coef', type=float, default=5e-2, help='coef change slower with weight decay')
     parser.add_argument('--l2', type=float, default=0, help='l2 regularizer, 5e-4, 0 is better')
     parser.add_argument('-hds', '--heads', default=1, type=int)
+
+    # for scale_big
+    parser.add_argument("--profiler", action="store_true")
+    parser.add_argument("--checkpoint_directory", type=str, help="Directory to save checkpoints", default="checkpoint")
+    parser.add_argument("--weight_decay", type=float, help="Weight decay", default=1e-3)
+    parser.add_argument("--lrelu_slope", type=float, help="negative slope of Leaky Relu", default=-1.0)
+    parser.add_argument("--conv_type2", type=str, help="scale, faber ", default="scale")
+    parser.add_argument("--weight_penalty", type=str, choices=["exp", "lin", "None"], default="exp")
+    parser.add_argument("--k_plus", type=int, help="Polynomial order", default=2)
+    parser.add_argument("--exponent", type=float, help="exponent in norm, -0.25, -0.5", default=-0.5)
+    # parser.add_argument("--zero_order", type=int, help="If include zero order", default=0)
+    parser.add_argument("--cat_A_X", type=int, help="If include concatenate A and X", default=0)
+    parser.add_argument("--structure", type=float, default=0, help="1 pure structure, 0 pure feature, 0.5 structure is feature too")
+
 
     #  from Magnet
     parser.add_argument('--q', type=float, default=0, help='q value for the phase matrix')

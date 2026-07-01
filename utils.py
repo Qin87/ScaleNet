@@ -55,15 +55,24 @@ def use_best_hyperparams(args, dataset_name):
     # print(args)
     return args
 
-def get_norm_adj(adj, norm):
+def get_norm_adj(adj, norm, exponent=-0.25 ):
     if norm == "sym":       # Din^(-0.5)ADin^(-0.5)
-        return gcn_norm(adj, add_self_loops=False)
-    elif norm == "row":     # Din^(-1)A
+        return gcn_norm(adj, add_self_loops=0)
+    # elif norm == "dir_ones":
+    #     return directed_norm_ones(adj)
+    elif norm == "row":
         return row_norm(adj)
-    elif norm == "dir":     # Din^(-0.5)ADout^(-0.5)
-        return directed_norm(adj)
+    # elif norm == "col":
+    #     return col_norm(adj)
+    elif norm == "dir":
+        return directed_norm(adj, exponent)
+    elif norm is None or norm==0  or norm=="0":
+        return adj
+    # elif norm == "opposite":
+    #     return directed_opposite_norm(adj)
     else:
         raise ValueError(f"{norm} normalization is not supported")
+
 
 def row_norm(adj):
     """
@@ -75,19 +84,20 @@ def row_norm(adj):
     return mul(adj, 1 / row_sum.view(-1, 1))
 
 
-def directed_norm(adj):     # copy from DirGNN
+def directed_norm(adj, exponent=-0.5):
     """
     Applies the normalization for directed graphs:
         \mathbf{D}_{out}^{-1/2} \mathbf{A} \mathbf{D}_{in}^{-1/2}.
     """
     in_deg = sparsesum(adj, dim=0)
-    in_deg_inv_sqrt = in_deg.pow_(-0.5)
+    in_deg_inv_sqrt = in_deg.pow_(exponent)
     in_deg_inv_sqrt.masked_fill_(in_deg_inv_sqrt == float("inf"), 0.0)
 
     out_deg = sparsesum(adj, dim=1)
-    out_deg_inv_sqrt = out_deg.pow_(-0.5)
+    out_deg_inv_sqrt = out_deg.pow_(exponent)
     out_deg_inv_sqrt.masked_fill_(out_deg_inv_sqrt == float("inf"), 0.0)
 
     adj = mul(adj, out_deg_inv_sqrt.view(-1, 1))
     adj = mul(adj, in_deg_inv_sqrt.view(1, -1))
+
     return adj

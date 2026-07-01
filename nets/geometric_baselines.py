@@ -13,7 +13,7 @@ from torch_geometric.utils import remove_self_loops
 from torch_sparse import SparseTensor
 from torch_sparse import sum as sparsesum
 from torch_sparse import mul
-
+from utils import get_norm_adj
 
 # from dgl.python.dgl import add_self_loop
 from nets.gcn import gcn_norm
@@ -2594,17 +2594,6 @@ class DirGCNConv_Qin(torch.nn.Module):
 
         return self.lin_src_to_dst(out)
 
-def get_norm_adj(adj, norm, rm_gen_sLoop=0):
-    if norm == "sym":
-        return gcn_norm(adj, add_self_loops=0)
-    elif norm == "row":
-        return row_norm(adj)
-    elif norm == "dir":
-        return directed_norm(adj, rm_gen_sLoop=rm_gen_sLoop)
-    elif norm is None or norm==0 or norm=="0" :
-        return adj
-    else:
-        raise ValueError(f"{norm} normalization is not supported")
 
 def row_norm(adj):
     """
@@ -2749,7 +2738,7 @@ def directed_norm_Qin(adj, rm_gen_sLoop=False):
 def get_model(num_features,  n_cls, args):
     return GNN(
         num_features=num_features,
-        hidden_dim=args.feat_dim,
+        hidden_dim=args.hid_dim,
         num_layers=args.layer,
         num_classes=n_cls,
         dropout=args.dropout,
@@ -2857,7 +2846,7 @@ class GCN_JKNet(torch.nn.Module):
         super().__init__()
         jumping_knowledge = args.jk
         layer = args.layer
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         hidden_dim = nhid
         normalize = args.normalize
         dropout = args.dropout
@@ -2908,7 +2897,7 @@ class High_Frequent(torch.nn.Module):
         super().__init__()
         jumping_knowledge = args.jk
         layer = args.layer
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         hidden_dim = nhid
         normalize = args.normalize
         dropout = args.dropout
@@ -2976,7 +2965,7 @@ class RandomNet(torch.nn.Module):
         super().__init__()
         jumping_knowledge = args.jk
         layer = args.layer
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         hidden_dim = nhid
         normalize = args.normalize
         dropout = args.dropout
@@ -3044,7 +3033,7 @@ class ScaleNet(torch.nn.Module):
         super().__init__()
         jumping_knowledge = args.jk
         layer = args.layer
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         hidden_dim = nhid
         normalize = args.normalize
         dropout = args.dropout
@@ -3113,7 +3102,7 @@ class Sloop_JKNet(torch.nn.Module):
         super().__init__()
         jumping_knowledge = args.jk
         layer = args.layer
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         hidden_dim = nhid
         normalize = args.normalize
         dropout = args.dropout

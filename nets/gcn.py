@@ -132,7 +132,7 @@ from torch_geometric.nn.dense.linear import Linear
 class StandGCNXBN_Ak(nn.Module):
     def __init__(self, nfeat, nclass, args):
         super().__init__()
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         dropout = args.dropout
         nlayer = args.Ak        # Differ
         is_add_self_loops = args.First_self_loop
@@ -178,7 +178,7 @@ class StandGCNXBN_Ak(nn.Module):
 class StandGCNXBN(nn.Module):
     def __init__(self, nfeat, nclass, args):
         super().__init__()
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         dropout = args.dropout
         nlayer = args.layer
         is_add_self_loops = args.First_self_loop
@@ -220,7 +220,7 @@ class StandGCNXBN(nn.Module):
 class StandGCNX_noRelu(nn.Module):
     def __init__(self, nfeat, nclass, args):
         super().__init__()
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         dropout = args.dropout
         nlayer = args.layer
         is_add_self_loops = args.First_self_loop
@@ -291,7 +291,7 @@ class GraphSAGEXBatNorm(nn.Module):
     def __init__(self,  nfeat, nclass, args):
         super().__init__()
         self.dropout_p = args.dropout
-        nhid = args.feat_dim
+        nhid = args.hid_dim
         nlayer= args.layer
         # self.Conv = nn.Conv1d(nhid*2 , nclass, kernel_size=1)
         # SAGEConv(input_dim, output_dim, root_weight=False)

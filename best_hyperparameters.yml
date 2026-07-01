@@ -1,6 +1,6 @@
 # 97.2±2.1,  96.8±2.1(0.5,-1,-1)
 telegram/:
-  feat_dim: 64
+  hid_dim: 64
   l2: 0   # 97.0(0), 95.6(5e-4)
 #  inci_norm: 0  # {94.2±4.4(dir) 95.6±3.0(0)}  {93.2(dir), 97.0(0)}
   has_scheduler: 1
@@ -35,7 +35,7 @@ cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
   conv_type: "dir-gcn"
   nonlinear: 1
 #  net: ScaleNet   #  net: QiGi3
-  feat_dim: 128   # better than 64
+  hid_dim: 128   # better than 64
 #  layer: 3   # 2(80), 3(75), 4(79.8), 5(79.6)--
   lr: 0.01    # 0.1(79), 0.01(80.7)
   l2: 0.0005
@@ -61,7 +61,7 @@ citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.
   conv_type: "dir-gcn"
 #  jk_inner: 0
   nonlinear: 0    # 0(68.3), 1(67.6)
-  feat_dim: 128
+  hid_dim: 128
 #  layer: 3     # 1(65.3),2(64.8), 3(62.6), 4(64.0), 5(64.4)
   lr: 0.01
   normalize: 1    # 1(68.3), 0 much worse60.7,
@@ -133,7 +133,7 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   epoch: 10000
   patience: 400
   has_scheduler: 1
-  feat_dim: 128
+  hid_dim: 128
   conv_type: "dir-gcn"
 #  inci_norm: "dir"
   dropout: 0.0  # 0.5(acc65), 0.0(acc75)
@@ -154,7 +154,7 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
 # (1_1_-1) 74.7±2.4,   (1,-1,-1) 75.2±1.7
 WikipediaNetwork/squirrel:
   monitor: 'acc'
-  feat_dim: 128
+  hid_dim: 128
   l2: 0
   NotImproved: 810
   epoch: 10000
@@ -185,12 +185,12 @@ directed-roman-empire/:
 #  First_self_loop: 0   # no selfloops originally
   BN_model: 0  # no batch norm is better
   normalize: 0  #
-  feat_dim: 256
+  hid_dim: 256
   layer: 5
   jk: "cat"
   dropout: 0.2
   NotImproved: 200
-#  conv_type: "dir-sage"   # gcn+mlp is worse
+#  conv_type: "dir-sage"   # (1) gcn+mlp is worse than "dir-sage"  . (2) gcn without selfloop with row_norm +lin(X)=sage, with other norm get better.
   alphaDir: 0.5
   betaDir: -1     # 0 is 88, 1 is 20
   gamaDir: -1     # all much worse
@@ -215,7 +215,7 @@ WebKB/Cornell:
 
 
 WebKB/Texas:
-  feat_dim: 64
+  hid_dim: 64
   epoch: 1500
   NotImproved: 410
   patience: 80
@@ -267,22 +267,23 @@ CiteSeer:
 
 
 arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
-#  net: LargeScaleNet
+  net: LargeScaleNet
+  inci_norm: dir   # row is bad
   num_split: 5
   epoch: 10000
   BN_model: 1  # 0:61
   add_selfloop: 1
-#  zero_order: 0
+  zero_order: 0
   has_scheduler: 0
   NotImproved: 400  # 80
   dropout: 0.5
 
-  feat_dim: 128  # 64:62, 16:61
+  hid_dim: 128  # 64:62, 16:61
   layer: 6  # 6:64.4 5:64.6  8:64.1
   lr: 0.001
 
   alphaDir: 0.5
 #  betaDir: 0  # 0.5:64.1  -1:64.4
 #  gamaDir: 0  # 0.5:64.2  1:64.5
-#  exponent: -0.5  # 0.25:30
-#  weight_penalty: 'None'  # exp:64.7
+  exponent: -0.5  # 0.25:30
+  weight_penalty: 'None'  # exp:64.7

@@ -1096,18 +1096,18 @@ def generate_features(data_x, edges, args):
     N, D = data_x.shape
 
     feat_type = args.feat_type
-    feat_dim = args.X0_feat_dim if args.X0_feat_dim > 0 else D
+    hid_dim = args.X0_hid_dim if args.X0_hid_dim > 0 else D
 
     if feat_type == "original":
         return data_x, D
 
     elif feat_type == "all1":
-        return torch.ones((N, feat_dim)), feat_dim
+        return torch.ones((N, hid_dim)), hid_dim
 
     elif feat_type == "random":
         torch.manual_seed(args.seed)
-        x = 2 * torch.rand((N, feat_dim)) - 1
-        return x, feat_dim
+        x = 2 * torch.rand((N, hid_dim)) - 1
+        return x, hid_dim
 
     elif feat_type == "degree":
         x = calculate_degree_features(edges, args.deg_fea)

@@ -8,7 +8,7 @@ from torch_geometric.nn import GCNConv
 
 from nets.jumping_weight import JumpingKnowledge
 
-from utils.utils import get_norm_adj
+from utils import get_norm_adj
 
 
 def get_conv2(input_dim, output_dim, args):
