@@ -94,6 +94,9 @@ def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
         model = ChebModel(num_features, n_cls, K=args.K,filter_num=args.feat_dim, dropout=args.dropout,layer=args.layer).to(device)
     elif args.net == 'ScaleNet':
         model = GCN_JKNet(nfeat=num_features, nclass=n_cls, args=args)
+    elif args.net.lower() == 'largescalenet':
+        args.conv_type2 = "scale"
+        model = GNN2(args).to(device)
     elif args.net == 'HFNet':
         model = High_Frequent(nfeat=num_features, nclass=n_cls, args=args)
     elif args.net == 'RandomNet':
@@ -402,7 +405,6 @@ def load_dataset(args):
         #     data_y = int(data_y)
         if data_y.dtype.is_floating_point:
             data_y = data_y.to(torch.long)
-            # data_y = data_y.long()
         if not hasattr(data, 'train_mask'):
             data = random_planetoid_splits(data, data_y, train_ratio=0.48, val_ratio=0.1, num_splits=10, Flag=0)
             data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
@@ -419,9 +421,9 @@ def load_dataset(args):
         except:
             dataset_num_features = data_x.shape[1]
 
-    IsDirectedGraph = test_directed(edges)        # time consuming
-    print("This is directed graph: ", IsDirectedGraph)
-    # print("data_x", data_x.shape)  # [11701, 300])
+    IsDirectedGraph = True
+    # IsDirectedGraph = test_directed(edges)        # time consuming
+    # print("This is directed graph: ", IsDirectedGraph)
 
     if IsDirectedGraph and args.to_undirected:
         edges = to_undirectedBen(edges)

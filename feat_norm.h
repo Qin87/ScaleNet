@@ -1,18 +1,25 @@
 #!/bin/bash
 
-net_values="  GCN "
+net_values="  ScaleNet "
 layer_values=" 4   "
 
-feat_types=("original" "all1" "random" "permute" "degree")
+feat_types=("original") #  "all1" "random" "permute" "degree")
 inci_norms=("0"  "dir" "sym" "row")    #
 
+while pgrep -x python3 > /dev/null; do
+  echo "Waiting for all python3 processes to finish..."
+  sleep 100
+done
+
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'     --net="$net"  'WikipediaNetwork/chameleon'
-Direct_dataset=(  'WikipediaNetwork/squirrel'     )
+Direct_dataset=(  'directed-roman-empire/'     )
 Direct_dataset_filename=$(echo $Direct_dataset | sed 's/\//_/g')
 generate_timestamp() {
   date +"%d%H%Ms%S"
 }
 timestamp=$(generate_timestamp)
+
+
 
 # Iterate over each dataset   --net="$net"    --layer="$layer"
 for Didataset in "${Direct_dataset[@]}"; do
@@ -28,6 +35,7 @@ echo "Running: dataset=$Didataset net=$net layer=$layer feat=$feat norm=$norm"
             python3 main.py   --net="$net"     \
             --feat_type="$feat" \
             --feat_dim=1 \
+            -zero_order=1\
             --inci_norm="$norm" \
              --use_best_hyperparams=1   \
             --Dataset="$Didataset" > "$log_output"

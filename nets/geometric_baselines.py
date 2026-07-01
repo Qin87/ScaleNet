@@ -938,7 +938,11 @@ class DirGCNConv_2(torch.nn.Module):
 
         self.input_dim = input_dim
         self.output_dim = output_dim
-        # self.lin = nn.ModuleList([nn.Linear(input_dim, output_dim) for _ in range(4)])
+
+        self.zero_order = args.zero_order
+        if self.zero_order:
+            self.lin_zero  = Linear(input_dim, output_dim)
+
 
         if args.conv_type == 'dir-gcn':
             self.lin_src_to_dst = Linear(input_dim, output_dim)
@@ -1013,7 +1017,6 @@ class DirGCNConv_2(torch.nn.Module):
 
 
     def forward(self, x, edge_index):
-        # x0= x
         device = edge_index.device
         if self.First_self_loop == 1:
             edge_index, _ = add_self_loops(edge_index, fill_value=1)
@@ -1081,6 +1084,9 @@ class DirGCNConv_2(torch.nn.Module):
                     self.adj_union_in_in = union_adj_norm(self.norm_list[2], self.norm_list[3], self.inci_norm, device)
 
             out1 = aggregate(x, self.alpha, self.lin_src_to_dst, self.adj_norm, self.lin_dst_to_src, self.adj_t_norm, self.adj_intersection, self.adj_union,  inci_norm=self.inci_norm)
+            if self.zero_order:
+                out1 += self.lin_zero(x)
+
             if not (self.beta == -1 and self.gama == -1):
                 out2 = aggregate(x, self.beta, self.linx[0], self.norm_list[0], self.linx[1], self.norm_list[1], self.adj_intersection_in_out, self.adj_union_in_out, inci_norm=self.inci_norm)
                 out3 = aggregate(x, self.gama, self.linx[2], self.norm_list[2], self.linx[3], self.norm_list[3], self.adj_intersection_in_in, self.adj_union_in_in, inci_norm=self.inci_norm)
@@ -1088,15 +1094,6 @@ class DirGCNConv_2(torch.nn.Module):
                 # out2 = out3 = torch.zeros_like(out1)
                 out2 = torch.zeros_like(out1)
                 out3 = torch.zeros_like(out1)
-            # out2 += 1*self.lin[1](x)
-            # a = 1*self.lin[1](x)
-            # b = 1*self.lin[2](x)
-            # c = 1*self.lin[3](x)
-            # out2 += 1*self.lin[1](x) + self.lin[2](x) + self.lin[3](x)
-            # out3 += 2*self.lin[1](x)+ 2*self.lin[2](x)
-
-            # out2 += 1 * self.lin[1](x)
-            # out3 += 1 * self.lin[2](x)
 
         elif self.conv_type in ['dir-gat', 'dir-sage']:
             edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
@@ -2876,18 +2873,6 @@ class GCN_JKNet(torch.nn.Module):
             self.convs.append(DirGCNConv_2(nhid, output_dim, args))
 
         num_scale = layer
-        self.mlp = None
-        if args.mlpOut:
-            self.mlp = torch.nn.Sequential(
-                # torch.nn.Linear(nfeat, nhid),
-                # torch.nn.ReLU(),
-                # torch.nn.Linear(nhid, nhid),
-                # torch.nn.ReLU(),
-                # torch.nn.BatchNorm1d(nhid),
-                torch.nn.Linear(nfeat, output_dim)
-            # ,torch.nn.BatchNorm1d(output_dim)
-            )
-            num_scale += 1
         if jumping_knowledge:
             input_dim = hidden_dim * num_scale if jumping_knowledge == "cat" else hidden_dim
             self.lin = Linear(input_dim, nclass)
@@ -2901,13 +2886,6 @@ class GCN_JKNet(torch.nn.Module):
 
 
     def forward(self, x, edge_index):
-    # def forward(self, data):
-    # def forward(self, data_list):
-    #     data = data_list[0]
-    #     x = data.x
-    #     edge_index = data.edge_index
-        if self.mlp:
-            x_mlp = self.mlp(x)
         xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index)
@@ -2918,9 +2896,6 @@ class GCN_JKNet(torch.nn.Module):
                 if self.normalize:
                     x = F.normalize(x, p=2, dim=1)
             xs += [x]
-
-        if self.mlp not in [None, 0]:
-            xs += [x_mlp]
 
         if self.jumping_knowledge:
             x = self.jump(xs)

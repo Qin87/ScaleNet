@@ -234,7 +234,6 @@ edges = torch.unique(edges, dim=1)
 seed_everything(args.seed)
 
 no_in, homo_ratio_A, no_out,   homo_ratio_At, in_homophilic_nodes, out_homophilic_nodes, in_heterophilic_nodes, out_heterophilic_nodes, no_in_nodes, no_out_nodes = count_homophilic_nodes(edges, data_y)
-# mst = find_max_spanning_tree(edges, data_x.shape[0])
 if args.to_reverse_edge:
     edges = edges[torch.tensor([1, 0])]
 if args.rm_bidirect_edge:
@@ -244,8 +243,6 @@ if args.Ak:
 
 if args.num_edge:
     results = matrix_power_analysis(edges, data_x.shape[0], k_max=20)
-
-# result = longest_hop_direct(edges[torch.tensor([1, 0])], data_x.shape[0])
 
 
 with open(log_directory + log_file_name_with_timestamp, 'w') as log_file:
