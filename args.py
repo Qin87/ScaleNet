@@ -15,19 +15,19 @@ def parse_args():
     parser.add_argument("--mlpOut", type=int, help="in ScaleNet, whether include mlp ", default=0)
     parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=1)
     parser.add_argument("--nonlinear", type=int, help="whether use activation(relu) in ScaleNet model:0/1", default=1)
-    parser.add_argument("--First_self_loop", type=int, choices=[1, -1,  0], default=0, help="1 is add, -1 is remove, Whether to add self-loops to the graph")
+    parser.add_argument("--First_self_loop", type=int, choices=[1, -1,  0], default=1, help="1 is add, -1 is remove, Whether to add self-loops to the graph")
     parser.add_argument("--rm_gen_sloop", type=int, choices=[1, 0], default=0, help="Whether to remove generated self-loops to the graph")
 
     parser.add_argument("--has_scheduler", type=int, default=1, help="Whether Optimizer has a scheduler")
     parser.add_argument('--patience', type=int, default=80, help='patience to reduce lr,80')
 
     # for DirGNN
-    parser.add_argument("--zero_order", type=int, help="If include zero order", default=0)
+    parser.add_argument("--zero_order", type=int, help="If include zero order", default=1)
     parser.add_argument("--conv_type", type=str, help="DirGNN Model", default="dir-gcn")
     parser.add_argument("--normalize", type=int, help="whether use batch normalization in ScaleNet, model:0/1", default=0)
     parser.add_argument("--jk", choices=["max", "cat", 'weighted',  0], default=0)
     parser.add_argument("--jk_inner", choices=["max", "cat", 'lstm', 0, 'weighted'], default=0)
-    parser.add_argument("--inci_norm", choices=["dir", "sym", 'row', "0"], default="0")
+    parser.add_argument("--inci_norm", choices=["dir", "sym", 'row', "0"], default="row")
     parser.add_argument("--fs", type=str, choices=["sum", "cat", 'weight_sum', 'linear'], default="dir", help='fusion method')
     parser.add_argument("--alphaDir", type=float, help="Direction convex combination params", default=0.5)
     parser.add_argument("--betaDir", type=float, help="Direction convex combination params", default=-1)
@@ -35,7 +35,7 @@ def parse_args():
     parser.add_argument("--learn_alpha", action="store_true")
     parser.add_argument("--differ_AA", type=int, default=0, help="Whether test AA-A-At")
     parser.add_argument("--differ_AAt", type=int, default=0,  help="Whether test AAt-A-At")
-    parser.add_argument('--num_split', type=int, default=1, help='num of run in spite of many splits')
+    parser.add_argument('--num_split', type=int, default=10, help='num of run in spite of many splits')
 
     parser.add_argument('--MakeImbalance', '-imbal', action='store_true', help='if convert graph to undirecteds')
     parser.add_argument('--imb_ratio', type=float, default=100, help='imbalance ratio')
