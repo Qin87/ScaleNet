@@ -450,7 +450,6 @@ try:
         print('Using Device: ', device, file=logfile)
         for split in range(num_run):
             model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device)
-            print('0000', model.convs[0].lins_dst_to_src[0].weight[0, :5])
             if split==0:
                 # print('no_in, homo_in, no_out, homo_out:', no_in, homo_ratio_A, no_out, homo_ratio_At, file=logfile)
                 print(model, file=logfile)
@@ -558,7 +557,6 @@ try:
             for i in range(n_cls):
                 data_num = (stats == i).sum()
                 n_data.append(int(data_num.item()))
-            # idx_info = get_idx_info(data_y, n_cls, data_train_mask, device)  # torch: all train nodes for each class
             node_train = torch.sum(data_train_mask).item()
 
             if args.MakeImbalance:
@@ -667,8 +665,6 @@ try:
                     # end_time = time.time()
                     print('epoch: {:3d}, val_loss:{:2f}, test_acc: {:.2f}, bacc: {:.2f}, tmp_test_acc: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_acc*100,
                                                                                                                               test_f1 * 100))
-                    # print(end_time - start_time, file=logfile)
-                    # print(end_time - start_time)
                     print('epoch: {:3d}, val_loss:{:2f}, test_acc: {:.2f}, bacc: {:.2f}, tmp_test_f1: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_f1*100,
                                                                                                                              test_f1 * 100),file=logfile)
                 end_epoch = epoch
