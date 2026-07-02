@@ -29,6 +29,7 @@ def test_directed(edge_index):
         return False
     return True
 
+
 class CrossEntropy(nn.Module):
     def __init__(self):
         super().__init__()
@@ -73,7 +74,7 @@ def use_best_hyperparams(args, dataset_name):
     # print(args)
     return args
 
-def get_norm_adj(adj, norm, exponent = -0.25 ):
+def get_norm_adj(adj, norm, exponent=-0.25 ):
     if norm == "sym":       # Din^(-0.5)ADin^(-0.5)
         return gcn_norm(adj, add_self_loops=False)
     elif norm == "dir_ones":
@@ -84,7 +85,7 @@ def get_norm_adj(adj, norm, exponent = -0.25 ):
         return col_norm(adj)
     elif norm == "dir":
         return directed_norm(adj, exponent)
-    elif norm is None or norm==0:
+    elif norm is None or norm==0 or norm=="0":
         return adj
     elif norm == "opposite":
         return directed_opposite_norm(adj)

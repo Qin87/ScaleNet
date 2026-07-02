@@ -27,6 +27,7 @@ from torch_geometric.datasets import WebKB, WikipediaNetwork, WikiCS
 from data.Citation import citation_datasets
 from data.preprocess import load_syn
 
+
 def keep_all_data(edge_index, label, n_data, n_cls, train_mask):
     device = edge_index.device
     class_num_list = n_data
@@ -42,6 +43,7 @@ def keep_all_data(edge_index, label, n_data, n_cls, train_mask):
 
     edge_mask = torch.ones(edge_index.size(1), dtype=torch.bool)   # Qin revise May16
     return class_num_list, data_train_mask, idx_info, train_node_mask, edge_mask
+
 
 def get_mask(idx, num_nodes):
     """
@@ -1094,3 +1096,32 @@ def visualize_class_relationships(edges_tensor, y_tensor, filename='class_relati
         for dst_cls in sorted(class_connections.get(cls, {}).keys()):
             avg = class_connections[cls][dst_cls]
             print(f"    → Class {dst_cls}: {avg:.1f}")
+            
+            
+def generate_features(data_x, edges, args):
+    N, D = data_x.shape
+
+    feat_type = args.feat_type
+    feat_dim = args.X0_dim if args.X0_dim > 0 else D
+
+    if feat_type == "original":
+        return data_x, D
+
+    elif feat_type == "all1":
+        return torch.ones((N, feat_dim)), feat_dim
+
+    elif feat_type == "random":
+        torch.manual_seed(args.seed)
+        x = 2 * torch.rand((N, feat_dim)) - 1
+        return x, feat_dim
+
+    elif feat_type == "degree":
+        x = calculate_degree_features(edges, args.deg_fea)
+        return x, x.shape[1]
+
+    elif feat_type == "permute":
+        perm = torch.randperm(N)
+        return data_x[perm], D
+
+    else:
+        raise ValueError(f"Unknown feat_type: {feat_type}")

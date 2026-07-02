@@ -16,7 +16,7 @@ import time
 import torch.nn.functional as F
 
 from utils.args import parse_args
-from data.data_utils import keep_all_data, seed_everything, set_device
+from data.data_utils import keep_all_data, seed_everything, set_device, generate_features
 from nets.edge_data import get_second_directed_adj, WCJ_get_directed_adj, Qin_get_second_directed_adj, Qin_get_directed_adj, get_appr_directed_adj2, Qin_get_second_directed_adj0, Qin_get_second_adj, Qin_get_all_directed_adj, normalize_row_edges
 from utils.data_model import CreatModel, log_file, get_name, load_dataset, feat_proximity, delete_edges, make_imbalanced
 from nets.DiG_NoConv import union_edges
@@ -34,7 +34,6 @@ def signal_handler(sig, frame):
     global end_time
     end_time = time.time()
     print("Process interrupted!")
-    # calculate_time()
     log_results()
     sys.exit(0)
 
@@ -247,12 +246,12 @@ macro_F1 = []
 acc_list = []
 bacc_list = []
 
+data_x, num_features = generate_features(data_x, edges, args)
+
 device = set_device(args)
 
 data_x = data_x.to(device)
 data_y = data_y.to(device)
-if args.all1:
-    data_x = torch.ones_like(data_x)
 edges = edges.to(device)
 
 data_train_maskOrigin = data_train_maskOrigin.to(device)
@@ -393,6 +392,7 @@ try:
             print_memory("Before model load")
 
             model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device)
+            print('0000', model.convs[0].lins_dst_to_src[0].weight[0, :5])
 
             print_memory("After model load")
             if split==0:
@@ -460,7 +460,6 @@ try:
             for i in range(n_cls):
                 data_num = (stats == i).sum()
                 n_data.append(int(data_num.item()))
-            # idx_info = get_idx_info(data_y, n_cls, data_train_mask, device)  # torch: all train nodes for each class
             node_train = torch.sum(data_train_mask).item()
 
             if args.MakeImbalance:
@@ -503,8 +502,6 @@ try:
                 if sorted_list[-1]:
                     imbalance_ratio_origin = sorted_list_original[0] / sorted_list_original[-1]
                     print('Origin Imbalance ratio is {:.1f}'.format(imbalance_ratio_origin))
-                    # imbalance_ratio = sorted_list[0] / sorted_list[-1]
-                    # print('New    Imbalance ratio is {:.1f}'.format(imbalance_ratio))
                 else:
                     print('the minor class has no training sample')
 
@@ -531,18 +528,20 @@ try:
             set_new_opt = True
             print_memory("Before training")
             for epoch in range(args.epoch):
+                print('epoch', epoch, model.convs[0].lins_dst_to_src[0].weight[0, :5])
+                print(data_train_mask.sum().item())
+                print(data_train_mask.nonzero().flatten()[:10])
+                print(edges.shape, edges[:, :5])
                 val_loss, new_edge_index, new_x, new_y, new_y_train = train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight, X_real, X_img, Sigedge_index, norm_real,norm_imag,
                                                                                 X_img_i, X_img_j, X_img_k,norm_imag_i, norm_imag_j, norm_imag_k, Quaedge_index)
                 accs, baccs, f1s, logits, class_detail = test()
                 train_acc, val_acc, tmp_test_acc = accs
                 train_f1, val_f1, tmp_test_f1 = f1s
 
-                monitor_metric = val_acc if args.monitor == 'val_acc' else -val_loss  # Use -val_loss to handle minimization
-                best_metric = best_val_acc if args.monitor == 'val_acc' else -best_val_loss
+                monitor_metric = val_acc if args.monitor == 'acc' else -val_loss  # Use -val_loss to handle minimization
+                best_metric = best_val_acc if args.monitor == 'acc' else -best_val_loss
 
                 if monitor_metric > best_metric:
-                # if val_acc > best_val_acc:
-                # if val_loss < best_val_loss:
                     metrics_list = []
                     best_val_acc = val_acc
                     best_val_loss = val_loss
@@ -551,16 +550,12 @@ try:
                     test_bacc = baccs[2]
                     test_f1 = f1s[2]
                     CountNotImproved = 0
-                    # print('test_f1 CountNotImproved reset to 0 in epoch', epoch, file=logfile)
-                    # Store the calculated metrics in variables instead of printing
-
 
                 else:
                     CountNotImproved += 1
                 if epoch < 200 and epoch%20 == 1:
                     print('epoch: {:3d}, val_loss:{:2f},val_acc: {:.2f}, test_acc: {:.2f}, bacc: {:.2f}, tmp_test_acc: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, val_acc*100, test_acc * 100, test_bacc * 100, tmp_test_acc * 100, test_f1 * 100))
-                if epoch%100 == 0 :
-                    # end_time = time.time()
+                if epoch%200 == 0 :
                     print('epoch: {:3d}, val_loss:{:2f}, test_acc: {:.2f}, bacc: {:.2f}, tmp_test_acc: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_acc*100,
                                                                                                                               test_f1 * 100))
                     print('epoch: {:3d}, val_loss:{:2f}, test_acc: {:.2f}, bacc: {:.2f}, tmp_test_f1: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_f1*100,
@@ -606,7 +601,7 @@ try:
 
             result_str = f"{average_acc:.2f}±{std_dev_acc:.2f}"
         else:
-            result_str = f"{test_acc * 100}"
+            result_str = f"{test_acc * 100:.2f}"
 
         # Rename log file
         old_path = os.path.join(log_directory, log_file_name_with_timestamp)

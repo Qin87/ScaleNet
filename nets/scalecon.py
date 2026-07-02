@@ -21,13 +21,14 @@ def get_conv2(input_dim, output_dim, args):
     else:
         raise ValueError(f"Convolution type {args.conv_type2} not supported")
 
+
 class GNN2(torch.nn.Module):
     def __init__(self, args):
         super().__init__()
         self.conv_type = args.conv_type2
         self.lrelu_slope = args.lrelu_slope
 
-        output_dim = args.hid_dim if args.jk else args.num_classes
+        output_dim = args.hid_dim if args.jk else args.n_cls
         if args.layer == 1:
             self.convs = ModuleList([get_conv2(args.num_features, output_dim, args)])
         else:
@@ -38,7 +39,7 @@ class GNN2(torch.nn.Module):
 
         if args.jk:
             input_dim = args.hid_dim * args.layer if args.jk == "cat" else args.hid_dim
-            self.lin = Linear(input_dim, args.num_classes)
+            self.lin = Linear(input_dim, args.n_cls)
             self.jump = JumpingKnowledge(mode=args.jk, channels=args.hid_dim, num_layers=args.layer)
 
         self.num_layers = args.layer
