@@ -19,3 +19,5 @@
 
 utils/lightning_logs/*
 utils/checkpoint/*
+
+feat_norm.h
