@@ -3,16 +3,16 @@
 net_values="  ScaleNet "
 layer_values=" 4   "
 
-feat_types=("permute" "degree")   # "original"  "all1" "random"
+feat_types=("permute" "degree" "original"  "all1" "random" )   #
 inci_norms=("0"  "dir" "sym" "row")    #
 
-while pgrep -x python3 > /dev/null; do
+while pgrep -x python > /dev/null; do
   echo "Waiting for all python3 processes to finish..."
   sleep 100
 done
 
 # 'citeseer/' 'cora_ml/'  'telegram/'   'dgl/pubmed'  'WikiCS/'     --net="$net"  'WikipediaNetwork/chameleon'
-Direct_dataset=(  'directed-roman-empire/'     )
+Direct_dataset=(  'arxiv-year/'     )
 Direct_dataset_filename=$(echo $Direct_dataset | sed 's/\//_/g')
 generate_timestamp() {
   date +"%d%H%Ms%S"
@@ -34,8 +34,6 @@ echo "Running: dataset=$Didataset net=$net layer=$layer feat=$feat norm=$norm"
             # Run the Python script with parameters and log output
             python3 main.py   --net="$net"     \
             --feat_type="$feat" \
-            --hid_dim=1 \
-            --zero_order=1\
             --inci_norm="$norm"   --num_split=1 \
              --use_best_hyperparams=1   \
             --Dataset="$Didataset" > "$log_output"

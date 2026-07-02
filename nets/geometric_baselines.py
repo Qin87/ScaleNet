@@ -1043,17 +1043,12 @@ class DirGCNConv_2(torch.nn.Module):
             if self.adj_norm_in_out is None:
                 # if :
                 #     break
-                self.adj_norm_in_out = get_norm_adj(adj @ adj_t,norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
-                self.adj_norm_out_in = get_norm_adj(adj_t @ adj, norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
-                self.adj_norm_in_in = get_norm_adj(adj @ adj, norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
-                self.adj_norm_out_out = get_norm_adj(adj_t @ adj_t, norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
+                self.adj_norm_in_out = get_norm_adj(adj @ adj_t,norm=self.inci_norm)
+                self.adj_norm_out_in = get_norm_adj(adj_t @ adj, norm=self.inci_norm)
+                self.adj_norm_in_in = get_norm_adj(adj @ adj, norm=self.inci_norm)
+                self.adj_norm_out_out = get_norm_adj(adj_t @ adj_t, norm=self.inci_norm)
 
                 self.norm_list = [self.adj_norm_in_out, self.adj_norm_out_in, self.adj_norm_in_in, self.adj_norm_out_out]
-                # print('edge_num of AAt, AtA, AA, AtAt: ',
-                #       sparse_all(self.adj_norm_in_out, k=1),
-                #       sparse_all(self.adj_norm_out_in, k=1),
-                #       sparse_all(self.adj_norm_in_in, k=1),
-                #       sparse_all(self.adj_norm_out_out, k=1))
 
                 if self.differ_AA:
                     Union_A_AA, Intersect_A_AA, diff_0 = share_edge(self.adj_norm_in_in, self.adj_norm, self.adj_t_norm)
