@@ -1096,7 +1096,7 @@ def generate_features(data_x, edges, args):
     N, D = data_x.shape
 
     feat_type = args.feat_type
-    hid_dim = args.X0_hid_dim if args.X0_hid_dim > 0 else D
+    hid_dim = args.X0_dim if args.X0_dim > 0 else D
 
     if feat_type == "original":
         return data_x, D

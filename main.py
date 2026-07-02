@@ -219,7 +219,6 @@ args = use_best_hyperparams(args, args.Dataset) if args.use_best_hyperparams els
 data_x, data_y, edges, edges_weight, num_features, data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph, edge_attr, data_batch = load_dataset(args)
 net_to_print, dataset_to_print = get_name(args, IsDirectedGraph)
 load_time = time.time()
-# data_x=print_x(data_x)
 log_directory, log_file_name_with_timestamp = log_file(net_to_print, dataset_to_print, args)
 if not os.path.exists(log_directory):
     os.makedirs(log_directory)

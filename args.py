@@ -4,7 +4,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--monitor", type=str, help="optimiser monitor: val_acc(acc), val_loss(loss)", default="acc")
     parser.add_argument("--feat_type", type=str, default="original", choices=["original", "all1", "random", "permute", "degree"])
-    parser.add_argument("--X0_hid_dim", type=int, default=1, help="dimension for random or all1 features")
+    parser.add_argument("--X0_dim", type=int, default=1, help="dimension for random or all1 features")
     parser.add_argument("--deg_fea", type=int, default=1, help="degree mode: 1=in, -1=out, 2=both")
 
     parser.add_argument("--use_best_hyperparams", type=int, default=1, help="whether use parameters in best_hyperparameters.yml")
@@ -26,7 +26,7 @@ def parse_args():
     parser.add_argument("--normalize", type=int, help="whether use batch normalization in ScaleNet, model:0/1", default=0)
     parser.add_argument("--jk", choices=["max", "cat", 'weighted',  0], default=0)
     parser.add_argument("--jk_inner", choices=["max", "cat", 'lstm', 0, 'weighted'], default=0)
-    parser.add_argument("--inci_norm", choices=["dir", "sym", 'row', "0"], default="row")
+    parser.add_argument("--inci_norm", choices=["dir", "sym", 'row', "0"], default="dir")
     parser.add_argument("--fs", type=str, choices=["sum", "cat", 'weight_sum', 'linear'], default="dir", help='fusion method')
     parser.add_argument("--alphaDir", type=float, help="Direction convex combination params", default=0.5)
     parser.add_argument("--betaDir", type=float, help="Direction convex combination params", default=-1)
@@ -44,7 +44,7 @@ def parse_args():
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc,'
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG)''Sym, 1ym')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='telegram/', help='citeseer/ , cora_ml/, dgl/pubmed, telegram/,  WikiCS/, dgl/cora ,film/'
+    parser.add_argument('--Dataset', type=str, default='directed-roman-empire/', help='citeseer/ , cora_ml/, dgl/pubmed, telegram/,  WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WikipediaNetwork/crocodile, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/, Amazon-Photo, Amazon-citeseer/Computers, malnet/tiny, dgl/Flickr, ')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout prob')

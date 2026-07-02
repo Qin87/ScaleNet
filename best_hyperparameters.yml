@@ -1,5 +1,6 @@
 # 97.2±2.1,  96.8±2.1(0.5,-1,-1)
 telegram/:
+  zero_order: 0
   hid_dim: 64
   l2: 0   # 97.0(0), 95.6(5e-4)
 #  inci_norm: 0  # {94.2±4.4(dir) 95.6±3.0(0)}  {93.2(dir), 97.0(0)}
@@ -27,6 +28,7 @@ telegram/:
 
 #
 cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
+  zero_order: 0
   NotImproved: 410
   epoch: 1500
   patience: 80
@@ -52,6 +54,7 @@ cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
 
 #
 citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.0_0.0_0.5----2.0_0.0_0.0----2.0_2.0_0.5-----0.5_2.0_0.5---0.0_0.5_2.0--0.5_2.0_2.0
+  zero_order: 0
   l2: 0   # A3_layer14 0_50, 5e-4_33;  undirected 5e-4 is a bit better 65(0_60)
   NotImproved: 810
   epoch: 10000
@@ -77,6 +80,7 @@ citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.
 
 # 79.1±0.8-----
 WikiCS/:
+  zero_order: 0
   inci_norm: 'dir'  # key
   NotImproved: 410
   epoch: 1500
@@ -99,6 +103,7 @@ WikiCS/:
 
 #
 dgl/pubmed:
+  zero_order: 0
 #  net: ScaleNet
   conv_type: "dir-gcn"   # sage
   jk_inner: 'cat'   #cat(76.1±1.6), 0(75.9)
@@ -127,6 +132,7 @@ dgl/pubmed:
 
 # (1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5)
 WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,-1@79.6±1.7)--(1,1,1@79.1±1.5)
+  zero_order: 0
   monitor: 'acc'
   l2: 0  # 5e-4 is a bit worse
   NotImproved: 810
@@ -153,6 +159,7 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
 
 # (1_1_-1) 74.7±2.4,   (1,-1,-1) 75.2±1.7
 WikipediaNetwork/squirrel:
+  zero_order: 0
   monitor: 'acc'
   hid_dim: 128
   l2: 0
@@ -179,10 +186,11 @@ WikipediaNetwork/squirrel:
 
 # 91.23 ± 0.32(0.5,-1,-1), 92.0±0.4(0.5,-1,-1),
 directed-roman-empire/:
+  net: ScaleNet
   nonlinear: 1    # must have this, or acc is 85
   has_scheduler: 0
   lr: 0.01
-#  First_self_loop: 0   # no selfloops originally
+  First_self_loop: 0   # no selfloops originally
   BN_model: 0  # no batch norm is better
   normalize: 0  #
   hid_dim: 256
@@ -190,6 +198,7 @@ directed-roman-empire/:
   jk: "cat"
   dropout: 0.2
   NotImproved: 200
+  zero_order: 1  # dir-gcn+zero_order is dir-sage
 #  conv_type: "dir-sage"   # (1) gcn+mlp is worse than "dir-sage"  . (2) gcn without selfloop with row_norm +lin(X)=sage, with other norm get better.
   alphaDir: 0.5
   betaDir: -1     # 0 is 88, 1 is 20

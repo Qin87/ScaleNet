@@ -934,15 +934,12 @@ def count_upper_triangle_edges(self):
 class DirGCNConv_2(torch.nn.Module):
     def __init__(self, input_dim, output_dim, args):
         super().__init__()
-
-
         self.input_dim = input_dim
         self.output_dim = output_dim
 
         self.zero_order = args.zero_order
         if self.zero_order:
             self.lin_zero  = Linear(input_dim, output_dim)
-
 
         if args.conv_type == 'dir-gcn':
             self.lin_src_to_dst = Linear(input_dim, output_dim)
@@ -1037,12 +1034,8 @@ class DirGCNConv_2(torch.nn.Module):
 
                 adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
                 self.adj_t_norm = get_norm_adj(adj_t, norm=self.inci_norm)  #
-                # print('edge number(A, At):', sparse_all(self.adj_norm), sparse_all(self.adj_t_norm))
 
-            # if self.adj_norm_in_out is None and not (self.beta == -1 and self.beta == -1):
             if self.adj_norm_in_out is None:
-                # if :
-                #     break
                 self.adj_norm_in_out = get_norm_adj(adj @ adj_t,norm=self.inci_norm)
                 self.adj_norm_out_in = get_norm_adj(adj_t @ adj, norm=self.inci_norm)
                 self.adj_norm_in_in = get_norm_adj(adj @ adj, norm=self.inci_norm)
@@ -1086,7 +1079,6 @@ class DirGCNConv_2(torch.nn.Module):
                 out2 = aggregate(x, self.beta, self.linx[0], self.norm_list[0], self.linx[1], self.norm_list[1], self.adj_intersection_in_out, self.adj_union_in_out, inci_norm=self.inci_norm)
                 out3 = aggregate(x, self.gama, self.linx[2], self.norm_list[2], self.linx[3], self.norm_list[3], self.adj_intersection_in_in, self.adj_union_in_in, inci_norm=self.inci_norm)
             else:
-                # out2 = out3 = torch.zeros_like(out1)
                 out2 = torch.zeros_like(out1)
                 out3 = torch.zeros_like(out1)
 
@@ -2283,8 +2275,6 @@ class DirGCNConv_sloop(torch.nn.Module):
                 raise NotImplementedError
 
             xs = [out1, out2, out3]
-            # if self.mlp:
-            #     xs.append(self.mlp(x))
 
             if self.jumping_knowledge_inner:
                 x = self.jump(xs)
@@ -2297,18 +2287,11 @@ class DirGCNConv_sloop(torch.nn.Module):
 
             x_sloop.append(x)
 
-        # are_close = torch.allclose(x_sloop[0], x_sloop[1], rtol=1e-5, atol=1e-8)
-        # print(f"Are the tensors (0 and 1) close enough to be considered equal? {are_close}")
-        #
-        # are_close = torch.allclose(x_sloop[0], x_sloop[2], rtol=1e-5, atol=1e-8)
-        # print(f"Are the tensors (0 and 2) close enough to be considered equal? {are_close}")
         if self.jumping_knowledge_sloop:
             x = self.jump(x_sloop)
             x = self.lin(x)
         else:
-            # x = sum(out for out in x_sloop)
             x = x_sloop
-
 
         return x
 
