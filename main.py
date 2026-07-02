@@ -7,10 +7,7 @@ import os
 
 import numpy as np
 from torch_geometric.utils import add_self_loops, remove_self_loops
-from torch_sparse import SparseTensor
 
-from longest import  longest_hop_undirect, longest_hop_direct
-from nets.geometric_baselines import add_self_loop_qin
 from utils0.util_qin import analyze_edge_index, remove_bidirectional_edges, get_k_hop_edges, matrix_power_analysis
 
 print("Python Path:", sys.path)
@@ -31,7 +28,7 @@ from data.data_utils import keep_all_data, seed_everything, set_device, scaled_e
 from edge_nets.edge_data import get_second_directed_adj, get_second_directed_adj_union, \
     WCJ_get_directed_adj, Qin_get_second_directed_adj, Qin_get_directed_adj, get_appr_directed_adj2, Qin_get_second_directed_adj0, Qin_get_second_adj, Qin_get_all_directed_adj, normalize_row_edges, \
     get_second_directed_adj_weight1, get_second_directed_adj_random
-from data_model import CreatModel, log_file, get_name, load_dataset, feat_proximity, delete_edges, make_imbalanced, count_homophilic_nodes, calculate_metrics, create_mask, print_x
+from data_model import CreatModel, logfile, get_name, load_dataset, feat_proximity, delete_edges, make_imbalanced, count_homophilic_nodes, calculate_metrics, create_mask, print_x
 from nets.DiG_NoConv import union_edges
 from nets.models import random_walk_pe
 from nets.src2 import laplacian
@@ -57,9 +54,9 @@ def signal_handler(sig, frame):
 def log_results():
     global start_time, end_time
     if start_time is not None and end_time is not None:
-        with open(log_directory + log_file_name_with_timestamp, 'a') as log_file:
+        with open(log_directory + logfile_name_with_timestamp, 'a') as logfile:
             elapsed_time = end_time - start_time
-            print("Total time: {:.2f} seconds".format(elapsed_time), file=log_file)
+            print("Total time: {:.2f} seconds".format(elapsed_time), file=logfile)
             print("Total time: {:.2f} seconds".format(elapsed_time))
             if len(macro_F1) > 1:
                 average = statistics.mean(macro_F1)
@@ -70,16 +67,16 @@ def log_results():
                 std_dev_bacc = statistics.stdev(bacc_list)
                 result_str = f"{average_acc:.1f}±{std_dev_acc:.1f}_{len(macro_F1):2d}splits"
                 print(net_to_print +'_'+ str(args.layer) + '_'+dataset_to_print + "_acc" + f"{average_acc:.1f}±{std_dev_acc:.1f}" + "_bacc" + f"{average_bacc:.1f}±{std_dev_bacc:.1f}" + '_MacroF1:' + f"{average:.1f}±{std_dev:.1f},{len(macro_F1):2d}splits")
-                print(net_to_print +'_'+ str(args.layer) + '_'+dataset_to_print + "_acc" + f"{average_acc:.1f}±{std_dev_acc:.1f}" + "_bacc" + f"{average_bacc:.1f}±{std_dev_bacc:.1f}" + '_MacroF1:' + f"{average:.1f}±{std_dev:.1f},{len(macro_F1):2d}splits", file=log_file)
+                print(net_to_print +'_'+ str(args.layer) + '_'+dataset_to_print + "_acc" + f"{average_acc:.1f}±{std_dev_acc:.1f}" + "_bacc" + f"{average_bacc:.1f}±{std_dev_bacc:.1f}" + '_MacroF1:' + f"{average:.1f}±{std_dev:.1f},{len(macro_F1):2d}splits", file=logfile)
             elif len(macro_F1) == 1:
-                print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print +"_acc"+f"{acc_list[0]:.1f}"+"_bacc" + f"{bacc_list[0]:.1f}"+'_MacroF1_'+f"{macro_F1[0]:.1f}, 1split", file=log_file)
+                print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print +"_acc"+f"{acc_list[0]:.1f}"+"_bacc" + f"{bacc_list[0]:.1f}"+'_MacroF1_'+f"{macro_F1[0]:.1f}, 1split", file=logfile)
                 print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print +"_acc"+f"{acc_list[0]:.1f}"+"_bacc" + f"{bacc_list[0]:.1f}"+'_MacroF1_'+f"{macro_F1[0]:.1f}, 1split")
             else:
                 print("not a single split is finished")
 
             # Rename log file
-            old_path = os.path.join(log_directory, log_file_name_with_timestamp)
-            new_file_name = f"{result_str}_{log_file_name_with_timestamp}"
+            old_path = os.path.join(log_directory, logfile_name_with_timestamp)
+            new_file_name = f"{result_str}_{logfile_name_with_timestamp}"
             new_path = os.path.join(log_directory, new_file_name)
 
             os.rename(old_path, new_path)
@@ -147,7 +144,7 @@ def train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_wei
         val_loss = F.cross_entropy(out[data_val_mask], data_y[data_val_mask])
     optimizer.step()
     if args.has_scheduler:
-        scheduler.step(val_loss, epoch)
+        scheduler.step(val_loss.item(), epoch)
 
     return val_loss, new_edge_index, new_x, new_y, new_y_train
 # from sklearn.metrics import confusion_matrix
@@ -218,8 +215,11 @@ args = use_best_hyperparams(args, args.Dataset) if args.use_best_hyperparams els
 
 data_x, data_y, edges, edges_weight, num_features, data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph, edge_attr, data_batch = load_dataset(args)
 net_to_print, dataset_to_print = get_name(args, IsDirectedGraph)
+
+if data_y.dim() > 1 and data_y.shape[1] == 1:
+    data_y = data_y.squeeze(1)
 load_time = time.time()
-log_directory, log_file_name_with_timestamp = log_file(net_to_print, dataset_to_print, args)
+log_directory, logfile_name_with_timestamp = logfile(net_to_print, dataset_to_print, args)
 if not os.path.exists(log_directory):
     os.makedirs(log_directory)
 print(args)
@@ -244,19 +244,19 @@ if args.num_edge:
     results = matrix_power_analysis(edges, data_x.shape[0], k_max=20)
 
 
-with open(log_directory + log_file_name_with_timestamp, 'w') as log_file:
-    print(args, file=log_file)
-    print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=log_file)
-    print('Running Branch Dec12', file=log_file)
+with open(log_directory + logfile_name_with_timestamp, 'w') as logfile:
+    print(args, file=logfile)
+    print(f"Machine ID: {socket.gethostname()}-{':'.join(['{:02x}'.format((uuid.getnode() >> elements) & 0xff) for elements in range(0, 8 * 6, 8)][::-1])}", file=logfile)
+    print('Running Branch Dec12', file=logfile)
 
     # result = longest_hop_direct(edges, data_x.shape[0])
     # count = sum(1 for x in result if x > args.layer)
     # print(count)
-    # print("Longest hop for each node:", result, file=log_file)
-    # print(f"Percent of node with hops larger than num-layer: {count / len(result) * 100:.1f}", "largest hop:",max(result), file=log_file)
+    # print("Longest hop for each node:", result, file=logfile)
+    # print(f"Percent of node with hops larger than num-layer: {count / len(result) * 100:.1f}", "largest hop:",max(result), file=logfile)
 
-    # print("Percent of node with hops larger than num-layer:", count/len(result)*100, file=log_file)
-    # print(mst, file=log_file)
+    # print("Percent of node with hops larger than num-layer:", count/len(result)*100, file=logfile)
+    # print(mst, file=logfile)
 # print("Percent of node with hops larger than num-layer:", count/len(result)*100)
 #     print(f"Percent of node with hops larger than num-layer: {count / len(result) * 100:.1f}", "largest hop:", max(result))
 
@@ -446,27 +446,28 @@ preprocess_time = time.time()
 args.num_features, args.n_cls, args.edge_index, args.num_nodes = data_x.shape[1], n_cls, edges, data_x.shape[0]
 
 try:
-    with open(log_directory + log_file_name_with_timestamp, 'a') as log_file:
-        print('Using Device: ', device, file=log_file)
+    with open(log_directory + logfile_name_with_timestamp, 'a') as logfile:
+        print('Using Device: ', device, file=logfile)
         for split in range(num_run):
             model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device)
+            print('0000', model.convs[0].lins_dst_to_src[0].weight[0, :5])
             if split==0:
-                # print('no_in, homo_in, no_out, homo_out:', no_in, homo_ratio_A, no_out, homo_ratio_At, file=log_file)
-                print(model, file=log_file)
+                # print('no_in, homo_in, no_out, homo_out:', no_in, homo_ratio_A, no_out, homo_ratio_At, file=logfile)
+                print(model, file=logfile)
                 print(model)
                 if args.net.startswith('ym'):
-                    print('Sym edge size(biedge, edge_in, edge_out):', biedges.size(),  in_weight.size(),  out_weight.size(), file=log_file)
+                    print('Sym edge size(biedge, edge_in, edge_out):', biedges.size(),  in_weight.size(),  out_weight.size(), file=logfile)
                     print('Sym edge size(biedge, edge_in, edge_out):', biedges.size(),  in_weight.size(),  out_weight.size())
                 elif args.net[1:].startswith('i'):
-                    print(args.net, 'edge size:', end=' ', file=log_file)
+                    print(args.net, 'edge size:', end=' ', file=logfile)
                     print(args.net, 'edge size:', end=' ')
                     if isinstance(edge_weight, tuple):
                         for i in edge_weight:
-                            print(i.size()[0], end=' ', file=log_file)
+                            print(i.size()[0], end=' ', file=logfile)
                             print(i.size()[0], end=' ')
                     else:
                         if edge_weight is not None:
-                            print(edge_weight.size()[0], end=' ', file=log_file)
+                            print(edge_weight.size()[0], end=' ', file=logfile)
                             print(edge_weight.size()[0], end=' ')
 
             # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.l2)
@@ -562,7 +563,7 @@ try:
 
             if args.MakeImbalance:
                 print("make imbalanced", args.imb_ratio)
-                print("make imbalanced",args.imb_ratio, file=log_file)
+                print("make imbalanced",args.imb_ratio, file=logfile)
                 class_num_list, data_train_mask, idx_info, train_node_mask, train_edge_mask = \
                     make_imbalanced(edges, data_y, n_data, n_cls, args.imb_ratio, data_train_mask.clone())
                 new_class_num_list = []
@@ -572,9 +573,9 @@ try:
                 if split==0:
                     # print('new train class in data: ', new_class_num_list, '\n', 'real imbal ratio: ', new_class_num_list[-1]/new_class_num_list[0])
                     print(dataset_to_print + '\ttotalNode_' + str(data_train_mask.size()[0]) + '\t trainNodeBal_' + str(node_train) + '\t trainNodeImbal_' + str(torch.sum(
-                        data_train_mask).item()), file=log_file)
+                        data_train_mask).item()), file=logfile)
                     print(dataset_to_print + '\ttotalEdge_' + str(edges.size()[1]) + '\t trainEdgeBal_' + str(train_edge_mask.size()[0]) + '\t trainEdgeImbal_' + str(torch.sum(
-                        train_edge_mask).item()), file=log_file)
+                        train_edge_mask).item()), file=logfile)
                     print(dataset_to_print + '\ttotalNode_' + str(data_train_mask.size()[0]) + '\t trainNodeBal_' + str(node_train) + '\t trainNodeImbal_' + str(torch.sum(
                         data_train_mask).item()))
                     print(dataset_to_print + '\ttotalEdge_' + str(edges.size()[1]) + '\t trainEdgeBal_' + str(train_edge_mask.size()[0]) + '\t trainEdgeImbal_' + str(torch.sum(
@@ -583,8 +584,8 @@ try:
                 class_num_list, data_train_mask, idx_info, train_node_mask, train_edge_mask = \
                     keep_all_data(edges, data_y, n_data, n_cls, data_train_mask)
                 if split == 0:
-                    print(dataset_to_print + '\ttotalNode_' + str(data_train_mask.size()[0]) + '\t trainNode_' + str(node_train), file=log_file)
-                    print(dataset_to_print + '\ttotalEdge_' + str(edges.size()[1]) + '\t trainEdge_' + str(train_edge_mask.size()[0]), file=log_file)
+                    print(dataset_to_print + '\ttotalNode_' + str(data_train_mask.size()[0]) + '\t trainNode_' + str(node_train), file=logfile)
+                    print(dataset_to_print + '\ttotalEdge_' + str(edges.size()[1]) + '\t trainEdge_' + str(train_edge_mask.size()[0]), file=logfile)
                     print(dataset_to_print + '\ttotalNode_' + str(data_train_mask.size()[0]) + '\t trainNodeBal_' + str(node_train) + '\t trainNodeNow_' + str(torch.sum(
                         data_train_mask).item()))
                     print(dataset_to_print + '\ttotalEdge_' + str(edges.size()[1]) + '\t trainEdgeBal_' + str(train_edge_mask.size()[0]) + '\t trainEdgeNow_' + str(
@@ -627,6 +628,10 @@ try:
             end_epoch = 0
             set_new_opt = True
             for epoch in range(args.epoch):
+                # print('epoch', epoch, model.convs[0].lins_dst_to_src[0].weight[0, :5])
+                # print(data_train_mask.sum().item())
+                # print(data_train_mask.nonzero().flatten()[:10])
+                # print(edges.shape, edges[:, :5])
                 val_loss, new_edge_index, new_x, new_y, new_y_train = train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight, X_real, X_img, Sigedge_index, norm_real,norm_imag,
                                                                                 X_img_i, X_img_j, X_img_k,norm_imag_i, norm_imag_j, norm_imag_k, Quaedge_index)
                 accs, baccs, f1s, logits, class_detail = test()
@@ -647,7 +652,7 @@ try:
                     test_bacc = baccs[2]
                     test_f1 = f1s[2]
                     CountNotImproved = 0
-                    # print('test_f1 CountNotImproved reset to 0 in epoch', epoch, file=log_file)
+                    # print('test_f1 CountNotImproved reset to 0 in epoch', epoch, file=logfile)
                     # Store the calculated metrics in variables instead of printing
 
                     # for name, lst in combined_intersection_list:
@@ -662,28 +667,28 @@ try:
                     # end_time = time.time()
                     print('epoch: {:3d}, val_loss:{:2f}, test_acc: {:.2f}, bacc: {:.2f}, tmp_test_acc: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_acc*100,
                                                                                                                               test_f1 * 100))
-                    # print(end_time - start_time, file=log_file)
+                    # print(end_time - start_time, file=logfile)
                     # print(end_time - start_time)
                     print('epoch: {:3d}, val_loss:{:2f}, test_acc: {:.2f}, bacc: {:.2f}, tmp_test_f1: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_f1*100,
-                                                                                                                             test_f1 * 100),file=log_file)
+                                                                                                                             test_f1 * 100),file=logfile)
                 end_epoch = epoch
                 if CountNotImproved > args.NotImproved:
 
                     # for name, metric_temp in metrics_list:
                     #     print(name, metric_temp)
-                    #     print(name, metric_temp, file=log_file)
+                    #     print(name, metric_temp, file=logfile)
 
                     for class_id, class_info in class_detail[-1].items():
                         print(f"Class {class_id}: {class_info}")
-                        print(f"Class {class_id}: {class_info}", file=log_file)
+                        print(f"Class {class_id}: {class_info}", file=logfile)
 
                     break
             # dataset_to_print = args.Dataset.replace('/', '_') + str(args.to_undirected)
             dataset_to_print = dataset_to_print.replace('/', '_') + str(args.to_undirected)
             print(net_to_print+'layer'+str(args.layer), dataset_to_print, 'EndEpoch', str(end_epoch), 'lr', args.lr)
             print('Split{:3d}, acc: {:.2f}, bacc: {:.2f}, f1: {:.2f}'.format(split, test_acc * 100, test_bacc * 100, test_f1 * 100))
-            print(net_to_print, args.layer, dataset_to_print, 'EndEpoch', str(end_epoch), 'lr', args.lr, file=log_file)
-            print('Split{:3d}, acc: {:.2f}, bacc: {:.2f}, f1: {:.2f}'.format(split, test_acc * 100, test_bacc * 100, test_f1 * 100), file=log_file)
+            print(net_to_print, args.layer, dataset_to_print, 'EndEpoch', str(end_epoch), 'lr', args.lr, file=logfile)
+            print('Split{:3d}, acc: {:.2f}, bacc: {:.2f}, f1: {:.2f}'.format(split, test_acc * 100, test_bacc * 100, test_f1 * 100), file=logfile)
             macro_F1.append(test_f1*100)
             acc_list.append(test_acc*100)
             bacc_list.append(test_bacc*100)
@@ -693,7 +698,7 @@ try:
         last_time = time.time()
         elapsed_time0 = last_time-start_time
         print("Time(s): Total_{}= Load_{} + Preprocess_{} + Train_{}".format(int(last_time-start_time), int(load_time-start_time), int(preprocess_time-load_time), int(last_time-preprocess_time)),
-              file=log_file)
+              file=logfile)
         print(
             "Time(s): Total_{}= Load_{} + Preprocess_{} + Train_{}".format(int(last_time - start_time), int(load_time - start_time), int(preprocess_time - load_time), int(last_time - preprocess_time)))
         if len(macro_F1) > 1:
@@ -704,15 +709,15 @@ try:
             average_bacc = statistics.mean(bacc_list)
             std_dev_bacc = statistics.stdev(bacc_list)
             print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print+"_acc"+f"{average_acc:.1f}±{std_dev_acc:.1f}"+"_bacc"+f"{average_bacc:.1f}±{std_dev_bacc:.1f}"+'_Macro F1:'+f"{average:.1f}±{std_dev:.1f}")
-            print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print+"_acc"+f"{average_acc:.1f}±{std_dev_acc:.1f}"+"_bacc"+f"{average_bacc:.1f}±{std_dev_bacc:.1f}"+'_Macro F1:'+f"{average:.1f}±{std_dev:.1f}", file=log_file)
+            print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print+"_acc"+f"{average_acc:.1f}±{std_dev_acc:.1f}"+"_bacc"+f"{average_bacc:.1f}±{std_dev_bacc:.1f}"+'_Macro F1:'+f"{average:.1f}±{std_dev:.1f}", file=logfile)
 
             result_str = f"{average_acc:.2f}±{std_dev_acc:.2f}"
         else:
             result_str = f"{test_acc * 100:.2f}"
 
         # Rename log file
-        old_path = os.path.join(log_directory, log_file_name_with_timestamp)
-        new_file_name = f"{result_str}_{log_file_name_with_timestamp}"
+        old_path = os.path.join(log_directory, logfile_name_with_timestamp)
+        new_file_name = f"{result_str}_{logfile_name_with_timestamp}"
         new_path = os.path.join(log_directory, new_file_name)
 
         os.rename(old_path, new_path)

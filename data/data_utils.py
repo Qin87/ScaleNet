@@ -175,18 +175,89 @@ def load_directedData(args):
         # print(f'Contains self-loops: {data.contains_self_loops()}')
         # print(f'Is undirected: {data.is_undirected()}')
         # return dataset
+    elif load_func in ['pokec']:
+        dataset = PokecDataset(root=args.data_path + "pokec")
+        # Convert the first element to homogeneous and assign to _data
+        dataset._data = dataset[0].to_homogeneous(
+            node_attrs=['x', 'y', 'train_mask', 'val_mask', 'test_mask']
+        )
+    elif load_func in ['genius']:
+        dataset = LINKXDataset(root=args.data_path, name=load_func, transform=transforms.NormalizeFeatures())
+        name = load_func
+        num_nodes = dataset._data.y.shape[0]
+
+        github_url = f"https://github.com/CUAI/Non-Homophily-Large-Scale/raw/master/data/splits/"
+        split_file_name = f"{name}-splits.npy"
+        local_dir = os.path.join(args.data_path, name, "raw")
+
+        download_url(os.path.join(github_url, split_file_name), local_dir, log=False)
+        splits = np.load(os.path.join(local_dir, split_file_name), allow_pickle=True)
+        # split_idx = splits[split_number % len(splits)]
+        #
+        # train_mask = get_mask(split_idx["train"], num_nodes)
+        # val_mask = get_mask(split_idx["valid"], num_nodes)
+        # test_mask = get_mask(split_idx["test"], num_nodes)
+
+        train_masks = []
+        val_masks = []
+        test_masks = []
+
+        for split_idx in splits:
+            train_masks.append(get_mask(split_idx["train"], num_nodes))
+            val_masks.append(get_mask(split_idx["valid"], num_nodes))
+            test_masks.append(get_mask(split_idx["test"], num_nodes))
+
+        # Stack into tensors of shape (num_nodes, num_splits)
+        dataset._data.train_mask = torch.stack(train_masks, dim=1)
+        dataset._data.val_mask = torch.stack(val_masks, dim=1)
+        dataset._data.test_mask = torch.stack(test_masks, dim=1)
+
+    elif load_func in ['fb100']:
+        dataset = LINKXDataset(root=args.data_path, name=subset, transform=transforms.NormalizeFeatures())
+        dataset._data.y = dataset._data.y.unsqueeze(-1)
+        num_nodes = dataset._data.y.shape[0]
+
+        # elif name in ["penn94", "genius"]:
+        if subset == "penn94":
+            name = "fb100-Penn94"
+        # Datasets from https://arxiv.org/pdf/2110.14446.pdf have five splits stored
+        # in https://github.com/CUAI/Non-Homophily-Large-Scale/tree/82f8f05c5c3ec16bd5b505cc7ad62ab5e09051e6/data/splits
+        # num_nodes = data["y"].shape[0]
+        github_url = f"https://github.com/CUAI/Non-Homophily-Large-Scale/raw/master/data/splits/"
+        split_file_name = f"{name}-splits.npy"
+        local_dir = os.path.join(args.data_path, name, "raw")
+
+        download_url(os.path.join(github_url, split_file_name), local_dir, log=False)
+        splits = np.load(os.path.join(local_dir, split_file_name), allow_pickle=True)
+        # split_idx = splits[split_number % len(splits)]
+
+        # download_url(os.path.join(github_url, split_file_name), local_dir, log=False)
+        # splits = np.load(os.path.join(local_dir, split_file_name), allow_pickle=True)
+
+        train_masks = []
+        val_masks = []
+        test_masks = []
+
+        for split_idx in splits:
+            train_masks.append(get_mask(split_idx["train"], num_nodes))
+            val_masks.append(get_mask(split_idx["valid"], num_nodes))
+            test_masks.append(get_mask(split_idx["test"], num_nodes))
+
+        # Stack into tensors of shape (num_nodes, num_splits)
+        dataset._data.train_mask = torch.stack(train_masks, dim=1)
+        dataset._data.val_mask = torch.stack(val_masks, dim=1)
+        dataset._data.test_mask = torch.stack(test_masks, dim=1)
     elif load_func in ['arxiv-year']:
         path = args.data_path
+        # arxiv-year uses the same graph and features as ogbn-arxiv, but with different labels
         dataset = PygNodePropPredDataset(name="ogbn-arxiv", transform=transforms.ToSparseTensor(), root=path)
         evaluator = Evaluator(name="ogbn-arxiv")
         y = even_quantile_labels(dataset._data.node_year.flatten().numpy(), nclasses=5, verbose=False)
-        # dataset._data.y = torch.as_tensor(y).reshape(-1, 1)
         dataset._data.y = torch.as_tensor(y)
 
         # if name in ["arxiv-year"]:
             # Datasets from https://arxiv.org/pdf/2110.14446.pdf have five splits stored
             # in https://github.com/CUAI/Non-Homophily-Large-Scale/tree/82f8f05c5c3ec16bd5b505cc7ad62ab5e09051e6/data/splits
-        split_number = 10
         num_nodes = y.shape[0]
         github_url = f"https://github.com/CUAI/Non-Homophily-Large-Scale/raw/master/data/splits/"
         split_file_name = f"{load_func}-splits.npy"
@@ -194,18 +265,21 @@ def load_directedData(args):
 
         download_url(os.path.join(github_url, split_file_name), local_dir, log=False)
         splits = np.load(os.path.join(local_dir, split_file_name), allow_pickle=True)
-        split_idx = splits[split_number % len(splits)]
 
-        dataset._data.train_mask = get_mask(split_idx["train"], num_nodes)
-        dataset._data.val_mask = get_mask(split_idx["valid"], num_nodes)
-        dataset._data.test_mask = get_mask(split_idx["test"], num_nodes)
+        train_masks = []
+        val_masks = []
+        test_masks = []
 
-        # return train_mask, val_mask, test_mask
-        # Tran, val and test masks are required during preprocessing. Setting them here to dummy values as
-        # they are overwritten later for this dataset (see get_dataset_split function below)
-        # dataset._data.train_mask, dataset._data.val_mask, dataset._data.test_mask = 0, 0, 0
-        # Create directory for this dataset
-        # os.makedirs(os.path.join(path, name.replace("-", "_"), "raw"), exist_ok=True)
+        for split_idx in splits:
+            train_masks.append(get_mask(split_idx["train"], num_nodes))
+            val_masks.append(get_mask(split_idx["valid"], num_nodes))
+            test_masks.append(get_mask(split_idx["test"], num_nodes))
+
+        # Stack into tensors of shape (num_nodes, num_splits)
+        dataset._data.train_mask = torch.stack(train_masks, dim=1)
+        dataset._data.val_mask = torch.stack(val_masks, dim=1)
+        dataset._data.test_mask = torch.stack(test_masks, dim=1)
+
     elif load_func in ['snap-patents']:
         dataset = load_snap_patents_mat(n_classes=5, root=args.data_path)
     elif load_func == "Cora" or load_func == "CiteSeer" or load_func == "PubMed":
@@ -239,9 +313,11 @@ def load_directedData(args):
         else:
             dataset = load_func(root=args.data_path, name=subset, geom_gcn_preprocess=False)
     elif load_func == 'WikiCS':
+        args.data_path += load_func
         load_func = WikiCS
         dataset = load_func(root=args.data_path, is_undirected=False)
     elif load_func == 'WikiCS_U':
+        args.data_path += load_func
         load_func = WikiCS
         dataset = load_func(root=args.data_path)        # get undirected
     elif load_func == 'cora_ml':
@@ -249,7 +325,8 @@ def load_directedData(args):
     elif load_func == 'citeseer':
         dataset = citation_datasets(root='./citeseer_npz.npz')
     elif load_func in ['film']:
-        dataset = Actor(root='../data/film', transform=T.NormalizeFeatures())
+        args.data_path += load_func
+        dataset = Actor(root=args.data_path, transform=T.NormalizeFeatures())
 
     elif load_func == 'dgl':    # Ben
         subset = subset.lower()
@@ -424,12 +501,6 @@ def set_device(args):
         print("args.CPU true, using CPU.")
 
     return device
-
-# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-# if torch.cuda.device_count() > 1:
-#     model = torch.nn.DataParallel(model)
-#     print(f'model parallel!', flush=True)
-# model.to(device)
 
 def seed_everything(seed):
     os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'

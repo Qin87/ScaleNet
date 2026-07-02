@@ -208,9 +208,9 @@ def get_name(args, IsDirectedGraph):
     else:
         dataset_to_print = dataset_to_print + 'Direct'
         if args.to_reverse_edge:
-            dataset_to_print = dataset_to_print + 'ReVerse'
+            dataset_to_print = dataset_to_print + 'At'
         else:
-            dataset_to_print = dataset_to_print + 'Origin'
+            dataset_to_print = dataset_to_print + 'A'
     if args.net.startswith('Ri'):
         net_to_print = args.net + str(args.W_degree) + '_'
     elif args.net.startswith('Mag'):
@@ -224,10 +224,8 @@ def get_name(args, IsDirectedGraph):
     else:
         net_to_print = 'NoBNorm_' + net_to_print
 
-
-
     if args.net == 'GCN':
-        if args.First_self_loop == 1 or args.add_selfloop == 1:
+        if args.add_selfloop == 1 or args.add_selfloop == 1:
             net_to_print = net_to_print + '_AddSloop'
         elif args.add_selfloop == -1:
             net_to_print = net_to_print + '_RmSloop'
@@ -245,9 +243,9 @@ def get_name(args, IsDirectedGraph):
         if args.paraD:
             net_to_print = net_to_print + 'paraD' + str(args.coeflr)
 
-        if args.First_self_loop == 1:
+        if args.add_selfloop == 1:
             net_to_print = net_to_print + '_AddSloop'
-        elif args.First_self_loop == -1:
+        elif args.add_selfloop == -1:
             net_to_print = net_to_print + '_RmSloop'
         else:
             net_to_print = net_to_print + '_NoSloop'
@@ -269,22 +267,22 @@ def get_name(args, IsDirectedGraph):
             net_to_print = net_to_print + args.conv_type + '_diff'+diff + '_jk'+str(args.jk)+'_norm'+args.inci_norm
         else:
             net_to_print = net_to_print  +'_' + args.conv_type +'_part'+str(args.alphaDir)+'_'+ str(args.betaDir)+'_'+str(
-                args.gamaDir)+'_sloop'+str(args.First_self_loop)+str(args.rm_gen_sloop)+'_jk'+str(args.jk)+'_norm'+str(args.inci_norm)+'_zero'+str(args.zero_order)
+                args.gamaDir)+'_sloop'+str(args.add_selfloop)+str(args.rm_gen_sloop)+'_jk'+str(args.jk)+'_norm'+str(args.inci_norm)+'_zero'+str(args.zero_order)
 
     return net_to_print, dataset_to_print
 
 
-def log_file(net_to_print, dataset_to_print, args):
+def logfile(net_to_print, dataset_to_print, args):
     if args.Ak:
         net_to_print = net_to_print + 'Ak' + str(args.Ak)
-    log_file_name = dataset_to_print+'_'+net_to_print+'_lay'+str(args.layer)+'_lr'+str(args.lr)+'_NoImp'+str(args.NotImproved)
+    logfile_name = dataset_to_print+'_'+net_to_print+'_lay'+str(args.layer)+'_lr'+str(args.lr)+'_NoImp'+str(args.NotImproved)
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    log_file_name_with_timestamp = f"{log_file_name}_{timestamp}.log"
+    logfile_name_with_timestamp = f"{logfile_name}_{timestamp}.log"
 
     log_directory = "~/Documents/Benlogs/"  # Change this to your desired directory
     log_directory = os.path.expanduser(log_directory)
 
-    return log_directory, log_file_name_with_timestamp
+    return log_directory, logfile_name_with_timestamp
 
 def get_dataset(name, path, split_type='public'):
     import torch_geometric.transforms as T
@@ -410,7 +408,8 @@ def load_dataset(args):
             data = random_planetoid_splits(data, data_y, train_ratio=0.48, val_ratio=0.1, num_splits=10, Flag=0)
             data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
 
-        elif args.Dataset in ['ogbn-arxiv/'] or (len(data.train_mask.shape) > 1 and data.train_mask.size(-1) > 9):
+        elif args.Dataset in ['ogbn-arxiv/', 'arxiv_year', 'fb100/penn94'] or (len(data.train_mask.shape) > 1 and data.train_mask.size(-1) > args.num_split-1):
+        # elif args.Dataset in ['ogbn-arxiv/'] or (len(data.train_mask.shape) > 1 and data.train_mask.size(-1) > 9):
             data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
         else:
             data = random_planetoid_splits(data, data_y, percls_trn=20, val_lb=30, Flag=1)

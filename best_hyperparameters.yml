@@ -15,7 +15,7 @@ telegram/:
   lr: 0.01
   normalize: 1
   BN_model: 1    # sure
-  First_self_loop: 1
+  add_selfloop: 1
   jk: 'max'
   dropout: 0.0
   jk_inner: 0
@@ -43,7 +43,7 @@ cora_ml/:     # 2,0.5,-1---2.0_0.5_2.0--2.0_0.5_0.5--2.0_-1.0_-1.0
   l2: 0.0005
   normalize: 0
   BN_model: 0   # 0(29), 1(79)  # 1(79), 0(82.7)
-#  First_self_loop : 1  # sure
+#  add_selfloop : 1  # sure
   jk: "max"     # max(80.7), cat(79.8), 0(76.9)
   jk_inner: 0
   dropout: 0.5   # 0.0(80.51), 0.5(80.76)
@@ -69,7 +69,7 @@ citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.
   lr: 0.01
   normalize: 1    # 1(68.3), 0 much worse60.7,
   BN_model: 0   # 0(68.3), 1(66.9)  # for high performance 0 is better.
-#  First_self_loop : 1     # 1(64.75), -1(58.2), 0(57.5)
+#  add_selfloop : 1     # 1(64.75), -1(58.2), 0(57.5)
 #  jk: 'max'   # 'max'(68.3). 'cat'(), 0(67.8)
   dropout: 0.5   # 0(61.44), 0.5(64.75)
   inci_norm: 'dir'    # dir(64.8), sym(63.9), row(63.8)
@@ -93,7 +93,7 @@ WikiCS/:
 #  l2: 0.0005  # better than 0 in deeper layer
   normalize: 1
   BN_model: 0  # 0(23), 1(73.5)
-#  First_self_loop : 1  # add(79.1±0.8),0(77.3±0.8), remove(77.4)
+#  add_selfloop : 1  # add(79.1±0.8),0(77.3±0.8), remove(77.4)
 #  jk: 'max'   # max(75.9),cat(75.99), 0(73.5)
   jk_inner: 0   # not cat
   dropout: 0.5  # 0.5(75.9), 0.0(73.9)
@@ -112,7 +112,7 @@ dgl/pubmed:
   lr: 0.01
   normalize: 0
   BN_model: 0  #
-  First_self_loop : 1
+  add_selfloop : 1
 #  jk: 'max'
   dropout: 0.0  #0.5(39), 0.0(77.5)
   alphaDir: 1   # 0.5(72.2), 0(73.2)
@@ -149,7 +149,7 @@ WikipediaNetwork/chameleon:     # 1,2,1----1,2,-1------1,1,2-----1,-1,1---(1,-1,
   lr: 0.005
   normalize: 1
   BN_model: 0  #  without layerNorm, very bad(but Dir-GNN prefer no LN)
-  First_self_loop: 0
+  add_selfloop: 0
   jk: 'max'
   jk_inner: 0
   alphaDir: 1
@@ -176,7 +176,7 @@ WikipediaNetwork/squirrel:
   lr: 0.01
   normalize: 1
   BN_model: 1 # 0(48.9), 1(72)
-  First_self_loop: 0     # 0 or 1 is worse
+  add_selfloop: 0     # 0 or 1 is worse
   jk: 'max'
   jk_inner: 0
   alphaDir: 1   # best is 1,1,-1
@@ -190,7 +190,7 @@ directed-roman-empire/:
   nonlinear: 1    # must have this, or acc is 85
   has_scheduler: 0
   lr: 0.01
-  First_self_loop: 0   # no selfloops originally
+  add_selfloop: 0   # no selfloops originally
   BN_model: 0  # no batch norm is better
   normalize: 0  #
   hid_dim: 256
@@ -228,7 +228,7 @@ WebKB/Texas:
   epoch: 1500
   NotImproved: 410
   patience: 80
-  First_self_loop: 0   # 83(0), 73(1)
+  add_selfloop: 0   # 83(0), 73(1)
   lr: 0.1  # bettern than 0.01
 #  mlp: 1  # 0(some split very bad)
   nonlinear: 1    # 1>0
@@ -242,7 +242,7 @@ WebKB/Texas:
   dropout: 0.5    # for ScaleNEt0.5, for SAGE0.0
 
 WebKB/Wisconsin:
-  First_self_loop: 0
+  add_selfloop: 0
   lr: 0.0005
   has_scheduler: 0
   dropout: 0.0  # Mag(0),
@@ -277,7 +277,7 @@ CiteSeer:
 
 arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
   net: LargeScaleNet
-#  inci_norm: dir   # row is bad
+  inci_norm: dir   # row is bad
   num_split: 5
   epoch: 10000
   BN_model: 1  # 0:61
@@ -286,6 +286,11 @@ arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
   has_scheduler: 0
   NotImproved: 400  # 80
   dropout: 0.5
+  jk: 'max'
+
+  l2: 0.0005
+  patience: 10
+
 
   hid_dim: 128  # 64:62, 16:61
   layer: 6  # 6:64.4 5:64.6  8:64.1

@@ -3,25 +3,18 @@ import argparse
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--monitor", type=str, help="optimiser monitor: val_acc(acc), val_loss(loss)", default="acc")
-    parser.add_argument("--feat_type", type=str, default="original", choices=["original", "all1", "random", "permute", "degree"])
+    parser.add_argument("--feat_type", type=str, default="all1", choices=["original", "all1", "random", "permute", "degree"])
     parser.add_argument("--X0_dim", type=int, default=1, help="dimension for random or all1 features")
     parser.add_argument("--deg_fea", type=int, default=1, help="degree mode: 1=in, -1=out, 2=both")
 
     parser.add_argument("--use_best_hyperparams", type=int, default=1, help="whether use parameters in best_hyperparameters.yml")
     parser.add_argument('--GPU', type=int, default=0, help='GPU device')
     parser.add_argument('--CPU', action='store_true', help='use CPU even has GPU')
-    parser.add_argument("--mlpIn", type=int, help="in ScaleNet, whether include mlp ", default=0)
-    parser.add_argument("--mlpOut", type=int, help="in ScaleNet, whether include mlp ", default=0)
     parser.add_argument("--BN_model", type=int, help="whether use layer normalization in model:0/1", default=1)
     parser.add_argument("--nonlinear", type=int, help="whether use activation(relu) in ScaleNet model:0/1", default=1)
-    parser.add_argument("--First_self_loop", type=int, choices=[1, -1,  0], default=1, help="1 is add, -1 is remove, Whether to add self-loops to the graph")
-    parser.add_argument("--rm_gen_sloop", type=int, choices=[1, 0], default=0, help="Whether to remove generated self-loops to the graph")
 
-    parser.add_argument("--has_scheduler", type=int, default=1, help="Whether Optimizer has a scheduler")
-    parser.add_argument('--patience', type=int, default=80, help='patience to reduce lr,80')
-
-    # for DirGNN
     parser.add_argument("--zero_order", type=int, help="If include zero order", default=1)
+    # for DirGNN
     parser.add_argument("--conv_type", type=str, help="DirGNN Model", default="dir-gcn")
     parser.add_argument("--normalize", type=int, help="whether use batch normalization in ScaleNet, model:0/1", default=0)
     parser.add_argument("--jk", choices=["max", "cat", 'weighted',  0], default=0)
@@ -36,15 +29,12 @@ def parse_args():
     parser.add_argument("--differ_AAt", type=int, default=0,  help="Whether test AAt-A-At")
     parser.add_argument('--num_split', type=int, default=10, help='num of run in spite of many splits')
 
-    parser.add_argument('--MakeImbalance', '-imbal', action='store_true', help='if convert graph to undirecteds')
-    parser.add_argument('--imb_ratio', type=float, default=100, help='imbalance ratio')
-
     parser.add_argument('--net', type=str, default='ScaleNet', help='mlp, Dir-GNN, ParaGCN, SimGAT, ScaleNet, SloopNet, tSNE, RandomNet, HFNet '
                      'Mag, Sig, QuaNet, '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc,'
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG)''Sym, 1ym')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='directed-roman-empire/', help='citeseer/ , cora_ml/, dgl/pubmed, telegram/,  WikiCS/, dgl/cora ,film/'
+    parser.add_argument('--Dataset', type=str, default='arxiv-year/', help='citeseer/ , cora_ml/, dgl/pubmed, telegram/,  WikiCS/, dgl/cora ,film/'
         'WikipediaNetwork/squirrel, WikipediaNetwork/chameleon, WikipediaNetwork/crocodile, WebKB/Cornell, WebKB/Texas,  WebKB/Wisconsin'
         'ogbn-arxiv/, directed-roman-empire/, arxiv-year/, snap-patents/, Amazon-Photo, Amazon-citeseer/Computers, malnet/tiny, dgl/Flickr, ')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout prob')
@@ -55,6 +45,8 @@ def parse_args():
 
     parser.add_argument('--hid_dim', type=int, default=64, help='feature dimension')
     parser.add_argument('--epoch', type=int, default=1500, help='epoch1500,')
+    parser.add_argument("--has_scheduler", type=int, default=1, help="Whether Optimizer has a scheduler")
+    parser.add_argument('--patience', type=int, default=80, help='patience to reduce lr,80')
     parser.add_argument('--NotImproved', type=int, default=810, help='consecutively Not Improved, break, 500, 450, 410, 210, 60')
 
     parser.add_argument('--lr', type=float, default=0.05, help='learning rate')
@@ -73,7 +65,6 @@ def parse_args():
     parser.add_argument("--weight_penalty", type=str, choices=["exp", "lin", "None"], default="exp")
     parser.add_argument("--k_plus", type=int, help="Polynomial order", default=2)
     parser.add_argument("--exponent", type=float, help="exponent in norm, -0.25, -0.5", default=-0.5)
-    # parser.add_argument("--zero_order", type=int, help="If include zero order", default=0)
     parser.add_argument("--cat_A_X", type=int, help="If include concatenate A and X", default=0)
     parser.add_argument("--structure", type=float, default=0, help="1 pure structure, 0 pure feature, 0.5 structure is feature too")
 
@@ -116,6 +107,7 @@ def parse_args():
     parser.add_argument('--paraD', action='store_true', help='ib is weighted sum')
     parser.add_argument('--gcn_norm', '-gcnnorm', type=int, default=1, help='GCNConv forward, normalize edge_index during training')
     parser.add_argument('--add_selfloop',  type=int, default=0, help='add selfloop in before model 1, remove -1, 0')
+    parser.add_argument("--rm_gen_sloop", type=int, choices=[1, 0], default=0, help="Whether to remove generated self-loops to the graph")
     parser.add_argument('--to_undirected', '-tud', type=int, default=0, help='if convert graph to undirected')
     parser.add_argument('--to_reverse_edge', '-tre', type=int, default=0, help='if reverse direction of edges')
     parser.add_argument('--rm_bidirect_edge', '-rbe', type=int, default=0, help='make all edges directed')
@@ -125,6 +117,9 @@ def parse_args():
     parser.add_argument('--feat_proximity', action='store_true', help='filter out non similar nodes in scaled graph')
     parser.add_argument('--ibx1', action='store_true', help='share the same ibx block in DiGSymCatib')
     parser.add_argument('--log_root', type=str, default='../logs/', help='the path saving model.t7 and the training process')
+
+    parser.add_argument('--MakeImbalance', '-imbal', action='store_true', help='if convert graph to undirecteds')
+    parser.add_argument('--imb_ratio', type=float, default=100, help='imbalance ratio')
 
 
     args = parser.parse_args()

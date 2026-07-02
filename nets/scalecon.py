@@ -45,6 +45,7 @@ class GNN2(torch.nn.Module):
         self.dropout = args.dropout
         self.jk = args.jk
         self.normalize = args.normalize
+
     def forward(self, x, edge_index):
         xs = []
         for i, conv in enumerate(self.convs):

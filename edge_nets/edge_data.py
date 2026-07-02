@@ -461,7 +461,7 @@ def get_appr_directed_adj(alpha, edge_index, num_nodes, dtype, edge_weight=None)
     return edge_index, deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
 
 def get_second_directed_adj(args,  edge_index, num_nodes, dtype):
-    selfloop = args.First_self_loop
+    selfloop = args.add_selfloop
     if selfloop == 1:
         edge_index, _ = add_self_loops(edge_index.long(), fill_value=1, num_nodes=num_nodes)  # with selfloop, QiG get better
 
@@ -505,7 +505,7 @@ def get_second_directed_adj(args,  edge_index, num_nodes, dtype):
     return edge_index, edge_weight
 
 def get_second_directed_adj_weight1(args,  edge_index, num_nodes, dtype):
-    selfloop = args.First_self_loop
+    selfloop = args.add_selfloop
     if selfloop == 1:
         edge_index, _ = add_self_loops(edge_index.long(), fill_value=1, num_nodes=num_nodes)  # with selfloop, QiG get better
 
@@ -527,7 +527,7 @@ def get_second_directed_adj_random(args,  edge_index, num_nodes, dtype):
     W_degree = args.W_degree
     device = edge_index.device
 
-    selfloop = args.First_self_loop
+    selfloop = args.add_selfloop
     if selfloop == 1:
         edge_index, _ = add_self_loops(edge_index.long(), fill_value=1, num_nodes=num_nodes)  # with selfloop, QiG get better
 
@@ -652,7 +652,7 @@ def union_edge_index(edge_index):
     return union
 
 def Qin_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
-    selfloop = args.First_self_loop
+    selfloop = args.add_selfloop
     norm = args.inci_norm
     device = edge_index.device
     if selfloop == 1:
@@ -684,7 +684,7 @@ def WCJ_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
     norm = args.inci_norm
     # norm = 'sym'
     # norm = 0
-    self_loop = args.First_self_loop
+    self_loop = args.add_selfloop
     W_degree = args.W_degree
     # random value to edge weights
     device = edge_index.device
@@ -850,7 +850,7 @@ def WCJ_get_directed_adj(args, edge_index, num_nodes, dtype, edge_weight=None):
 
 
 def get_appr_directed_adj2(args, edge_index, num_nodes, dtype, edge_weight=None):
-    selfloop, alpha = args.First_self_loop, args.alpha
+    selfloop, alpha = args.add_selfloop, args.alpha
     device = edge_index.device
 
     if edge_weight is None:
@@ -1527,7 +1527,7 @@ def sparse_intersection(U, I):
     return intersection
 
 def Qin_get_second_directed_adj(args, edge_index, num_nodes, k, IsExhaustive, mode, norm='dir'):     #
-    self_loop = args.First_self_loop
+    self_loop = args.add_selfloop
     device = edge_index.device
     if self_loop == 1:
         edge_index, _ = add_self_loops(edge_index.long(), fill_value=1, num_nodes=num_nodes)  # with selfloop, QiG get better
@@ -1633,7 +1633,7 @@ def dir_normalize_edge_weights(row, col, value,  num_nodes, edge_weights=None):
 
 def Qin_get_all_directed_adj(args,  edge_index, num_nodes, k, IsExhaustive, mode, norm='dir'):
     has_1_order = args.has_1_order
-    selfloop = args.First_self_loop
+    selfloop = args.add_selfloop
     rm_gen_sloop = args.rm_gen_sloop
 
     device = edge_index.device

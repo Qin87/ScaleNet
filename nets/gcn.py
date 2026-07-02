@@ -135,7 +135,7 @@ class StandGCNXBN_Ak(nn.Module):
         nhid = args.hid_dim
         dropout = args.dropout
         nlayer = args.Ak        # Differ
-        is_add_self_loops = args.First_self_loop
+        is_add_self_loops = args.add_selfloop
         norm = args.gcn_norm
         self.is_add_self_loops = is_add_self_loops  # Qin True is the original
         if nlayer == 1:
@@ -181,7 +181,7 @@ class StandGCNXBN(nn.Module):
         nhid = args.hid_dim
         dropout = args.dropout
         nlayer = args.layer
-        is_add_self_loops = args.First_self_loop
+        is_add_self_loops = args.add_selfloop
         norm = args.gcn_norm
         self.is_add_self_loops = is_add_self_loops  # Qin True is the original
         if nlayer == 1:
@@ -223,7 +223,7 @@ class StandGCNX_noRelu(nn.Module):
         nhid = args.hid_dim
         dropout = args.dropout
         nlayer = args.layer
-        is_add_self_loops = args.First_self_loop
+        is_add_self_loops = args.add_selfloop
         norm = args.gcn_norm
         self.is_add_self_loops = is_add_self_loops  # Qin True is the original
         if nlayer == 1:
