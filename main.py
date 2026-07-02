@@ -659,7 +659,7 @@ try:
                     CountNotImproved += 1
                 if epoch < 200 and epoch%20 == 1:
                     print('epoch: {:3d}, val_loss:{:2f},val_acc: {:.2f}, test_acc: {:.2f}, bacc: {:.2f}, tmp_test_acc: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, val_acc*100, test_acc * 100, test_bacc * 100, tmp_test_acc * 100, test_f1 * 100))
-                if epoch%100 == 0 :
+                if epoch%200 == 0 :
                     # end_time = time.time()
                     print('epoch: {:3d}, val_loss:{:2f}, test_acc: {:.2f}, bacc: {:.2f}, tmp_test_acc: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_acc*100,
                                                                                                                               test_f1 * 100))

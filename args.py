@@ -3,7 +3,6 @@ import argparse
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--monitor", type=str, help="optimiser monitor: val_acc(acc), val_loss(loss)", default="acc")
-
     parser.add_argument("--feat_type", type=str, default="original", choices=["original", "all1", "random", "permute", "degree"])
     parser.add_argument("--X0_hid_dim", type=int, default=1, help="dimension for random or all1 features")
     parser.add_argument("--deg_fea", type=int, default=1, help="degree mode: 1=in, -1=out, 2=both")

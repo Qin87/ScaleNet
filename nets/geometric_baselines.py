@@ -2165,10 +2165,6 @@ class DirGCNConv_sloop(torch.nn.Module):
         self.Intersect_alpha, self.Union_alpha, self.Intersect_beta, self.Union_beta, self.Intersect_gama, self.Union_gama = None, None, None, None, None, None
 
         num_scale = 2
-        # self.mlp = None
-        # if args.mlp:
-        #     self.mlp = torch.nn.Linear(input_dim, output_dim)
-        #     num_scale += 1
         jumping_knowledge = args.jk_inner
         self.jumping_knowledge_inner = jumping_knowledge
         if jumping_knowledge:
@@ -2212,7 +2208,6 @@ class DirGCNConv_sloop(torch.nn.Module):
 
                     adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
                     self.adj_t_norm = get_norm_adj(adj_t, norm=self.inci_norm)  #
-                    # print('edge number(A, At):', sparse_all(self.adj_norm), sparse_all(self.adj_t_norm))
 
                 if self.adj_norm_in_out is None or flag:
 
@@ -2221,13 +2216,7 @@ class DirGCNConv_sloop(torch.nn.Module):
                     self.adj_norm_in_in = get_norm_adj(adj @ adj, norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
                     self.adj_norm_out_out = get_norm_adj(adj_t @ adj_t, norm=self.inci_norm, rm_gen_sLoop=rm_gen_sLoop)
 
-
                     self.norm_list = [self.adj_norm_in_out, self.adj_norm_out_in, self.adj_norm_in_in, self.adj_norm_out_out]
-                    # print('edge_num of AAt, AtA, AA, AtAt: ',
-                    #       sparse_all(self.adj_norm_in_out, k=1),
-                    #       sparse_all(self.adj_norm_out_in, k=1),
-                    #       sparse_all(self.adj_norm_in_in, k=1),
-                    #       sparse_all(self.adj_norm_out_out, k=1))
 
                     if self.differ_AA:
                         Union_A_AA, Intersect_A_AA, diff_0 = share_edge(self.adj_norm_in_in, self.adj_norm, self.adj_t_norm)
