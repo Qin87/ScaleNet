@@ -3,8 +3,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch_sparse
-# from dgl.backend.mxnet import no_grad
-from torch import triu
 from torch.nn import Linear, ModuleList, init
 from torch_geometric.nn import GCNConv, GATConv, SAGEConv, ChebConv, GINConv, APPNP
 from torch.nn import Parameter
@@ -13,9 +11,6 @@ from torch_sparse import SparseTensor
 from torch_sparse import sum as sparsesum
 from torch_sparse import mul
 
-
-# from dgl.python.dgl import add_self_loop
-from nets.gcn import gcn_norm
 from torch_geometric.utils import add_self_loops
 
 from nets.jumping_weight import JumpingKnowledge
@@ -80,6 +75,10 @@ class DirGCNConv_2(torch.nn.Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
 
+        self.zero_order = args.zero_order
+        if self.zero_order:
+            self.lin_zero  = Linear(input_dim, output_dim)
+
         if args.conv_type == 'dir-gcn':
             self.lin_src_to_dst = Linear(input_dim, output_dim)
             self.lin_dst_to_src = Linear(input_dim, output_dim)
@@ -129,7 +128,6 @@ class DirGCNConv_2(torch.nn.Module):
 
         self.adj_norm, self.adj_t_norm = None, None
 
-
         # self
         self.adj_norm_in_out, self.adj_norm_out_in, self.adj_norm_in_in, self.adj_norm_out_out = None, None, None, None
         self.adj_intersection, self.adj_intersection_in_in, self.adj_intersection_in_out = None, None, None
@@ -150,21 +148,13 @@ class DirGCNConv_2(torch.nn.Module):
                 adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
                 self.adj_t_norm = get_norm_adj(adj_t, norm=self.inci_norm)  #
 
-            # if self.adj_norm_in_out is None and not (self.beta == -1 and self.beta == -1):
             if self.adj_norm_in_out is None:
-                # if :
-                #     break
                 self.adj_norm_in_out = get_norm_adj(adj @ adj_t,norm=self.inci_norm)
                 self.adj_norm_out_in = get_norm_adj(adj_t @ adj, norm=self.inci_norm)
                 self.adj_norm_in_in = get_norm_adj(adj @ adj, norm=self.inci_norm)
                 self.adj_norm_out_out = get_norm_adj(adj_t @ adj_t, norm=self.inci_norm)
 
                 self.norm_list = [self.adj_norm_in_out, self.adj_norm_out_in, self.adj_norm_in_in, self.adj_norm_out_out]
-                # print('edge_num of AAt, AtA, AA, AtAt: ',
-                #       sparse_all(self.adj_norm_in_out, k=1),
-                #       sparse_all(self.adj_norm_out_in, k=1),
-                #       sparse_all(self.adj_norm_in_in, k=1),
-                #       sparse_all(self.adj_norm_out_out, k=1))
 
                 if self.differ_AA:
                     Union_A_AA, Intersect_A_AA, diff_0 = share_edge(self.adj_norm_in_in, self.adj_norm, self.adj_t_norm)
@@ -195,14 +185,15 @@ class DirGCNConv_2(torch.nn.Module):
                     self.adj_union_in_in = union_adj_norm(self.norm_list[2], self.norm_list[3], self.inci_norm, device)
 
             out1 = aggregate(x, self.alpha, self.lin_src_to_dst, self.adj_norm, self.lin_dst_to_src, self.adj_t_norm, self.adj_intersection, self.adj_union,  inci_norm=self.inci_norm)
+            if self.zero_order:
+                out1 += self.lin_zero(x)
+
             if not (self.beta == -1 and self.gama == -1):
                 out2 = aggregate(x, self.beta, self.linx[0], self.norm_list[0], self.linx[1], self.norm_list[1], self.adj_intersection_in_out, self.adj_union_in_out, inci_norm=self.inci_norm)
                 out3 = aggregate(x, self.gama, self.linx[2], self.norm_list[2], self.linx[3], self.norm_list[3], self.adj_intersection_in_in, self.adj_union_in_in, inci_norm=self.inci_norm)
             else:
-                # out2 = out3 = torch.zeros_like(out1)
                 out2 = torch.zeros_like(out1)
                 out3 = torch.zeros_like(out1)
-
 
         elif self.conv_type in ['dir-gat', 'dir-sage']:
             edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
@@ -247,6 +238,7 @@ class DirGCNConv_2(torch.nn.Module):
             x = self.batch_norm2(x)
         return x
 
+
 def getHP(adj, device):
     num_nodes = adj.sparse_sizes()[0]
 
@@ -275,6 +267,7 @@ def getHP(adj, device):
     # Optionally, you might want to coalesce the tensor to combine duplicate entries
     I_adj = I_adj.coalesce()
     return I_adj
+
 
 class HighFreConv(torch.nn.Module):
     def __init__(self, input_dim, output_dim, args):
@@ -336,9 +329,6 @@ class HighFreConv(torch.nn.Module):
         self.Intersect_alpha, self.Union_alpha, self.Intersect_beta, self.Union_beta, self.Intersect_gama, self.Union_gama = None, None, None, None, None, None
 
         num_scale = 3
-        # self.mlp = None
-        # if args.mlp:
-        #     self.mlp = torch.nn.Linear(input_dim, output_dim)
 
         jk = args.jk_inner
         self.jk_inner = jk
@@ -346,7 +336,6 @@ class HighFreConv(torch.nn.Module):
             input_dim_jk = output_dim * num_scale if jk == "cat" else output_dim
             self.jump = JumpingKnowledge(mode=jk, channels=input_dim, num_layers=3)
             self.lin = Linear(input_dim_jk, output_dim)
-
 
     def forward(self, x, edge_index):
         device = edge_index.device
@@ -365,42 +354,6 @@ class HighFreConv(torch.nn.Module):
 
                 self.adj_norm = getHP(self.adj_norm, device)
                 self.adj_t_norm = getHP(self.adj_t_norm, device)
-
-            # if self.adj_norm_in_out is None:
-            #     self.adj_norm_in_out = get_norm_adj(adj @ adj_t,norm=self.inci_norm)
-            #     self.adj_norm_out_in = get_norm_adj(adj_t @ adj, norm=self.inci_norm)
-            #     self.adj_norm_in_in = get_norm_adj(adj @ adj, norm=self.inci_norm)
-            #     self.adj_norm_out_out = get_norm_adj(adj_t @ adj_t, norm=self.inci_norm)
-            #
-            #     self.norm_list = [self.adj_norm_in_out, self.adj_norm_out_in, self.adj_norm_in_in, self.adj_norm_out_out]
-            #
-            #     if self.differ_AA:
-            #         Union_A_AA, Intersect_A_AA, diff_0 = share_edge(self.adj_norm_in_in, self.adj_norm, self.adj_t_norm)
-            #         Union_A_AtAt, Intersect_A_AtAt, diff_t = share_edge(self.adj_norm_out_out, self.adj_norm, self.adj_t_norm)
-            #     elif self.differ_AAt:
-            #         Union_A_AAt,  Intersect_A_AAt, diff_0= share_edge(self.adj_norm_in_out, self.adj_norm, self.adj_t_norm)
-            #         Union_A_AtA, Intersect_A_AtA, diff_t = share_edge(self.adj_norm_out_in, self.adj_norm, self.adj_t_norm)
-            #     if self.differ_AA or self.differ_AAt:
-            #         indices = torch.stack([torch.tensor(pair) for pair in diff_0], dim=0).t()
-            #         row = indices[0]
-            #         col = indices[1]
-            #         sparse_tensor1 = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
-            #         self.adj_norm = get_norm_adj(sparse_tensor1, norm=self.inci_norm).to(self.adj_t_norm.device())
-            #
-            #         indices = torch.stack([torch.tensor(pair) for pair in diff_t], dim=0).t()
-            #         row = indices[0]
-            #         col = indices[1]
-            #         sparse_tensor2 = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
-            #         self.adj_t_norm = get_norm_adj(sparse_tensor2, norm=self.inci_norm).to(self.adj_t_norm.device())
-            #     if 3 in (self.alpha, self.beta, self.gama) and self.adj_intersection is None:
-            #         self.adj_intersection = intersection_adj_norm(self.adj_norm, self.adj_t_norm, self.inci_norm, device)
-            #         self.adj_intersection_in_out = intersection_adj_norm(self.norm_list[0], self.norm_list[1], self.inci_norm, device)
-            #         self.adj_intersection_in_in = intersection_adj_norm(self.norm_list[2], self.norm_list[3], self.inci_norm, device)
-            #
-            #     if 2 in (self.alpha, self.beta, self.gama) and self.adj_union is None:
-            #         self.adj_union = union_adj_norm(self.adj_norm, self.adj_t_norm, self.inci_norm, device)
-            #         self.adj_union_in_out = union_adj_norm(self.norm_list[0], self.norm_list[1], self.inci_norm, device)
-            #         self.adj_union_in_in = union_adj_norm(self.norm_list[2], self.norm_list[3], self.inci_norm, device)
 
             out1 = aggregate(x, self.alpha, self.lin_src_to_dst, self.adj_norm, self.lin_dst_to_src, self.adj_t_norm, self.adj_intersection, self.adj_union,  inci_norm=self.inci_norm)
             if not (self.beta == -1 and self.gama == -1):
@@ -437,18 +390,12 @@ class HighFreConv(torch.nn.Module):
             raise NotImplementedError
 
         xs = [out1, out2, out3]
-        # if self.mlp:
-        #     xs.append(self.mlp(x))
 
         if self.jk_inner:
             x = self.jump(xs)
             x = self.lin(x)
         else:
             x = sum(out for out in xs)
-
-        # if self.mlp:
-        #     x = torch.cat((self.mlp(x), x), dim=-1)
-            # torch.vstack(self.mlp(x), x)
 
         if self.BN_model:
             x = self.batch_norm2(x)
@@ -685,10 +632,6 @@ class DirConv_tSNE(torch.nn.Module):
         self.Intersect_alpha, self.Union_alpha, self.Intersect_beta, self.Union_beta, self.Intersect_gama, self.Union_gama = None, None, None, None, None, None
 
         num_scale = 3
-        # self.mlp = None
-        # if args.mlp:
-        #     self.mlp = torch.nn.Linear(input_dim, output_dim)
-        #     num_scale += 1
         jk = args.jk_inner
         self.jk_inner = jk
         if jk:
@@ -787,8 +730,6 @@ class DirConv_tSNE(torch.nn.Module):
             raise NotImplementedError
 
         xs = [out1, out2, out3]
-        # if self.mlp:
-        #     xs.append(self.mlp(x))
 
         if self.jk_inner:
             x = self.jump(xs)
@@ -797,8 +738,6 @@ class DirConv_tSNE(torch.nn.Module):
             x = sum(out for out in xs)
         if (self.visual and epoch%100 == 0 and self.training)  or (epoch<10 ):
             with torch.no_grad():
-                # visualize_batch_norm_effect_QQ(x, y, epoch)
-                # visualize_batch_norm_effect_PCA(x, y, edge_index, epoch)
                 visualize_batch_norm_effect_tSNE(x, y, edge_index, epoch)
 
 
@@ -810,7 +749,10 @@ class DirConv_tSNE(torch.nn.Module):
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
+from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+from scipy.stats import wasserstein_distance
+from sklearn.metrics import pairwise_distances
 from scipy import stats
 
 def visualize_batch_norm_effect_QQ(X, y, epoch, feature_indices=None, num_features=4):
@@ -1235,10 +1177,6 @@ class DirGCNConv_sloop(torch.nn.Module):
         self.Intersect_alpha, self.Union_alpha, self.Intersect_beta, self.Union_beta, self.Intersect_gama, self.Union_gama = None, None, None, None, None, None
 
         num_scale = 2
-        # self.mlp = None
-        # if args.mlp:
-        #     self.mlp = torch.nn.Linear(input_dim, output_dim)
-        #     num_scale += 1
         jk = args.jk_inner
         self.jk_inner = jk
         if jk:
@@ -1271,17 +1209,14 @@ class DirGCNConv_sloop(torch.nn.Module):
 
             if self.conv_type == 'dir-gcn':
                 if self.adj_norm is None or flag:
-                # if flag:
 
                     adj = SparseTensor(row=row, col=col, sparse_sizes=(num_nodes, num_nodes))
                     self.adj_norm = get_norm_adj(adj, norm=self.inci_norm)     # this is key: improve from 57 to 72
 
                     adj_t = SparseTensor(row=col, col=row, sparse_sizes=(num_nodes, num_nodes))
                     self.adj_t_norm = get_norm_adj(adj_t, norm=self.inci_norm)  #
-                    # print('edge number(A, At):', sparse_all(self.adj_norm), sparse_all(self.adj_t_norm))
 
                 if self.adj_norm_in_out is None or flag:
-                # if flag:
 
                     self.adj_norm_in_out = get_norm_adj(adj @ adj_t,norm=self.inci_norm)
                     self.adj_norm_out_in = get_norm_adj(adj_t @ adj, norm=self.inci_norm)
@@ -1290,11 +1225,6 @@ class DirGCNConv_sloop(torch.nn.Module):
 
 
                     self.norm_list = [self.adj_norm_in_out, self.adj_norm_out_in, self.adj_norm_in_in, self.adj_norm_out_out]
-                    # print('edge_num of AAt, AtA, AA, AtAt: ',
-                    #       sparse_all(self.adj_norm_in_out, k=1),
-                    #       sparse_all(self.adj_norm_out_in, k=1),
-                    #       sparse_all(self.adj_norm_in_in, k=1),
-                    #       sparse_all(self.adj_norm_out_out, k=1))
 
                     if self.differ_AA:
                         Union_A_AA, Intersect_A_AA, diff_0 = share_edge(self.adj_norm_in_in, self.adj_norm, self.adj_t_norm)
@@ -1361,8 +1291,6 @@ class DirGCNConv_sloop(torch.nn.Module):
                 raise NotImplementedError
 
             xs = [out1, out2, out3]
-            # if self.mlp:
-            #     xs.append(self.mlp(x))
 
             if self.jk_inner:
                 x = self.jump(xs)
@@ -1375,18 +1303,11 @@ class DirGCNConv_sloop(torch.nn.Module):
 
             x_sloop.append(x)
 
-        # are_close = torch.allclose(x_sloop[0], x_sloop[1], rtol=1e-5, atol=1e-8)
-        # print(f"Are the tensors (0 and 1) close enough to be considered equal? {are_close}")
-        #
-        # are_close = torch.allclose(x_sloop[0], x_sloop[2], rtol=1e-5, atol=1e-8)
-        # print(f"Are the tensors (0 and 2) close enough to be considered equal? {are_close}")
         if self.jk_sloop:
             x = self.jump(x_sloop)
             x = self.lin(x)
         else:
-            # x = sum(out for out in x_sloop)
             x = x_sloop
-
 
         return x
 
@@ -1730,20 +1651,6 @@ def directed_norm_weight(adj, edge_weight=None):
 
     return adj1
 
-def get_model(args):
-    return GNN(
-        num_features=args.num_features,
-        hidden_dim=args.hid_dim,
-        num_layers=args.layer,
-        num_classes=args.n_cls,
-        dropout=args.dropout,
-        conv_type=args.conv_type,
-        jk=args.jk,
-        normalize=args.normalize,
-        alpha=args.alphaDir,
-        learn_alpha=args.learn_alpha,
-    )
-
 
 class DirSageConv(torch.nn.Module):
     def __init__(self, input_dim, output_dim, alpha):
@@ -1782,8 +1689,6 @@ class DirGATConv(torch.nn.Module):
         return (1 - self.alpha) * self.conv_src_to_dst(x, edge_index) + self.alpha * self.conv_dst_to_src(
             x, edge_index_t
         )
-
-
 
 class GNN(torch.nn.Module):     # from Rossi(LoG paper)
     def __init__(
@@ -2023,6 +1928,7 @@ class ScaleNet(torch.nn.Module):
             x = self.lin(x)
 
         return x
+
 
 class Sloop_JKNet(torch.nn.Module):
     def __init__(self, nfeat, nclass, args):
