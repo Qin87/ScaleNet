@@ -147,7 +147,6 @@ def train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_wei
         scheduler.step(val_loss.item(), epoch)
 
     return val_loss, new_edge_index, new_x, new_y, new_y_train
-# from sklearn.metrics import confusion_matrix
 from collections import Counter
 @torch.no_grad()
 def test():
@@ -298,13 +297,9 @@ data_x, num_features = generate_features(data_x, edges, args)
 data_x = data_x.to(device)
 data_y = data_y.to(device)
 edges = edges.to(device)
-
-# visualize_class_relationships(edges, data_y)
-
 data_train_maskOrigin = data_train_maskOrigin.to(device)
 data_val_maskOrigin = data_val_maskOrigin.to(device)
 data_test_maskOrigin = data_test_maskOrigin.to(device)
-
 # edges = scaled_edges(edges, data_x.shape[0])
 
 
@@ -469,7 +464,6 @@ try:
                             print(edge_weight.size()[0], end=' ', file=logfile)
                             print(edge_weight.size()[0], end=' ')
 
-            # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.l2)
             if hasattr(model, 'coefs'):     # parameter without weight_decay will typically change faster
                 optimizer = torch.optim.Adam(
                     [dict(params=model.reg_params, lr=args.lr, weight_decay=5e-4), dict(params=model.non_reg_params, lr=args.lr, weight_decay=0),
@@ -599,8 +593,6 @@ try:
                 if sorted_list[-1]:
                     imbalance_ratio_origin = sorted_list_original[0] / sorted_list_original[-1]
                     print('Origin Imbalance ratio is {:.1f}'.format(imbalance_ratio_origin))
-                    # imbalance_ratio = sorted_list[0] / sorted_list[-1]
-                    # print('New    Imbalance ratio is {:.1f}'.format(imbalance_ratio))
                 else:
                     print('the minor class has no training sample')
 
@@ -626,10 +618,6 @@ try:
             end_epoch = 0
             set_new_opt = True
             for epoch in range(args.epoch):
-                # print('epoch', epoch, model.convs[0].lins_dst_to_src[0].weight[0, :5])
-                # print(data_train_mask.sum().item())
-                # print(data_train_mask.nonzero().flatten()[:10])
-                # print(edges.shape, edges[:, :5])
                 val_loss, new_edge_index, new_x, new_y, new_y_train = train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight, X_real, X_img, Sigedge_index, norm_real,norm_imag,
                                                                                 X_img_i, X_img_j, X_img_k,norm_imag_i, norm_imag_j, norm_imag_k, Quaedge_index)
                 accs, baccs, f1s, logits, class_detail = test()
@@ -638,9 +626,6 @@ try:
 
                 monitor_metric = val_acc if args.monitor == 'acc' else -val_loss  # Use -val_loss to handle minimization
                 best_metric = best_val_acc if args.monitor == 'acc' else -best_val_loss
-                # if args.monitor == 'acc':
-                # # if val_acc > best_val_acc:
-                # if val_loss < best_val_loss:
                 if monitor_metric > best_metric:
                     metrics_list = []
                     best_val_acc = val_acc
@@ -650,12 +635,6 @@ try:
                     test_bacc = baccs[2]
                     test_f1 = f1s[2]
                     CountNotImproved = 0
-                    # print('test_f1 CountNotImproved reset to 0 in epoch', epoch, file=logfile)
-                    # Store the calculated metrics in variables instead of printing
-
-                    # for name, lst in combined_intersection_list:
-                    #     metrics_temp = calculate_metrics(logits, data_test_mask, data_y, lst, edges)
-                    #     metrics_list.append((name, metrics_temp))
 
                 else:
                     CountNotImproved += 1
@@ -669,17 +648,11 @@ try:
                                                                                                                              test_f1 * 100),file=logfile)
                 end_epoch = epoch
                 if CountNotImproved > args.NotImproved:
-
-                    # for name, metric_temp in metrics_list:
-                    #     print(name, metric_temp)
-                    #     print(name, metric_temp, file=logfile)
-
                     for class_id, class_info in class_detail[-1].items():
                         print(f"Class {class_id}: {class_info}")
                         print(f"Class {class_id}: {class_info}", file=logfile)
 
                     break
-            # dataset_to_print = args.Dataset.replace('/', '_') + str(args.to_undirected)
             dataset_to_print = dataset_to_print.replace('/', '_') + str(args.to_undirected)
             print(net_to_print+'layer'+str(args.layer), dataset_to_print, 'EndEpoch', str(end_epoch), 'lr', args.lr)
             print('Split{:3d}, acc: {:.2f}, bacc: {:.2f}, f1: {:.2f}'.format(split, test_acc * 100, test_bacc * 100, test_f1 * 100))
@@ -721,6 +694,5 @@ try:
 
 
 except KeyboardInterrupt:
-    # If interrupted, the signal handler will be triggered
     pass
 
