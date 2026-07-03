@@ -214,7 +214,7 @@ def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
 
 def get_name(args, IsDirectedGraph):
     dataset_to_print = args.Dataset.replace('/', '_')
-    dataset_to_print = 'feat' + str(args.feat_type) + str(args.X0_dim) + '_' + dataset_to_print
+    dataset_to_print = 'feat' + str(args.feat_type) + str(args.X0_dim)+ '_'+ dataset_to_print
     if not IsDirectedGraph:
         dataset_to_print = dataset_to_print + 'Undire'
     else:
@@ -231,7 +231,7 @@ def get_name(args, IsDirectedGraph):
     if args.net[1:3] == 'iA' or args.net == 'GAT':
         net_to_print = net_to_print + '_Head' + str(args.heads)
     if args.BN_model:
-        net_to_print = 'BNorm_' + net_to_print
+        net_to_print = 'BN_' + net_to_print
     else:
         net_to_print = 'NoBN_' + net_to_print
 
@@ -422,7 +422,6 @@ def load_dataset(args):
         #     data_y = int(data_y)
         if data_y.dtype.is_floating_point:
             data_y = data_y.to(torch.long)
-            # data_y = data_y.long()
         if not hasattr(data, 'train_mask'):
             data = random_planetoid_splits(data, data_y, train_ratio=0.48, val_ratio=0.1, num_splits=10, Flag=0)
             data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
@@ -442,7 +441,6 @@ def load_dataset(args):
     IsDirectedGraph = True
     # IsDirectedGraph = test_directed(edges)        # time consuming
     # print("This is directed graph: ", IsDirectedGraph)
-    # print("data_x", data_x.shape)  # [11701, 300])
 
     if IsDirectedGraph and args.to_undirected:
         edges = to_undirectedBen(edges)
