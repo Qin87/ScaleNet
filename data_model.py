@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
-
+import shutil
+import psutil
 import numpy as np
 import torch
 from torch_scatter import scatter_add
@@ -206,7 +207,6 @@ def get_name(args, IsDirectedGraph):
     if not IsDirectedGraph:
         dataset_to_print = dataset_to_print + 'Undire'
     else:
-        dataset_to_print = dataset_to_print + 'Direct'
         if args.to_reverse_edge:
             dataset_to_print = dataset_to_print + 'At'
         else:
@@ -220,9 +220,9 @@ def get_name(args, IsDirectedGraph):
     if args.net[1:3] == 'iA' or args.net == 'GAT':
         net_to_print = net_to_print + '_Head' + str(args.heads)
     if args.BN_model:
-        net_to_print = 'BNorm_' + net_to_print
+        net_to_print = 'BN_' + net_to_print
     else:
-        net_to_print = 'NoBNorm_' + net_to_print
+        net_to_print = 'NoBN_' + net_to_print
 
     if args.net == 'GCN':
         if args.add_selfloop == 1 or args.add_selfloop == 1:
@@ -258,7 +258,7 @@ def get_name(args, IsDirectedGraph):
         net_to_print = net_to_print + '_Imbal' + str(args.imb_ratio)
     else:
         net_to_print = net_to_print + '_Bal'
-    if args.net in ['ScaleNet', 'LargeScaleNet']:
+    if args.net == 'ScaleNet':
         if args.differ_AA or args.differ_AAt:
             if args.differ_AA:
                 diff = 'AA'+str(args.alphaDir)
@@ -267,7 +267,13 @@ def get_name(args, IsDirectedGraph):
             net_to_print = net_to_print + args.conv_type + '_diff'+diff + '_jk'+str(args.jk)+'_norm'+args.inci_norm
         else:
             net_to_print = net_to_print  +'_' + args.conv_type +'_part'+str(args.alphaDir)+'_'+ str(args.betaDir)+'_'+str(
-                args.gamaDir)+'_sloop'+str(args.add_selfloop)+str(args.rm_gen_sloop)+'_jk'+str(args.jk)+'_norm'+str(args.inci_norm)+'_zero'+str(args.zero_order)
+                args.gamaDir)+'_jk'+str(args.jk)+'_norm'+str(args.inci_norm)+'_exp'+str(args.exponent)
+    if args.net == 'LargeScaleNet':
+        net_to_print += ('_' + args.conv_type2 + '_part' + str(args.alphaDir) + '_' + str(args.betaDir) + '_' + str(
+            args.gamaDir) + '_jk' + str(args.jk) + '_norm' + str(args.inci_norm)
+            + '_zero'+str(args.zero_order) + '_struct'+str(args.structure)) + '_cat'+str(args.cat_A_X)+'_exp'+str(args.exponent)
+
+    net_to_print += '_s'+str(args.seed)+ '_dp'+str(args.dropout)+ '_split'+str(args.num_split)+'_n'+str(args.normalize)
 
     return net_to_print, dataset_to_print
 
@@ -409,7 +415,6 @@ def load_dataset(args):
             data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
 
         elif args.Dataset in ['ogbn-arxiv/', 'arxiv_year', 'fb100/penn94'] or (len(data.train_mask.shape) > 1 and data.train_mask.size(-1) > args.num_split-1):
-        # elif args.Dataset in ['ogbn-arxiv/'] or (len(data.train_mask.shape) > 1 and data.train_mask.size(-1) > 9):
             data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
         else:
             data = random_planetoid_splits(data, data_y, percls_trn=20, val_lb=30, Flag=1)

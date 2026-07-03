@@ -15,3 +15,5 @@
 *.iml
 /data/film
 !figureDraw/tel_400_noloop.png
+
+feat_norm.h
