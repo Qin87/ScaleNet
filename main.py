@@ -21,7 +21,7 @@ import torch.nn.functional as F
 from utils.args import parse_args
 from data.data_utils import keep_all_data, seed_everything, set_device
 from nets.edge_data import get_second_directed_adj, WCJ_get_directed_adj, Qin_get_second_directed_adj, Qin_get_directed_adj, get_appr_directed_adj2, Qin_get_second_directed_adj0, Qin_get_second_adj, Qin_get_all_directed_adj, normalize_row_edges
-from utils.data_model import CreatModel, log_file, get_name, load_dataset, feat_proximity, delete_edges, make_imbalanced, count_selfloop
+from utils.data_model import CreatModel, logfile, get_name, load_dataset, feat_proximity, delete_edges, make_imbalanced, count_selfloop
 from nets.DiG_NoConv import union_edges
 from nets.src2 import laplacian
 from nets.src2.quaternion_laplacian import process_quaternion_laplacian
@@ -193,7 +193,7 @@ if data_y.dim() > 1 and data_y.shape[1] == 1:
     data_y = data_y.squeeze(1)
 load_time = time.time()
 net_to_print, dataset_to_print = get_name(args, IsDirectedGraph)
-log_directory, log_file_name_with_timestamp = log_file(net_to_print, dataset_to_print, args)
+log_directory, log_file_name_with_timestamp = logfile(net_to_print, dataset_to_print, args)
 log_file_name_with_timestamp = 'main_' + log_file_name_with_timestamp
 if not os.path.exists(log_directory):
     os.makedirs(log_directory)

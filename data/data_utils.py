@@ -151,8 +151,31 @@ from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
 def load_directedData(args):
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     load_func, subset = args.Dataset.split('/')[0], args.Dataset.split('/')[1]
-    if load_func in ['pokec']:
-        dataset = PokecDataset(root=args.data_path+"pokec")
+    if load_func in ['malnet']:
+        dataset = MalNetTiny(root=args.data_path, split='train')
+
+        # Access the first graph in the dataset
+        # data = dataset[0]
+        #
+        # # Print some information about the dataset
+        # print(f'Dataset: {dataset}:')
+        # print('====================')
+        # print(f'Number of graphs: {len(dataset)}')
+        # print(f'Number of features: {dataset.num_features}')
+        # print(f'Number of classes: {dataset.num_classes}')
+        #
+        # # Print information about the first graph
+        # print('\nFirst graph:')
+        # print('====================')
+        # print(f'Number of nodes: {data.num_nodes}')
+        # print(f'Number of edges: {data.num_edges}')
+        # print(f'Average node degree: {data.num_edges / data.num_nodes:.2f}')
+        # print(f'Contains isolated nodes: {data.contains_isolated_nodes()}')
+        # print(f'Contains self-loops: {data.contains_self_loops()}')
+        # print(f'Is undirected: {data.is_undirected()}')
+        # return dataset
+    elif load_func in ['pokec']:
+        dataset = PokecDataset(root=args.data_path + "pokec")
         # Convert the first element to homogeneous and assign to _data
         dataset._data = dataset[0].to_homogeneous(
             node_attrs=['x', 'y', 'train_mask', 'val_mask', 'test_mask']
@@ -353,7 +376,6 @@ def load_dgl_graph(subset):
     else:
         raise NotImplementedError
     return dataset
-
 
 def random_planetoid_splits(data, y, train_ratio=0.7, val_ratio=0.1, percls_trn=20,  val_lb=30, num_splits=10, Flag=1):
     # Set new random planetoid splits based on provided ratios
