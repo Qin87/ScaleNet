@@ -129,7 +129,6 @@ def train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_wei
         scheduler.step(val_loss.item(), epoch)   # Scheduler expects float, not tensor
 
     return val_loss, new_edge_index, new_x, new_y, new_y_train
-# from sklearn.metrics import confusion_matrix
 from collections import Counter
 @torch.no_grad()
 def test():
@@ -392,8 +391,6 @@ try:
             print_memory("Before model load")
 
             model = CreatModel(args, num_features, n_cls, data_x, device, edges.shape[1]).to(device)
-            print('0000', model.convs[0].lins_dst_to_src[0].weight[0, :5])
-
             print_memory("After model load")
             if split==0:
                 print(model, file=logfile)
@@ -446,7 +443,6 @@ try:
                         data_test_mask = data_test_maskOrigin[:, 1].clone()
                     except:
                         data_test_mask = data_test_maskOrigin.clone()
-
 
             n_data0 = []  # num of train in each class
             for i in range(n_cls):
@@ -528,10 +524,6 @@ try:
             set_new_opt = True
             print_memory("Before training")
             for epoch in range(args.epoch):
-                print('epoch', epoch, model.convs[0].lins_dst_to_src[0].weight[0, :5])
-                print(data_train_mask.sum().item())
-                print(data_train_mask.nonzero().flatten()[:10])
-                print(edges.shape, edges[:, :5])
                 val_loss, new_edge_index, new_x, new_y, new_y_train = train(epoch, edge_in, in_weight, edge_out, out_weight, SparseEdges, edge_weight, X_real, X_img, Sigedge_index, norm_real,norm_imag,
                                                                                 X_img_i, X_img_j, X_img_k,norm_imag_i, norm_imag_j, norm_imag_k, Quaedge_index)
                 accs, baccs, f1s, logits, class_detail = test()
@@ -555,7 +547,7 @@ try:
                     CountNotImproved += 1
                 if epoch < 200 and epoch%20 == 1:
                     print('epoch: {:3d}, val_loss:{:2f},val_acc: {:.2f}, test_acc: {:.2f}, bacc: {:.2f}, tmp_test_acc: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, val_acc*100, test_acc * 100, test_bacc * 100, tmp_test_acc * 100, test_f1 * 100))
-                if epoch%200 == 0 :
+                if epoch%200 == 0:
                     print('epoch: {:3d}, val_loss:{:2f}, test_acc: {:.2f}, bacc: {:.2f}, tmp_test_acc: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_acc*100,
                                                                                                                               test_f1 * 100))
                     print('epoch: {:3d}, val_loss:{:2f}, test_acc: {:.2f}, bacc: {:.2f}, tmp_test_f1: {:.2f}, f1: {:.2f}'.format(epoch, val_loss, test_acc * 100, test_bacc * 100, tmp_test_f1*100,

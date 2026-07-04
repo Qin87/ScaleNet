@@ -100,7 +100,7 @@ WikiCS/:
 dgl/pubmed:
   num_split: 10
   net: ScaleNet
-  conv_type: "dir-gcn"   # sage
+  conv_type: "dir-gcn"   #
   nonlinear: 1
   layer: 4
   lr: 0.01
@@ -196,7 +196,7 @@ directed-roman-empire/:
   alphaDir: 0.5   #
   betaDir: -1     # 0 is 88, 1 is 20
   gamaDir: -1     # all much worse
-  conv_type: "dir-sage"   # gcn+mlp is worse  # for ScaleNet
+  conv_type: "dir-gcn"   #
   zero_order: 1  # for LargeScaleNet
   exponent: -0.25  # 92.9 for -0.5
 
@@ -229,7 +229,8 @@ arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
 ogbn-arxiv/:
   net: LargeScaleNet
   num_split: 1
-  conv_type: dir-sage
+  conv_type: dir-gcn
+  zero_order: 1
   layer: 4    # 69.68(4layer)
 
   lr: 0.01
@@ -258,7 +259,7 @@ snap-patents/:
   BN_model: 1   # 1:74.6, 0:74.2
   lr: 0.01   # sure
   layer: 5  # sure
-  hid_dim: 32  # sure
+#  hid_dim: 32  # sure
   jk: 'max'   # sure
   normalize: 1   # sure
   dropout: 0.0  # sure
