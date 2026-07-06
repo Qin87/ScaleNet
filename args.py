@@ -15,7 +15,7 @@ def parse_args():
 
     parser.add_argument("--zero_order", type=int, help="If include zero order", default=1)
     # for DirGNN
-    parser.add_argument("--conv_type", type=str, help="DirGNN Model", default="dir-gcn")
+    parser.add_argument("--conv_type", type=str, help="DirGNN Model, dir_sage=dir_gcn+zero_order+rownorm", default="dir-gcn")
     parser.add_argument("--normalize", type=int, help="whether use batch normalization in ScaleNet, model:0/1", default=0)
     parser.add_argument("--jk", choices=["max", "cat", 'weighted',  0], default=0)
     parser.add_argument("--jk_inner", choices=["max", "cat", 'lstm', 0, 'weighted'], default=0)

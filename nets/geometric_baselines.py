@@ -5,8 +5,7 @@ import torch.nn.functional as F
 import torch_sparse
 # from dgl.backend.mxnet import no_grad
 from torch import triu
-from torch.nn import Linear
-from torch.nn import ModuleList, init
+from torch.nn import Linear, ModuleList, init
 from torch_geometric.nn import GCNConv, GATConv, SAGEConv, ChebConv, GINConv, APPNP
 from torch.nn import Parameter
 from torch_geometric.utils import remove_self_loops
@@ -20,867 +19,11 @@ from nets.gcn import gcn_norm
 from torch_geometric.utils import add_self_loops
 
 from nets.jumping_weight import JumpingKnowledge
+from nets.scalecon import FaberConv, ScaleConv
+from utils import get_norm_adj
 
-####################################################################
-# Link Prediction Models
-####################################################################
-'''
-def pairwise_similar(x):
-    x = torch.tanh(x)
-    xx = torch.exp(torch.matmul(x, x.T))
-    xx = xx - torch.diag(torch.diag(xx, 0))
-    return xx, torch.sum(xx, 1)+1e-8
-'''
 
-
-class APPNP_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, alpha=0.1, dropout=False, K=1):
-        super(APPNP_Link, self).__init__()
-        self.dropout = dropout
-
-        self.line1 = nn.Linear(input_dim, filter_num)
-        self.line2 = nn.Linear(filter_num, filter_num)
-
-        self.conv1 = APPNP(K=K, alpha=alpha)
-        self.conv2 = APPNP(K=K, alpha=alpha)
-
-        self.linear = nn.Linear(filter_num * 2, out_dim)
-
-    def forward(self, x, edge_index, index):
-        x = self.line1(x)
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-
-        x = self.line2(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        x = torch.cat((x[index[:, 0]], x[index[:, 1]]), axis=-1)
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = self.linear(x)
-
-        return F.log_softmax(x, dim=1)
-
-
-class GIN_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, dropout=False):
-        super(GIN_Link, self).__init__()
-        self.dropout = dropout
-        self.line1 = nn.Linear(input_dim, filter_num)
-        self.line2 = nn.Linear(filter_num, filter_num)
-
-        self.conv1 = GINConv(self.line1)
-        self.conv2 = GINConv(self.line2)
-        self.linear = nn.Linear(filter_num * 2, out_dim)
-
-    def forward(self, x, edge_index, index):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        x = torch.cat((x[index[:, 0]], x[index[:, 1]]), axis=-1)
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = self.linear(x)
-
-        return F.log_softmax(x, dim=1)
-
-
-class GCN_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, dropout=False):
-        super(GCN_Link, self).__init__()
-        self.dropout = dropout
-        self.conv1 = GCNConv(input_dim, filter_num)
-        self.conv2 = GCNConv(filter_num, filter_num)
-        self.linear = nn.Linear(filter_num * 2, out_dim)
-
-    def forward(self, x, edge_index, index):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        x = torch.cat((x[index[:, 0]], x[index[:, 1]]), axis=-1)
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = self.linear(x)
-
-        return F.log_softmax(x, dim=1)
-
-
-class Cheb_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, K, dropout=False):
-        super(Cheb_Link, self).__init__()
-        self.dropout = dropout
-        self.conv1 = ChebConv(input_dim, filter_num, K)
-        self.conv2 = ChebConv(filter_num, filter_num, K)
-        self.linear = nn.Linear(filter_num * 2, out_dim)
-
-    def forward(self, x, edge_index, index):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        x = torch.cat((x[index[:, 0]], x[index[:, 1]]), axis=-1)
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = self.linear(x)
-
-        return F.log_softmax(x, dim=1)
-
-
-class SAGE_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, dropout=False):
-        super(SAGE_Link, self).__init__()
-        self.dropout = dropout
-        self.conv1 = SAGEConv(input_dim, filter_num)
-        self.conv2 = SAGEConv(filter_num, filter_num)
-        # self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-        self.linear = nn.Linear(filter_num * 2, out_dim)
-
-    def forward(self, x, edge_index, index):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        x = torch.cat((x[index[:, 0]], x[index[:, 1]]), axis=-1)
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = self.linear(x)
-
-        return F.log_softmax(x, dim=1)
-
-
-class GAT_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, heads, filter_num, dropout=False):
-        super(GAT_Link, self).__init__()
-        self.dropout = dropout
-        self.conv1 = GATConv(input_dim, filter_num, heads=heads)
-        self.conv2 = GATConv(filter_num * heads, filter_num, heads=heads)
-        self.linear = nn.Linear(filter_num * heads * 2, out_dim)
-
-    def forward(self, x, edge_index, index):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        x = torch.cat((x[index[:, 0]], x[index[:, 1]]), axis=-1)
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = self.linear(x)
-
-        return F.log_softmax(x, dim=1)
-
-
-'''
-####################################################################
-# Link Prediction Models in old versions of the paper
-####################################################################
-class Sym_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, dropout = False):
-        super(Sym_Link, self).__init__()
-        self.dropout = dropout
-        self.conv11 = GCNConv(input_dim, filter_num)
-        self.conv12 = GCNConv(input_dim, filter_num)
-        self.conv13 = GCNConv(input_dim, filter_num)
-
-        self.conv21 = GCNConv(filter_num*3, filter_num)
-        self.conv22 = GCNConv(filter_num*3, filter_num)
-        self.conv23 = GCNConv(filter_num*3, filter_num)
-
-        self.Conv = nn.Conv1d(filter_num*3, out_dim, kernel_size=1)
-
-    def forward(self, x, edge_index, edge_in, in_w, edge_out, out_w, positive, negative):
-        x1 = self.conv11(x, edge_index)
-        x2 = self.conv12(x, edge_in, in_w)
-        x3 = self.conv13(x, edge_out, out_w)
-        x = torch.cat((x1, x2, x3), axis = -1)
-        x = F.relu(x)
-
-        x1 = self.conv21(x, edge_index)
-        x2 = self.conv21(x, edge_in, in_w)
-        x3 = self.conv23(x, edge_out, out_w)
-        x = torch.cat((x1, x2, x3), axis = -1)
-        x = F.relu(x)
-
-        pos = x[positive[:,0]] - x[positive[:,1]]
-        neg = x[negative[:,0]] - x[negative[:,1]]
-        x = torch.cat((pos, neg), axis = 0)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0,2,1))
-        x = self.Conv(x)
-        x = x.permute((0,2,1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-class APPNP_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, alpha = 0.1, dropout = False, K=1):
-        super(APPNP_Link, self).__init__()
-        self.dropout = dropout
-
-        self.line1 = nn.Linear(input_dim, filter_num)
-        self.line2 = nn.Linear(filter_num, filter_num)
-
-        self.conv1 = APPNP(K=K, alpha=alpha)
-        self.conv2 = APPNP(K=K, alpha=alpha)
-
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-    def forward(self, x, edge_index, positive, negative):
-        x = self.line1(x)
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-
-        x = self.line2(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        pos = x[positive[:,0]] - x[positive[:,1]]
-        neg = x[negative[:,0]] - x[negative[:,1]]
-        x = torch.cat((pos, neg), axis = 0)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0,2,1))
-        x = self.Conv(x)
-        x = x.permute((0,2,1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-class GIN_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, dropout = False):
-        super(GIN_Link, self).__init__()
-        self.dropout = dropout
-        self.line1 = nn.Linear(input_dim, filter_num)
-        self.line2 = nn.Linear(filter_num, filter_num)
-
-        self.conv1 = GINConv(self.line1)
-        self.conv2 = GINConv(self.line2)
-
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-    def forward(self, x, edge_index, positive, negative):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        pos = x[positive[:,0]] - x[positive[:,1]]
-        neg = x[negative[:,0]] - x[negative[:,1]]
-        x = torch.cat((pos, neg), axis = 0)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0,2,1))
-        x = self.Conv(x)
-        x = x.permute((0,2,1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-class GCN_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, dropout = False):
-        super(GCN_Link, self).__init__()
-        self.dropout = dropout
-        self.conv1 = GCNConv(input_dim, filter_num)
-        self.conv2 = GCNConv(filter_num, filter_num)
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-    def forward(self, x, edge_index, positive, negative):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        pos = x[positive[:,0]] - x[positive[:,1]]
-        neg = x[negative[:,0]] - x[negative[:,1]]
-        x = torch.cat((pos, neg), axis = 0)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0,2,1))
-        x = self.Conv(x)
-        x = x.permute((0,2,1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-class Cheb_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, K, dropout = False):
-        super(Cheb_Link, self).__init__()
-        self.dropout = dropout
-        self.conv1 = ChebConv(input_dim, filter_num, K)
-        self.conv2 = ChebConv(filter_num, filter_num, K)
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-    def forward(self, x, edge_index, positive, negative):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        pos = x[positive[:,0]] - x[positive[:,1]]
-        neg = x[negative[:,0]] - x[negative[:,1]]
-        x = torch.cat((pos, neg), axis = 0)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0,2,1))
-        x = self.Conv(x)
-        x = x.permute((0,2,1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-class SAGE_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, dropout = False):
-        super(SAGE_Link, self).__init__()
-        self.dropout = dropout
-        self.conv1 = SAGEConv(input_dim, filter_num)
-        self.conv2 = SAGEConv(filter_num, filter_num)
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-    def forward(self, x, edge_index, positive, negative):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        pos = x[positive[:,0]] - x[positive[:,1]]
-        neg = x[negative[:,0]] - x[negative[:,1]]
-        x = torch.cat((pos, neg), axis = 0)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0,2,1))
-        x = self.Conv(x)
-        x = x.permute((0,2,1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-class GAT_Link(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, heads, filter_num, dropout = False):
-        super(GAT_Link, self).__init__()
-        self.dropout = dropout
-        self.conv1 = GATConv(input_dim, filter_num, heads=heads)
-        self.conv2 = GATConv(filter_num*heads, filter_num, heads=heads)
-        self.Conv = nn.Conv1d(filter_num*heads, out_dim, kernel_size=1)
-
-    def forward(self, x, edge_index, positive, negative):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        pos = x[positive[:,0]] - x[positive[:,1]]
-        neg = x[negative[:,0]] - x[negative[:,1]]
-        x = torch.cat((pos, neg), axis = 0)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0,2,1))
-        x = self.Conv(x)
-        x = x.permute((0,2,1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-'''
-
-
-####################################################################
-# Node Classification Models
-####################################################################
-
-
-class GATModel(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, heads, filter_num, dropout=False, layer=2):
-        super(GATModel, self).__init__()
-        self.dropout = dropout
-        self.conv1 = GATConv(input_dim, filter_num, heads=heads)
-        self.conv2 = GATConv(filter_num * heads, filter_num, heads=heads)
-        self.Conv = nn.Conv1d(filter_num * heads, out_dim, kernel_size=1)
-        self.layer = layer
-        if layer == 3:
-            self.conv3 = GATConv(filter_num * heads, filter_num, heads=heads)
-
-    def forward(self, data):
-        x, edge_index = data.x, data.edge_index
-
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-        if self.layer == 3:
-            x = self.conv3(x, edge_index)
-            x = F.relu(x)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-
-class SAGEModel(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, dropout=False, layer=2):
-        super(SAGEModel, self).__init__()
-        self.dropout = dropout
-        self.conv1 = SAGEConv(input_dim, filter_num)
-        self.conv2 = SAGEConv(filter_num, filter_num)
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-        self.layer = layer
-        if layer == 3:
-            self.conv3 = SAGEConv(filter_num, filter_num)
-
-    def forward(self, data):
-        x, edge_index = data.x, data.edge_index
-
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        if self.layer == 3:
-            x = self.conv3(x, edge_index)
-            x = F.relu(x)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-class SAGEModelBen(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, dropout=False, layer=2):
-        super(SAGEModelBen, self).__init__()
-        self.dropout = dropout
-        self.conv1 = SAGEConv(input_dim, filter_num)
-        self.conv2 = SAGEConv(filter_num, filter_num)
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-        self.layer = layer
-        if layer == 3:
-            self.conv3 = SAGEConv(filter_num, filter_num)
-
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        if self.layer == 3:
-            x = self.conv3(x, edge_index)
-            x = F.relu(x)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-class SAGEModelBen1(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, hid_dim, dropout=False, layer=2):
-        super(SAGEModelBen1, self).__init__()
-        self.dropout = dropout
-        self.conv1 = SAGEConv(input_dim, hid_dim)
-        self.conv2 = SAGEConv(hid_dim, out_dim)
-        # self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-        #
-        # self.reg_params = list(self.conv1.parameters())
-        # self.non_reg_params = self.conv2.parameters()
-
-        self.layer = layer
-        if layer == 3:
-            self.conv3 = SAGEConv(hid_dim, hid_dim)
-
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        if self.layer == 3:
-            x = self.conv3(x, edge_index)
-            x = F.relu(x)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        # x = self.Conv(x)
-        # x = x.permute((0, 2, 1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-
-class GCNModel(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, dropout=False, layer=2):
-        super(GCNModel, self).__init__()
-        self.dropout = dropout
-        self.conv1 = GCNConv(input_dim, filter_num)
-        self.conv2 = GCNConv(filter_num, filter_num)
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-        self.layer = layer
-        if layer == 3:
-            self.conv3 = GCNConv(filter_num, filter_num)
-
-    def forward(self, data):
-        x, edge_index = data.x, data.edge_index
-
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        if self.layer == 3:
-            x = self.conv3(x, edge_index)
-            x = F.relu(x)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)  # adds a singleton dimension at the beginning of the tensor x.
-        x = x.permute((0, 2,
-                       1))  # If the original shape of x was [batch_size, original_dim1, original_dim2], the result of this permutation will be [batch_size, original_dim2, original_dim1].
-        x = self.Conv(
-            x)  # applies a convolutional operation (assuming self.Conv is a convolutional layer) to the tensor x
-        x = x.permute((0, 2, 1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-
-class ChebModelBen(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, K, dropout=False, layer=2):
-        super(ChebModelBen, self).__init__()
-        self.dropout = dropout
-        self.conv1 = ChebConv(input_dim, filter_num, K)
-        self.conv2 = ChebConv(filter_num, filter_num, K)
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-        self.layer = layer
-        if layer == 3:
-            self.conv3 = ChebConv(filter_num, filter_num, K)
-
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        if self.layer == 3:
-            x = self.conv3(x, edge_index)
-            x = F.relu(x)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-
-class ChebModel(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, K, dropout=False, layer=2):
-        super(ChebModel, self).__init__()
-        self.dropout = dropout
-        self.conv1 = ChebConv(input_dim, filter_num, K)
-        self.conv2 = ChebConv(filter_num, filter_num, K)
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-        self.layer = layer
-        if layer == 3:
-            self.conv3 = ChebConv(filter_num, filter_num, K)
-
-    def forward(self, data):
-        x, edge_index = data.x, data.edge_index
-
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        if self.layer == 3:
-            x = self.conv3(x, edge_index)
-            x = F.relu(x)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-
-class APPNP_ModelBen(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, alpha=0.1, dropout=False, layer=3):
-        super(APPNP_ModelBen, self).__init__()
-        self.dropout = dropout
-        self.line1 = nn.Linear(input_dim, filter_num)
-        self.line2 = nn.Linear(filter_num, filter_num)
-
-        self.conv1 = APPNP(K=10, alpha=alpha)
-        self.conv2 = APPNP(K=10, alpha=alpha)
-        self.layer = layer
-        if layer == 3:
-            self.line3 = nn.Linear(filter_num, filter_num)
-            self.conv3 = APPNP(K=10, alpha=alpha)
-
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-    def forward(self, x, edge_index):
-        x = self.line1(x)
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-
-        x = self.line2(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        if self.layer == 3:
-            x = self.line3(x)
-            x = self.conv3(x, edge_index)
-            x = F.relu(x)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-
-class APPNP_Model(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, alpha=0.1, dropout=False, layer=3):
-        super(APPNP_Model, self).__init__()
-        self.dropout = dropout
-        self.line1 = nn.Linear(input_dim, filter_num)
-        self.line2 = nn.Linear(filter_num, filter_num)
-
-        self.conv1 = APPNP(K=10, alpha=alpha)
-        self.conv2 = APPNP(K=10, alpha=alpha)
-        self.layer = layer
-        if layer == 3:
-            self.line3 = nn.Linear(filter_num, filter_num)
-            self.conv3 = APPNP(K=10, alpha=alpha)
-
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-    def forward(self, x, edge_index):
-        # x, edge_index = data.x, data.edge_index
-
-        x = self.line1(x)
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-
-        x = self.line2(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        if self.layer == 3:
-            x = self.line3(x)
-            x = self.conv3(x, edge_index)
-            x = F.relu(x)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-
-class GIN_ModelBen2(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, hid_dim, dropout=False, layer=2):
-        super(GIN_ModelBen2, self).__init__()
-        self.dropout = dropout
-        self.line1 = nn.Linear(input_dim, hid_dim)
-        self.line2 = nn.Linear(hid_dim, out_dim)
-
-        self.conv1 = GINConv(self.line1)
-        self.conv2 = GINConv(self.line2)
-
-        # self.Conv = nn.Conv1d(hid_dim, out_dim, kernel_size=1)
-        self.layer = layer
-        if layer == 3:
-            self.line3 = nn.Linear(hid_dim, hid_dim)
-            self.conv3 = GINConv(self.line3)
-
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-        if self.layer == 3:
-            x = self.conv3(x, edge_index)
-            x = F.relu(x)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-
-class GIN_Model(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, dropout=False, layer=2):
-        super(GIN_Model, self).__init__()
-        self.dropout = dropout
-        self.line1 = nn.Linear(input_dim, filter_num)
-        self.line2 = nn.Linear(filter_num, filter_num)
-
-        self.conv1 = GINConv(self.line1)
-        self.conv2 = GINConv(self.line2)
-
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-        self.layer = layer
-        if layer == 3:
-            self.line3 = nn.Linear(filter_num, filter_num)
-            self.conv3 = GINConv(self.line3)
-
-    def forward(self, data):
-        x, edge_index = data.x, data.edge_index
-
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-        if self.layer == 3:
-            x = self.conv3(x, edge_index)
-            x = F.relu(x)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-
-class GATModelBen(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, heads, filter_num, dropout=False, layer=2):
-        super(GATModelBen, self).__init__()
-        self.dropout = dropout
-        self.conv1 = GATConv(input_dim, filter_num, heads=heads)
-        self.conv2 = GATConv(filter_num * heads, filter_num, heads=heads)
-        self.Conv = nn.Conv1d(filter_num * heads, out_dim, kernel_size=1)
-        self.layer = layer
-        if layer == 3:
-            self.conv3 = GATConv(filter_num * heads, filter_num, heads=heads)
-
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-        if self.layer == 3:
-            x = self.conv3(x, edge_index)
-            x = F.relu(x)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)
-        x = x.permute((0, 2, 1))
-        x = self.Conv(x)
-        x = x.permute((0, 2, 1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-class GCNModelBen(torch.nn.Module):
-    def __init__(self, input_dim, out_dim, filter_num, dropout=False, layer=2):
-        super(GCNModelBen, self).__init__()
-        self.dropout = dropout
-        self.conv1 = GCNConv(input_dim, filter_num)
-        self.conv2 = GCNConv(filter_num, filter_num)
-        self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-        self.layer = layer
-        if layer == 3:
-            self.conv3 = GCNConv(filter_num, filter_num)
-
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-
-        if self.layer == 3:
-            x = self.conv3(x, edge_index)
-            x = F.relu(x)
-
-        if self.dropout > 0:
-            x = F.dropout(x, self.dropout, training=self.training)
-        x = x.unsqueeze(0)      # adds a singleton dimension at the beginning of the tensor x.
-        x = x.permute((0, 2, 1))    # If the original shape of x was [batch_size, original_dim1, original_dim2], the result of this permutation will be [batch_size, original_dim2, original_dim1].
-        x = self.Conv(x)    # applies a convolutional operation (assuming self.Conv is a convolutional layer) to the tensor x
-        x = x.permute((0, 2, 1)).squeeze()
-
-        return F.log_softmax(x, dim=1)
-
-    class SAGEModelBen(torch.nn.Module):
-        def __init__(self, input_dim, out_dim, filter_num, dropout=False, layer=2):
-            super(SAGEModelBen, self).__init__()
-            self.dropout = dropout
-            self.conv1 = SAGEConv(input_dim, filter_num)
-            self.conv2 = SAGEConv(filter_num, filter_num)
-            self.Conv = nn.Conv1d(filter_num, out_dim, kernel_size=1)
-
-            self.layer = layer
-            if layer == 3:
-                self.conv3 = SAGEConv(filter_num, filter_num)
-
-        def forward(self, x, edge_index):
-            x = self.conv1(x, edge_index)
-            x = F.relu(x)
-            x = self.conv2(x, edge_index)
-            x = F.relu(x)
-
-            if self.layer == 3:
-                x = self.conv3(x, edge_index)
-                x = F.relu(x)
-
-            if self.dropout > 0:
-                x = F.dropout(x, self.dropout, training=self.training)
-            x = x.unsqueeze(0)
-            x = x.permute((0, 2, 1))
-            x = self.Conv(x)
-            x = x.permute((0, 2, 1)).squeeze()
-
-            return F.log_softmax(x, dim=1)
-
-def get_conv(conv_type, input_dim, output_dim, alpha):      # from Rossi(LoG)
+def get_conv(conv_type, input_dim, output_dim, alpha, args=None):      # from Rossi(LoG)
     if conv_type == "gcn":
         return GCNConv(input_dim, output_dim, add_self_loops=False)
     elif conv_type == "sage":
@@ -888,7 +31,7 @@ def get_conv(conv_type, input_dim, output_dim, alpha):      # from Rossi(LoG)
     elif conv_type == "gat":
         return GATConv(input_dim, output_dim, heads=1)
     elif conv_type == "dir-gcn":
-        return DirGCNConv(input_dim, output_dim, alpha)
+        return DirGCNConv(input_dim, output_dim, alpha, args)
         # return DirGCNConv(input_dim, output_dim)
     elif conv_type == "dir-sage":
         return DirSageConv(input_dim, output_dim, alpha)
@@ -899,8 +42,8 @@ def get_conv(conv_type, input_dim, output_dim, alpha):      # from Rossi(LoG)
 
 class DirGCNConv(torch.nn.Module):
     # def __init__(self, input_dim, output_dim, alpha):
-    def __init__(self, input_dim, output_dim, alpha):
-        super(DirGCNConv, self).__init__()
+    def __init__(self, input_dim, output_dim, alpha, args):
+        super().__init__()
 
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -948,7 +91,7 @@ class DirGCNConv_2(torch.nn.Module):
             self.linx = nn.ModuleList([Linear(input_dim, output_dim) for i in range(4)])
 
             self.batch_norm2 = nn.BatchNorm1d(output_dim)
-            self.conv2_1 = Linear(output_dim*2, output_dim)
+            self.conv2_1 = Linear(output_dim * 2, output_dim)
         elif args.conv_type == 'dir-sage':
             self.lin_src_to_dst = SAGEConv(input_dim, output_dim,  root_weight=True)
             self.lin_dst_to_src = SAGEConv(input_dim, output_dim, root_weight=True)
@@ -972,8 +115,6 @@ class DirGCNConv_2(torch.nn.Module):
         else:
             raise NotImplementedError
 
-        self.add_selfloop = args.add_selfloop
-        self.rm_gen_sloop = args.rm_gen_sloop
         self.differ_AA = args.differ_AA
         self.differ_AAt = args.differ_AAt
         if self.differ_AA or self.differ_AAt:
@@ -999,28 +140,10 @@ class DirGCNConv_2(torch.nn.Module):
         self.edge_in_out, self.edge_out_in, self.edge_in_in, self.edge_out_out = None, None, None, None
         self.Intersect_alpha, self.Union_alpha, self.Intersect_beta, self.Union_beta, self.Intersect_gama, self.Union_gama = None, None, None, None, None, None
 
-        num_scale = 3
-        jumping_knowledge = args.jk_inner
-        self.jumping_knowledge_inner = jumping_knowledge
-        if jumping_knowledge:
-            input_dim_jk = output_dim * num_scale if jumping_knowledge == "cat" else output_dim
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=input_dim, num_layers=3)
-            self.linjk = Linear(input_dim_jk, output_dim)
-
-
     def forward(self, x, edge_index):
         device = edge_index.device
-        if self.add_selfloop == 1:
-            edge_index, _ = add_self_loops(edge_index, fill_value=1)
-        elif self.add_selfloop == -1:
-            edge_index, _ = remove_self_loops(edge_index)
         row, col = edge_index
         num_nodes = x.shape[0]
-
-        if self.rm_gen_sloop:
-            rm_gen_sLoop = True
-        else:
-            rm_gen_sLoop = False
 
         if self.conv_type == 'dir-gcn':
             if self.adj_norm is None:
@@ -1080,7 +203,7 @@ class DirGCNConv_2(torch.nn.Module):
         elif self.conv_type in ['dir-gat', 'dir-sage']:
             edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
             if not(self.beta == -1 and self.gama == -1) and self.edge_in_in is None:
-                self.edge_in_out, self.edge_out_in, self.edge_in_in, self.edge_out_out =get_higher_edge_index(edge_index, num_nodes, rm_gen_sLoop=rm_gen_sLoop)
+                self.edge_in_out, self.edge_out_in, self.edge_in_in, self.edge_out_out =get_higher_edge_index(edge_index, num_nodes)
                 self.Intersect_alpha, self.Union_alpha = edge_index_u_i(edge_index, edge_index_t)
                 self.Intersect_beta, self.Union_beta = edge_index_u_i(self.edge_in_out, self.edge_out_in)
                 self.Intersect_gama, self.Union_gama = edge_index_u_i(self.edge_in_in, self.edge_out_out)
@@ -1109,21 +232,15 @@ class DirGCNConv_2(torch.nn.Module):
             else:
                 out2 = torch.zeros_like(out1)
                 out3 = torch.zeros_like(out1)
-
         else:
             raise NotImplementedError
 
         xs = [out1, out2, out3]
 
-        if self.jumping_knowledge_inner:
-            x = self.jump(xs)
-            x = self.linjk(x)
-        else:
-            x = sum(out for out in xs)
+        x = sum(out for out in xs)
 
         if self.BN_model:
             x = self.batch_norm2(x)
-
         return x
 
 
@@ -1191,8 +308,6 @@ class HighFreConv(torch.nn.Module):
             raise NotImplementedError
 
 
-        self.add_selfloop = args.add_selfloop
-        self.rm_gen_sloop = args.rm_gen_sloop
         self.differ_AA = args.differ_AA
         self.differ_AAt = args.differ_AAt
         if self.differ_AA or self.differ_AAt:
@@ -1220,11 +335,11 @@ class HighFreConv(torch.nn.Module):
 
         num_scale = 3
 
-        jumping_knowledge = args.jk_inner
-        self.jumping_knowledge_inner = jumping_knowledge
-        if jumping_knowledge:
-            input_dim_jk = output_dim * num_scale if jumping_knowledge == "cat" else output_dim
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=input_dim, num_layers=3)
+        jk = args.jk_inner
+        self.jk_inner = jk
+        if jk:
+            input_dim_jk = output_dim * num_scale if jk == "cat" else output_dim
+            self.jump = JumpingKnowledge(mode=jk, channels=input_dim, num_layers=3)
             self.lin = Linear(input_dim_jk, output_dim)
 
     def forward(self, x, edge_index):
@@ -1254,7 +369,7 @@ class HighFreConv(torch.nn.Module):
         elif self.conv_type in ['dir-gat', 'dir-sage']:
             edge_index_t = torch.stack([edge_index[1], edge_index[0]], dim=0)
             if not(self.beta == -1 and self.gama == -1) and self.edge_in_in is None:
-                self.edge_in_out, self.edge_out_in, self.edge_in_in, self.edge_out_out =get_higher_edge_index(edge_index, num_nodes, rm_gen_sLoop=rm_gen_sLoop)
+                self.edge_in_out, self.edge_out_in, self.edge_in_in, self.edge_out_out =get_higher_edge_index(edge_index, num_nodes)
                 self.Intersect_alpha, self.Union_alpha = edge_index_u_i(edge_index, edge_index_t)
                 self.Intersect_beta, self.Union_beta = edge_index_u_i(self.edge_in_out, self.edge_out_in)
                 self.Intersect_gama, self.Union_gama = edge_index_u_i(self.edge_in_in, self.edge_out_out)
@@ -1281,7 +396,7 @@ class HighFreConv(torch.nn.Module):
 
         xs = [out1, out2, out3]
 
-        if self.jumping_knowledge_inner:
+        if self.jk_inner:
             x = self.jump(xs)
             x = self.lin(x)
         else:
@@ -1326,8 +441,6 @@ class RanConv(torch.nn.Module):
             raise NotImplementedError
 
 
-        self.add_selfloop = args.add_selfloop
-        self.rm_gen_sloop = args.rm_gen_sloop
         self.differ_AA = args.differ_AA
         self.differ_AAt = args.differ_AAt
         if self.differ_AA or self.differ_AAt:
@@ -1354,28 +467,18 @@ class RanConv(torch.nn.Module):
         self.Intersect_alpha, self.Union_alpha, self.Intersect_beta, self.Union_beta, self.Intersect_gama, self.Union_gama = None, None, None, None, None, None
 
         num_scale = 3
-        jumping_knowledge = args.jk_inner
-        self.jumping_knowledge_inner = jumping_knowledge
-        if jumping_knowledge:
-            input_dim_jk = output_dim * num_scale if jumping_knowledge == "cat" else output_dim
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=input_dim, num_layers=3)
+        jk = args.jk_inner
+        self.jk_inner = jk
+        if jk:
+            input_dim_jk = output_dim * num_scale if jk == "cat" else output_dim
+            self.jump = JumpingKnowledge(mode=jk, channels=input_dim, num_layers=3)
             self.lin = Linear(input_dim_jk, output_dim)
 
 
     def forward(self, x, edge_index):
         device = edge_index.device
-        if self.add_selfloop == 1:
-
-            edge_index, _ = add_self_loops(edge_index, fill_value=1)
-        elif self.add_selfloop == 'remove':
-            edge_index, _ = remove_self_loops(edge_index)
         row, col = edge_index
         num_nodes = x.shape[0]
-
-        if self.rm_gen_sloop == 'remove':
-            rm_gen_sLoop = True
-        else:
-            rm_gen_sLoop = False
 
         if self.conv_type == 'dir-gcn':
             if self.adj_norm is None:
@@ -1461,7 +564,7 @@ class RanConv(torch.nn.Module):
 
         xs = [out1, out2, out3]
 
-        if self.jumping_knowledge_inner:
+        if self.jk_inner:
             x = self.jump(xs)
             x = self.lin(x)
         else:
@@ -1508,8 +611,6 @@ class DirConv_tSNE(torch.nn.Module):
             raise NotImplementedError
 
 
-        self.add_selfloop = args.add_selfloop
-        self.rm_gen_sloop = args.rm_gen_sloop
         self.differ_AA = args.differ_AA
         self.differ_AAt = args.differ_AAt
         if self.differ_AA or self.differ_AAt:
@@ -1536,27 +637,18 @@ class DirConv_tSNE(torch.nn.Module):
         self.Intersect_alpha, self.Union_alpha, self.Intersect_beta, self.Union_beta, self.Intersect_gama, self.Union_gama = None, None, None, None, None, None
 
         num_scale = 3
-        jumping_knowledge = args.jk_inner
-        self.jumping_knowledge_inner = jumping_knowledge
-        if jumping_knowledge:
-            input_dim_jk = output_dim * num_scale if jumping_knowledge == "cat" else output_dim
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=input_dim, num_layers=3)
+        jk = args.jk_inner
+        self.jk_inner = jk
+        if jk:
+            input_dim_jk = output_dim * num_scale if jk == "cat" else output_dim
+            self.jump = JumpingKnowledge(mode=jk, channels=input_dim, num_layers=3)
             self.lin = Linear(input_dim_jk, output_dim)
+
 
     def forward(self, x, edge_index, y, epoch):
         device = edge_index.device
-        if self.add_selfloop == 1:
-
-            edge_index, _ = add_self_loops(edge_index, fill_value=1)
-        elif self.add_selfloop == 'remove':
-            edge_index, _ = remove_self_loops(edge_index)
         row, col = edge_index
         num_nodes = x.shape[0]
-
-        if self.rm_gen_sloop == 'remove':
-            rm_gen_sLoop = True
-        else:
-            rm_gen_sLoop = False
 
         if self.conv_type == 'dir-gcn':
             if self.adj_norm is None:
@@ -1644,7 +736,7 @@ class DirConv_tSNE(torch.nn.Module):
 
         xs = [out1, out2, out3]
 
-        if self.jumping_knowledge_inner:
+        if self.jk_inner:
             x = self.jump(xs)
             x = self.lin(x)
         else:
@@ -2064,8 +1156,6 @@ class DirGCNConv_sloop(torch.nn.Module):
         else:
             raise NotImplementedError
 
-        self.add_selfloop = args.add_selfloop
-        self.rm_gen_sloop = args.rm_gen_sloop
         self.differ_AA = args.differ_AA
         self.differ_AAt = args.differ_AAt
         if self.differ_AA or self.differ_AAt:
@@ -2092,26 +1182,21 @@ class DirGCNConv_sloop(torch.nn.Module):
         self.Intersect_alpha, self.Union_alpha, self.Intersect_beta, self.Union_beta, self.Intersect_gama, self.Union_gama = None, None, None, None, None, None
 
         num_scale = 2
-        jumping_knowledge = args.jk_inner
-        self.jumping_knowledge_inner = jumping_knowledge
-        if jumping_knowledge:
-            input_dim_jk = output_dim * num_scale if jumping_knowledge == "cat" else output_dim
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=input_dim, num_layers=3)
+        jk = args.jk_inner
+        self.jk_inner = jk
+        if jk:
+            input_dim_jk = output_dim * num_scale if jk == "cat" else output_dim
+            self.jump = JumpingKnowledge(mode=jk, channels=input_dim, num_layers=3)
             self.lin = Linear(input_dim_jk, output_dim)
 
-        self.jumping_knowledge_sloop = jk_sl
-        if self.jumping_knowledge_sloop:
+        self.jk_sloop = jk_sl
+        if self.jk_sloop:
             num_scale_sl = 2
-            input_dim_jk_sl = output_dim * num_scale_sl if self.jumping_knowledge_sloop == "cat" else output_dim
-            self.jump = JumpingKnowledge(mode=self.jumping_knowledge_sloop, channels=input_dim, num_layers=3)
+            input_dim_jk_sl = output_dim * num_scale_sl if self.jk_sloop == "cat" else output_dim
+            self.jump = JumpingKnowledge(mode=self.jk_sloop, channels=input_dim, num_layers=3)
             self.lin = Linear(input_dim_jk_sl, output_dim)
 
     def forward(self, x, edge_index, flag):
-        if self.rm_gen_sloop == 'remove':
-            rm_gen_sLoop = True
-        else:
-            rm_gen_sLoop = False
-
         device = edge_index.device
 
         edge_index_add, _ = add_self_loops(edge_index, fill_value=1)
@@ -2211,7 +1296,7 @@ class DirGCNConv_sloop(torch.nn.Module):
 
             xs = [out1, out2, out3]
 
-            if self.jumping_knowledge_inner:
+            if self.jk_inner:
                 x = self.jump(xs)
                 x = self.lin(x)
             else:
@@ -2222,7 +1307,7 @@ class DirGCNConv_sloop(torch.nn.Module):
 
             x_sloop.append(x)
 
-        if self.jumping_knowledge_sloop:
+        if self.jk_sloop:
             x = self.jump(x_sloop)
             x = self.lin(x)
         else:
@@ -2290,18 +1375,13 @@ def get_index(adj_aat):
     edge_index_aat = torch.stack([row, col], dim=0)
 
     return edge_index_aat
-def get_higher_edge_index(edge_index, num_nodes, rm_gen_sLoop=0):
+def get_higher_edge_index(edge_index, num_nodes):
     adj = edge_index_to_adj(edge_index, num_nodes)
     adj_in_out = adj @ adj.t()
     adj_out_in =  adj.t() @ adj
 
     adj_aa = adj @ adj
     adj_out_out = adj.t() @ adj.t()
-
-    if rm_gen_sLoop:
-        adj_in_out[torch.arange(num_nodes), torch.arange(num_nodes)] = 0
-        adj_out_in[torch.arange(num_nodes), torch.arange(num_nodes)] = 0
-
 
     return get_index(adj_in_out), get_index(adj_out_in), get_index(adj_aa), get_index(adj_out_out)
 
@@ -2313,10 +1393,7 @@ def aggregate(x, alpha, lin0, adj0, lin1, adj1,  intersection, union, inci_norm=
     elif alpha == 3:
         out = lin0(intersection @ x)
     else:
-        out = 0.5*(1+alpha)*(alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
-        # m = lin0(x)
-        # out = 1*(1+alpha)*(alpha * (adj0 @ m) + (1 - alpha) * lin1(adj1 @ x))
-        # out = (alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
+        out = (1+alpha)*(alpha * lin0(adj0 @ x) + (1 - alpha) * lin1(adj1 @ x))
 
     return out
 
@@ -2475,7 +1552,7 @@ def sparse_all(sparse_matrix, k=0):
 
 class DirGCNConv_Qin(torch.nn.Module):
     def __init__(self, input_dim, output_dim, alpha):
-        super(DirGCNConv_Qin, self).__init__()
+        super().__init__()
 
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -2495,35 +1572,6 @@ class DirGCNConv_Qin(torch.nn.Module):
         out = torch.sparse.mm(adj_matrix, x)
 
         return self.lin_src_to_dst(out)
-
-
-def row_norm(adj):
-    """
-    Applies the row-wise normalization:
-        \mathbf{D}_{out}^{-1} \mathbf{A}
-    """
-    row_sum = sparsesum(adj, dim=1)
-    inv_deg = 1 / row_sum.view(-1, 1)
-    inv_deg.masked_fill_(inv_deg == float("inf"), 0.0)
-
-    return mul(adj, inv_deg)
-
-# def remove_self_loops(adj):
-#     """Remove self-loops from the adjacency matrix."""
-#     mask = adj.row() != adj.col()
-#     adj = adj.index_select(mask)
-#     return adj
-
-def remove_self_loop_qin(adj):
-    """Remove self-loops from the adjacency matrix."""
-    row, col, value = adj.coo()
-    mask = row != col
-    row = row[mask]
-    col = col[mask]
-    value = value[mask] if value is not None else None
-    adj = SparseTensor(row=row, col=col, value=value, sparse_sizes=adj.sparse_sizes())
-    return adj
-
 
 def add_self_loop_qin(adj):
     """Add self-loops to the adjacency matrix."""
@@ -2579,7 +1627,7 @@ def directed_norm(adj, rm_gen_sLoop=False):
 
     return adj1
 
-def directed_norm_weight(adj, edge_weight=None, rm_gen_sLoop=False):
+def directed_norm_weight(adj, edge_weight=None):
     """
     Applies the normalization for directed graphs:
         \mathbf{D}_{out}^{-1/2} \mathbf{A} \mathbf{D}_{in}^{-1/2}.
@@ -2608,52 +1656,9 @@ def directed_norm_weight(adj, edge_weight=None, rm_gen_sLoop=False):
     return adj1
 
 
-def directed_norm_Qin(adj, rm_gen_sLoop=False):
-    in_deg = sparsesum(adj, dim=0).to(torch.float)
-    # in_deg = torch_sparse.sum(adj, dim=0).to(torch.float)
-    in_deg_inv_sqrt = in_deg.pow(-0.5)
-    in_deg_inv_sqrt.masked_fill_(in_deg_inv_sqrt == float("inf"), 0.0)
-
-    out_deg = sparsesum(adj, dim=1).to(torch.float)
-    # out_deg = torch_sparse.sum(adj, dim=1).to(torch.float)
-    out_deg_inv_sqrt = out_deg.pow(-0.5)
-    out_deg_inv_sqrt.masked_fill_(out_deg_inv_sqrt == float("inf"), 0.0)
-
-    out_deg_inv_sqrt = out_deg_inv_sqrt.to(adj.device)
-    in_deg_inv_sqrt = in_deg_inv_sqrt.to(adj.device)
-
-    # row, col = adj
-    # deg = scatter_add(edge_weight, row, dim=0, dim_size=num_nodes)
-    # deg_inv_sqrt = deg.pow(-0.5)
-    # deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0
-
-    D_out_inv_sqrt = torch.diag(out_deg_inv_sqrt)
-    D_in_inv_sqrt = torch.diag(in_deg_inv_sqrt)
-
-    adj0 = torch_sparse.mul(adj, out_deg_inv_sqrt.view(-1, 1))
-    normalized_adj = torch_sparse.mul(adj0, in_deg_inv_sqrt.view(1, -1))
-
-    # edge_weight = deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
-
-    return normalized_adj
-
-def get_model(num_features,  n_cls, args):
-    return GNN(
-        num_features=num_features,
-        hidden_dim=args.hid_dim,
-        num_layers=args.layer,
-        num_classes=n_cls,
-        dropout=args.dropout,
-        conv_type=args.conv_type,
-        jumping_knowledge=args.jk,
-        normalize=args.normalize,
-        alpha=args.alphaDir,
-        learn_alpha=args.learn_alpha,
-    )
-
 class DirSageConv(torch.nn.Module):
     def __init__(self, input_dim, output_dim, alpha):
-        super(DirSageConv, self).__init__()
+        super().__init__()
 
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -2673,7 +1678,7 @@ class DirSageConv(torch.nn.Module):
 
 class DirGATConv(torch.nn.Module):
     def __init__(self, input_dim, output_dim, heads, alpha):
-        super(DirGATConv, self).__init__()
+        super().__init__()
 
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -2691,52 +1696,42 @@ class DirGATConv(torch.nn.Module):
 
 class GNN(torch.nn.Module):     # from Rossi(LoG paper)
     def __init__(
-        self,
-        num_features,
-        num_classes,
-        hidden_dim,
-        num_layers=2,
-        dropout=0,
-        conv_type="dir-gcn",
-        jumping_knowledge=False,
-        normalize=False,
-        alpha=1/2,
-        learn_alpha=False,
+            self,
+            args
     ):
-        super(GNN, self).__init__()
-
-        self.alpha = nn.Parameter(torch.ones(1) * alpha, requires_grad=learn_alpha)
-        output_dim = hidden_dim if jumping_knowledge else num_classes
-        if num_layers == 1:
-            self.convs = ModuleList([get_conv(conv_type, num_features, output_dim, self.alpha)])
+        super().__init__()
+        self.alpha = nn.Parameter(torch.ones(1) * args.alphaDir, requires_grad=args.learn_alpha)
+        output_dim = args.hid_dim if args.jk else args.num_classes
+        if args.layer == 1:
+            self.convs = ModuleList([get_conv(args.conv_type, args.num_features, output_dim, self.alpha, args=args)])
         else:
-            self.convs = ModuleList([get_conv(conv_type, num_features, hidden_dim, self.alpha)])
-            for _ in range(num_layers - 2):
-                self.convs.append(get_conv(conv_type, hidden_dim, hidden_dim, self.alpha))
-            self.convs.append(get_conv(conv_type, hidden_dim, output_dim, self.alpha))
+            self.convs = ModuleList([get_conv(args.conv_type, args.num_features, args.hid_dim, self.alpha, args=args)])
+            for _ in range(args.layer - 2):
+                self.convs.append(get_conv(args.conv_type, args.hid_dim, args.hid_dim, self.alpha, args=args))
+            self.convs.append(get_conv(args.conv_type, args.hid_dim, output_dim, self.alpha, args=args))
 
-        if jumping_knowledge:
-            input_dim = hidden_dim * num_layers if jumping_knowledge == "cat" else hidden_dim
-            self.lin = Linear(input_dim, num_classes)
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=hidden_dim, num_layers=num_layers)
+        if args.jk:
+            input_dim = args.hid_dim * args.layer if args.jk == "cat" else args.hid_dim
+            self.lin = Linear(input_dim, args.num_classes)
+            self.jump = JumpingKnowledge(mode=args.jk, channels=args.hid_dim, num_layers=args.layer)
 
-        self.num_layers = num_layers
-        self.dropout = dropout
-        self.jumping_knowledge = jumping_knowledge
-        self.normalize = normalize
+        self.num_layers = args.layer
+        self.dropout = args.dropout
+        self.jk = args.jk
+        self.normalize = args.normalize
 
     def forward(self, x, edge_index):
         xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index)
-            if i != len(self.convs) - 1 or self.jumping_knowledge:
+            if i != len(self.convs) - 1 or self.jk:
                 x = F.relu(x)
                 x = F.dropout(x, p=self.dropout, training=self.training)
                 if self.normalize:
                     x = F.normalize(x, p=2, dim=1)
             xs += [x]
 
-        if self.jumping_knowledge:
+        if self.jk:
             x = self.jump(xs)
             x = self.lin(x)
 
@@ -2746,41 +1741,32 @@ class GNN(torch.nn.Module):     # from Rossi(LoG paper)
 class GCN_JKNet(torch.nn.Module):
     def __init__(self, nfeat, nclass, args):
         super().__init__()
-        jumping_knowledge = args.jk
-        layer = args.layer
-        nhid = args.hid_dim
-        hidden_dim = nhid
-        normalize = args.normalize
-        dropout = args.dropout
-        nonlinear = args.nonlinear
-
-        output_dim = nhid if jumping_knowledge else nclass
-        if layer == 1:
+        output_dim = args.hid_dim if args.jk else nclass
+        if args.layer == 1:
             self.convs = ModuleList([DirGCNConv_2(nfeat, output_dim, args)])
         else:
-            self.convs = ModuleList([DirGCNConv_2(nfeat, nhid, args)])
-            for _ in range(layer - 2):
-                self.convs.append(DirGCNConv_2(nhid, nhid, args))
-            self.convs.append(DirGCNConv_2(nhid, output_dim, args))
+            self.convs = ModuleList([DirGCNConv_2(nfeat, args.hid_dim, args)])
+            for _ in range(args.layer - 2):
+                self.convs.append(DirGCNConv_2(args.hid_dim, args.hid_dim, args))
+            self.convs.append(DirGCNConv_2(args.hid_dim, output_dim, args))
 
-        num_scale = layer
-        if jumping_knowledge:
-            input_dim = hidden_dim * num_scale if jumping_knowledge == "cat" else hidden_dim
+        num_scale = args.layer
+        if args.jk:
+            input_dim = args.hid_dim * num_scale if args.jk == "cat" else args.hid_dim
             self.lin = Linear(input_dim, nclass)
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=hidden_dim, num_layers=layer)
+            self.jump = JumpingKnowledge(mode=args.jk, channels=args.hid_dim, num_layers=args.layer)
 
-        self.num_layers = layer
-        self.dropout = dropout
-        self.jumping_knowledge = jumping_knowledge
-        self.normalize = normalize
-        self.nonlinear = nonlinear
-
+        self.num_layers = args.layer
+        self.dropout = args.dropout
+        self.jk = args.jk
+        self.normalize = args.normalize
+        self.nonlinear = args.nonlinear
 
     def forward(self, x, edge_index):
         xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index)
-            if i != len(self.convs) - 1 or self.jumping_knowledge:
+            if i != len(self.convs) - 1 or self.jk:
                 if self.nonlinear:
                     x = F.relu(x)
                 x = F.dropout(x, p=self.dropout, training=self.training)
@@ -2788,7 +1774,7 @@ class GCN_JKNet(torch.nn.Module):
                     x = F.normalize(x, p=2, dim=1)
             xs += [x]
 
-        if self.jumping_knowledge:
+        if self.jk:
             x = self.jump(xs)
             x = self.lin(x)
 
@@ -2797,7 +1783,7 @@ class GCN_JKNet(torch.nn.Module):
 class High_Frequent(torch.nn.Module):
     def __init__(self, nfeat, nclass, args):
         super().__init__()
-        jumping_knowledge = args.jk
+        jk = args.jk
         layer = args.layer
         nhid = args.hid_dim
         hidden_dim = nhid
@@ -2805,7 +1791,7 @@ class High_Frequent(torch.nn.Module):
         dropout = args.dropout
         nonlinear = args.nonlinear
 
-        output_dim = nhid if jumping_knowledge else nclass
+        output_dim = nhid if jk else nclass
         if layer == 1:
             self.convs = ModuleList([HighFreConv(nfeat, output_dim, args)])
         else:
@@ -2815,14 +1801,14 @@ class High_Frequent(torch.nn.Module):
             self.convs.append(HighFreConv(nhid, output_dim, args))
 
         num_scale = layer
-        if jumping_knowledge:
-            input_dim = hidden_dim * num_scale if jumping_knowledge == "cat" else hidden_dim
+        if jk:
+            input_dim = hidden_dim * num_scale if jk == "cat" else hidden_dim
             self.lin = Linear(input_dim, nclass)
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=hidden_dim, num_layers=layer)
+            self.jump = JumpingKnowledge(mode=jk, channels=hidden_dim, num_layers=layer)
 
         self.num_layers = layer
         self.dropout = dropout
-        self.jumping_knowledge = jumping_knowledge
+        self.jk = jk
         self.normalize = normalize
         self.nonlinear = nonlinear
 
@@ -2831,7 +1817,7 @@ class High_Frequent(torch.nn.Module):
         xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index)
-            if i != len(self.convs) - 1 or self.jumping_knowledge:
+            if i != len(self.convs) - 1 or self.jk:
                 if self.nonlinear:
                     x = F.relu(x)
                 x = F.dropout(x, p=self.dropout, training=self.training)
@@ -2839,17 +1825,16 @@ class High_Frequent(torch.nn.Module):
                     x = F.normalize(x, p=2, dim=1)
             xs += [x]
 
-        if self.jumping_knowledge:
+        if self.jk:
             x = self.jump(xs)
             x = self.lin(x)
 
         return x
 
-
 class RandomNet(torch.nn.Module):
     def __init__(self, nfeat, nclass, args):
         super().__init__()
-        jumping_knowledge = args.jk
+        jk = args.jk
         layer = args.layer
         nhid = args.hid_dim
         hidden_dim = nhid
@@ -2857,7 +1842,7 @@ class RandomNet(torch.nn.Module):
         dropout = args.dropout
         nonlinear = args.nonlinear
 
-        output_dim = nhid if jumping_knowledge else nclass
+        output_dim = nhid if jk else nclass
         if layer == 1:
             self.convs = ModuleList([RanConv(nfeat, output_dim, args)])
         else:
@@ -2867,14 +1852,14 @@ class RandomNet(torch.nn.Module):
             self.convs.append(RanConv(nhid, output_dim, args))
 
         num_scale = layer
-        if jumping_knowledge:
-            input_dim = hidden_dim * num_scale if jumping_knowledge == "cat" else hidden_dim
+        if jk:
+            input_dim = hidden_dim * num_scale if jk == "cat" else hidden_dim
             self.lin = Linear(input_dim, nclass)
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=hidden_dim, num_layers=layer)
+            self.jump = JumpingKnowledge(mode=jk, channels=hidden_dim, num_layers=layer)
 
         self.num_layers = layer
         self.dropout = dropout
-        self.jumping_knowledge = jumping_knowledge
+        self.jk = jk
         self.normalize = normalize
         self.nonlinear = nonlinear
 
@@ -2883,7 +1868,7 @@ class RandomNet(torch.nn.Module):
         xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index)
-            if i != len(self.convs) - 1 or self.jumping_knowledge:
+            if i != len(self.convs) - 1 or self.jk:
                 if self.nonlinear:
                     x = F.relu(x)
                 x = F.dropout(x, p=self.dropout, training=self.training)
@@ -2891,7 +1876,7 @@ class RandomNet(torch.nn.Module):
                     x = F.normalize(x, p=2, dim=1)
             xs += [x]
 
-        if self.jumping_knowledge:
+        if self.jk:
             x = self.jump(xs)
             x = self.lin(x)
 
@@ -2900,7 +1885,7 @@ class RandomNet(torch.nn.Module):
 class ScaleNet(torch.nn.Module):
     def __init__(self, nfeat, nclass, args):
         super().__init__()
-        jumping_knowledge = args.jk
+        jk = args.jk
         layer = args.layer
         nhid = args.hid_dim
         hidden_dim = nhid
@@ -2908,8 +1893,7 @@ class ScaleNet(torch.nn.Module):
         dropout = args.dropout
         nonlinear = args.nonlinear
 
-        output_dim = nhid if jumping_knowledge else nclass
-        # not_train=
+        output_dim = nhid if jk else nclass
         if layer == 1:
             self.convs = ModuleList([DirConv_tSNE(nfeat, output_dim, args, visualize=True )])
         else:
@@ -2919,14 +1903,14 @@ class ScaleNet(torch.nn.Module):
             self.convs.append(DirConv_tSNE(nhid, output_dim, args, visualize=True))
 
         num_scale = layer
-        if jumping_knowledge:
-            input_dim = hidden_dim * num_scale if jumping_knowledge == "cat" else hidden_dim
+        if jk:
+            input_dim = hidden_dim * num_scale if jk == "cat" else hidden_dim
             self.lin = Linear(input_dim, nclass)
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=hidden_dim, num_layers=layer)
+            self.jump = JumpingKnowledge(mode=jk, channels=hidden_dim, num_layers=layer)
 
         self.num_layers = layer
         self.dropout = dropout
-        self.jumping_knowledge = jumping_knowledge
+        self.jk = jk
         self.normalize = normalize
         self.nonlinear = nonlinear
 
@@ -2935,7 +1919,7 @@ class ScaleNet(torch.nn.Module):
         xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index, y, epoch)
-            if i != len(self.convs) - 1 or self.jumping_knowledge:
+            if i != len(self.convs) - 1 or self.jk:
                 if self.nonlinear:
                     x = F.relu(x)
                 x = F.dropout(x, p=self.dropout, training=self.training)
@@ -2943,7 +1927,7 @@ class ScaleNet(torch.nn.Module):
                     x = F.normalize(x, p=2, dim=1)
             xs += [x]
 
-        if self.jumping_knowledge:
+        if self.jk:
             x = self.jump(xs)
             x = self.lin(x)
 
@@ -2953,7 +1937,7 @@ class ScaleNet(torch.nn.Module):
 class Sloop_JKNet(torch.nn.Module):
     def __init__(self, nfeat, nclass, args):
         super().__init__()
-        jumping_knowledge = args.jk
+        jk = args.jk
         layer = args.layer
         nhid = args.hid_dim
         hidden_dim = nhid
@@ -2961,7 +1945,7 @@ class Sloop_JKNet(torch.nn.Module):
         dropout = args.dropout
         nonlinear = args.nonlinear
 
-        output_dim = nhid if jumping_knowledge else nclass
+        output_dim = nhid if jk else nclass
         jkSl_end = 'max'
         jkSl_inner = 0
         if layer == 1:
@@ -2972,17 +1956,15 @@ class Sloop_JKNet(torch.nn.Module):
                 self.convs.append(DirGCNConv_sloop(nhid, nhid, args, jk_sl=jkSl_inner))
             self.convs.append(DirGCNConv_sloop(nhid, output_dim, args, jk_sl=jkSl_end))
 
-        if jumping_knowledge:
+        if jk:
             n= layer*3
-            # n= 4
-            # n= layer
-            input_dim = hidden_dim * n if jumping_knowledge == "cat" else hidden_dim
+            input_dim = hidden_dim * n if jk == "cat" else hidden_dim
             self.lin = Linear(input_dim, nclass)
-            self.jump = JumpingKnowledge(mode=jumping_knowledge, channels=hidden_dim, num_layers=layer)
+            self.jump = JumpingKnowledge(mode=jk, channels=hidden_dim, num_layers=layer)
 
         self.num_layers = layer
         self.dropout = dropout
-        self.jumping_knowledge = jumping_knowledge
+        self.jk = jk
         self.normalize = normalize
         self.nonlinear = nonlinear
 
@@ -2990,8 +1972,7 @@ class Sloop_JKNet(torch.nn.Module):
         xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index, flag=1-i)
-            # assert len(x) == 3
-            if i != len(self.convs) - 1 or self.jumping_knowledge:
+            if i != len(self.convs) - 1 or self.jk:
                 if self.nonlinear:
                     if isinstance(x, list):
                         x = [F.relu(i) for i in x]
@@ -3008,54 +1989,18 @@ class Sloop_JKNet(torch.nn.Module):
                         x = [F.normalize(i, p=2, dim=1) for i in x]
                     else:
                         x = F.normalize(x, p=2, dim=1)
-            # xs += [x[2]]
             if isinstance(x, list):
                 xs.extend(x)
             else:
                 xs.append(x)
 
-        if self.jumping_knowledge:
+        if self.jk:
             x = self.jump(xs)
             x = self.lin(x)
 
         return x
 
 
-class GCN_JKNet2(torch.nn.Module):
-    def __init__(self, nfeat, nhid, nclass, dropout):
-
-        super(GCN_JKNet2, self).__init__()
-        self.conv1 = GCNConv(nfeat, nhid)
-        self.conv2 = GCNConv(nhid, nhid)
-        self.lin1 = torch.nn.Linear(nhid, nclass)
-        self.one_step = APPNP(K=1, alpha=0)
-        self.JK = JumpingKnowledge(mode='lstm',
-                                   channels=nhid,
-                                   num_layers=2
-                                   )
-
-    def forward(self, x, edge_index):
-        x1 = F.relu(self.conv1(x, edge_index))
-        x1 = F.dropout(x1, p=0.5, training=self.training)
-
-        x2 = F.relu(self.conv2(x1, edge_index))
-        x2 = F.dropout(x2, p=0.5, training=self.training)
-
-        x = self.JK([x1, x2])
-        x = self.one_step(x, edge_index)
-        x = self.lin1(x)
-        # x = F.dropout(x, p=0.5, training=self.training)   # without is better
-        return F.log_softmax(x, dim=1)
-
-def create_JK(nfeat, nhid, nclass, dropout, nlayer):
-    if nlayer == 1:
-        model = GCN_JKNet(nfeat, nhid, nclass, dropout,nlayer)
-    elif nlayer == 2:
-        model = StandGCN2BN(nfeat, nhid, nclass, dropout,nlayer)
-    else:
-        model = StandGCNXBN(nfeat, nhid, nclass, dropout,nlayer)
-
-    return model
 from torch_geometric.nn import MessagePassing, APPNP
 class GPR_prop(MessagePassing):
     '''
@@ -3063,7 +2008,7 @@ class GPR_prop(MessagePassing):
     '''
 
     def __init__(self, K, alpha, Init, Gamma=None, bias=True, **kwargs):
-        super(GPR_prop, self).__init__(aggr='add', **kwargs)
+        super().__init__(aggr='add', **kwargs)
         self.K = K
         self.Init = Init
         self.alpha = alpha
@@ -3133,8 +2078,7 @@ class GPR_prop(MessagePassing):
 
 class GPRGNN(torch.nn.Module):
     def __init__(self, nfeat, nhid, nclass, dropout, args):
-    # def __init__(self, dataset, args):
-        super(GPRGNN, self).__init__()
+        super().__init__()
         self.lin1 = Linear(nfeat, nhid)
         self.lin2 = Linear(nhid, nclass)
 

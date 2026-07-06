@@ -186,23 +186,28 @@ WikipediaNetwork/squirrel:
 
 # 91.23 ± 0.32(0.5,-1,-1), 92.0±0.4(0.5,-1,-1),
 directed-roman-empire/:
-  net: ScaleNet
+  epoch: 10000
+  l2: 0.0005
+#  inci_norm: "dir"
+  net: LargeScaleNet
+  num_split: 10  # original dataset
   nonlinear: 1    # must have this, or acc is 85
-  has_scheduler: 0
+  has_scheduler: 1
+  patience: 80
+  NotImproved: 400  # 200:93.4, 400:93.4
   lr: 0.01
-  add_selfloop: 0   # no selfloops originally
+  add_selfloop: 0   # Add 93.3
   BN_model: 0  # no batch norm is better
   normalize: 0  #
   hid_dim: 256
-  layer: 5
-  jk: "cat"
+  layer: 6  # 5:93.4  7:93.1  8:93.0
+  jk: "cat"   # >max
   dropout: 0.2
-  NotImproved: 200
-  zero_order: 1  # dir-gcn+zero_order is dir-sage
-#  conv_type: "dir-sage"   # (1) gcn+mlp is worse than "dir-sage"  . (2) gcn without selfloop with row_norm +lin(X)=sage, with other norm get better.
-  alphaDir: 0.5
+  alphaDir: 0.5   #
   betaDir: -1     # 0 is 88, 1 is 20
   gamaDir: -1     # all much worse
+  exponent: -0.25  # 92.9 for -0.5
+  zero_order: 1  # dir-gcn+zero_order is dir-sage
 
 
 ogbn-arxiv/:

@@ -8,7 +8,7 @@ from torch_scatter import scatter_add
 
 from nets.gat import GATConvQin, StandGAT1BN_Qin
 from nets.gcn import ParaGCNXBN, StandGCNXBN, StandGCNXBN_Ak, StandGCNX_noRelu
-from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model, Sloop_JKNet, ScaleNet, RandomNet, High_Frequent
+from nets.geometric_baselines import GCN_JKNet, GPRGNN,  Sloop_JKNet, ScaleNet, RandomNet, High_Frequent, GNN
 from nets.models import JKNet, create_MLP, create_SGC, create_pgnn, GPRGNNNet1, GraphModel
 
 from nets.Signum_quaternion import QuaNet_node_prediction_one_laplacian_Qin
@@ -69,7 +69,7 @@ def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
     elif args.net.lower() == 'sgc':
         model = create_SGC(nfeat=num_features, nhid=args.hid_dim, nclass=n_cls, dropout=args.dropout, nlayer=args.layer,K=args.K)
     elif args.net == 'Dir-GNN':
-        model = get_model(num_features,  n_cls, args)
+        model = GNN(args)
     elif args.net.lower() == 'jk':
         model = JKNet(in_channels=num_features,
                         out_channels=n_cls,
@@ -266,8 +266,8 @@ def get_name(args, IsDirectedGraph):
                 diff = 'AAt'+str(args.alphaDir)
             net_to_print = net_to_print + args.conv_type + '_diff'+diff + '_jk'+str(args.jk)+'_norm'+args.inci_norm
         else:
-            net_to_print = net_to_print  +'_' + args.conv_type +'_part'+str(args.alphaDir)+'_'+ str(args.betaDir)+'_'+str(
-                args.gamaDir)+'_jk'+str(args.jk)+'_norm'+str(args.inci_norm)+'_exp'+str(args.exponent)
+            net_to_print = net_to_print  + '_' + args.conv_type +'_part'+str(args.alphaDir)+'_'+ str(args.betaDir)+'_'+ str(
+                args.gamaDir)+'_jk'+str(args.jk)+'_norm'+str(args.inci_norm)+'_exp'+str(args.exponent)+ '_zero'+str(args.zero_order)
     if args.net == 'LargeScaleNet':
         net_to_print += ('_' + args.conv_type2 + '_part' + str(args.alphaDir) + '_' + str(args.betaDir) + '_' + str(
             args.gamaDir) + '_jk' + str(args.jk) + '_norm' + str(args.inci_norm)
@@ -289,12 +289,21 @@ def logfile(net_to_print, dataset_to_print, args):
     log_directory = os.path.expanduser(log_directory)
 
     return log_directory, logfile_name_with_timestamp
-
+import json
+from networkx.readwrite import json_graph
+import numpy as np
 def get_dataset(name, path, split_type='public'):
     import torch_geometric.transforms as T
     from torch_geometric.datasets import Coauthor
+    if name in ['COCO-SP', 'PascalVOC-SP']:
+        from torch_geometric.datasets import LRGBDataset
+        dataset = {
+            'train': LRGBDataset(root=path, name=name, split="train"),
+            'val': LRGBDataset(root=path, name=name, split="val"),
+            'test': LRGBDataset(root=path, name=name, split="test"),
+        }
 
-    if name == "Cora" or name == "CiteSeer" or name == "PubMed":
+    elif name in ["Cora", "CiteSeer", "PubMed"]:
         from torch_geometric.datasets import Planetoid
         dataset = Planetoid(path, name, transform=T.NormalizeFeatures(), split=split_type)
     elif name == 'Amazon-Computers':

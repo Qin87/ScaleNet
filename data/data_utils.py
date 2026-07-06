@@ -247,6 +247,7 @@ def load_directedData(args):
         dataset._data.train_mask = torch.stack(train_masks, dim=1)
         dataset._data.val_mask = torch.stack(val_masks, dim=1)
         dataset._data.test_mask = torch.stack(test_masks, dim=1)
+
     elif load_func in ['arxiv-year']:
         path = args.data_path
         # arxiv-year uses the same graph and features as ogbn-arxiv, but with different labels
@@ -334,7 +335,6 @@ def load_directedData(args):
     elif load_func == 'telegram':
         dataset = load_syn(root='./telegram')
     else:
-        # dataset = load_syn(args.data_path + load_func+ '/'+ subset, None)
         dataset = load_syn(load_func+ '/'+ subset, None)
 
     return dataset
@@ -448,7 +448,10 @@ class DirectedHeterophilousGraphDataset(InMemoryDataset):
         }
 
         super().__init__(root, transform, pre_transform)
-        self.data, self.slices = torch.load(self.processed_paths[0],  weights_only=False)
+        try:
+            self.data, self.slices = torch.load(self.processed_paths[0])
+        except:
+            self.data, self.slices = torch.load(self.processed_paths[0],  weights_only=False)
 
     @property
     def raw_dir(self) -> str:
