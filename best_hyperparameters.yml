@@ -20,8 +20,8 @@ telegram/:
   dropout: 0.0
   jk_inner: 0
   alphaDir: 0.5     # 0.5, 0.2(94.8)
-  betaDir: -1
-  gamaDir: -1
+#  betaDir: -1
+#  gamaDir: -1
   seed: 101   # 96.4±2.5(1), 94.8±2.9(11), 97.0±2.2(101)
 
 
@@ -65,7 +65,7 @@ citeseer/:        # 0.5,2,0----1.0_0.0_0.5, ----1.0_2.0_0.5----2.0_2.0_0.0----2.
   jk_inner: 0
   nonlinear: 0    # 0(68.3), 1(67.6)
   hid_dim: 128
-  layer: 3     # 1(65.3),2(64.8), 3(62.6), 4(64.0), 5(64.4)
+#  layer: 3     # 1(65.3),2(64.8), 3(62.6), 4(64.0), 5(64.4)
   lr: 0.01
   normalize: 1    # 1(68.3), 0 much worse60.7,
   BN_model: 0   # 0(68.3), 1(66.9)  # for high performance 0 is better.
@@ -186,6 +186,7 @@ WikipediaNetwork/squirrel:
 
 # 91.23 ± 0.32(0.5,-1,-1), 92.0±0.4(0.5,-1,-1),
 directed-roman-empire/:
+  zero_order: 1  # dir-gcn+zero_order is dir-sage
   epoch: 10000
   l2: 0.0005
 #  inci_norm: "dir"
@@ -207,7 +208,7 @@ directed-roman-empire/:
   betaDir: -1     # 0 is 88, 1 is 20
   gamaDir: -1     # all much worse
   exponent: -0.25  # 92.9 for -0.5
-  zero_order: 1  # dir-gcn+zero_order is dir-sage
+
 
 
 ogbn-arxiv/:
@@ -332,3 +333,12 @@ snap-patents/:
   exponent: -0.25     # sure
   weight_penalty: 'None'   # exp
   lrelu_slope: 0
+
+
+fb100/penn94:
+  net: LargeScaleNet
+  structure: 1
+  zero_order: 0
+  add_selfloop: 0
+  epoch: 10000
+  num_split: 5

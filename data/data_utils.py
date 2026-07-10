@@ -1,6 +1,6 @@
 import os
 import random
-from torch_geometric.datasets import QM9, MalNetTiny
+from torch_geometric.datasets import QM9, MalNetTiny, LINKXDataset
 import scipy
 from torch_geometric.data import download_url
 from torch_geometric.datasets import (
