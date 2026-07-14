@@ -27,7 +27,8 @@ class GNN2(torch.nn.Module):
         self.conv_type = args.conv_type2
         self.lrelu_slope = args.lrelu_slope
 
-        output_dim = args.hid_dim if args.jk else args.n_cls
+        # output_dim = args.hid_dim if args.jk else args.n_cls
+        output_dim = args.hid_dim
         if args.layer == 1:
             self.convs = ModuleList([get_conv2(args.num_features, output_dim, args)])
         else:
@@ -40,6 +41,8 @@ class GNN2(torch.nn.Module):
             input_dim = args.hid_dim * args.layer if args.jk == "cat" else args.hid_dim
             self.lin = Linear(input_dim, args.n_cls)
             self.jump = JumpingKnowledge(mode=args.jk, channels=args.hid_dim, num_layers=args.layer)
+        else:
+            self.lin = Linear(args.hid_dim, args.n_cls)
 
         self.num_layers = args.layer
         self.dropout = args.dropout
@@ -50,7 +53,8 @@ class GNN2(torch.nn.Module):
         xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index)
-            if i != len(self.convs) - 1 or self.jk:
+
+            if i != len(self.convs) - 1 or self.jk or len(self.convs) == 1:
                 x = F.relu(x)
                 # x = F.leaky_relu(x,negative_slope= self.lrelu_slope)
                 x = F.dropout(x, p=self.dropout, training=self.training)
@@ -60,6 +64,8 @@ class GNN2(torch.nn.Module):
 
         if self.jk:
             x = self.jump(xs)
+            x = self.lin(x)
+        else:
             x = self.lin(x)
 
         return x

@@ -69,6 +69,7 @@ def log_results():
                 print(net_to_print +'_'+ str(args.layer) + '_'+dataset_to_print + "_acc" + f"{average_acc:.1f}±{std_dev_acc:.1f}" + "_bacc" + f"{average_bacc:.1f}±{std_dev_bacc:.1f}" + '_MacroF1:' + f"{average:.1f}±{std_dev:.1f},{len(macro_F1):2d}splits")
                 print(net_to_print +'_'+ str(args.layer) + '_'+dataset_to_print + "_acc" + f"{average_acc:.1f}±{std_dev_acc:.1f}" + "_bacc" + f"{average_bacc:.1f}±{std_dev_bacc:.1f}" + '_MacroF1:' + f"{average:.1f}±{std_dev:.1f},{len(macro_F1):2d}splits", file=logfile)
             elif len(macro_F1) == 1:
+                result_str = f"{acc_list[0]:.1f}"
                 print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print +"_acc"+f"{acc_list[0]:.1f}"+"_bacc" + f"{bacc_list[0]:.1f}"+'_MacroF1_'+f"{macro_F1[0]:.1f}, 1split", file=logfile)
                 print(net_to_print+'_'+str(args.layer)+'_'+dataset_to_print +"_acc"+f"{acc_list[0]:.1f}"+"_bacc" + f"{bacc_list[0]:.1f}"+'_MacroF1_'+f"{macro_F1[0]:.1f}, 1split")
             else:
