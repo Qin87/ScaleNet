@@ -58,7 +58,7 @@ class LINK(nn.Module):
 
     def __init__(self, args):
         super(LINK, self).__init__()
-        self.W = nn.Linear(args.num_nodes, args.num_classes)
+        self.W = nn.Linear(args.num_nodes, args.n_cls)
         self.num_nodes = args.num_nodes
 
         self.reset_parameters()
@@ -82,7 +82,7 @@ class LINK_Concat(nn.Module):
 
     def __init__(self, args, cache=True):
         super().__init__()
-        self.mlp = MLP(args.num_features + args.num_nodes, args.hid_dim, args.num_classes, args.layer, dropout=args.dropout)
+        self.mlp = MLP(args.num_features + args.num_nodes, args.hid_dim, args.n_cls, args.layer, dropout=args.dropout)
         self.in_channels = args.num_features
         self.cache = cache
         self.x = None
@@ -101,9 +101,9 @@ class LINK_Concat(nn.Module):
             feat_row, feat_col = feat_nz
             full_row = torch.cat((feat_row, row))
             full_col = torch.cat((feat_col, col))
-            value = x[feat_nz]
-            full_value = torch.cat((value,
-                                    torch.ones(row.shape[0], device=value.device)))
+            # value = x[feat_nz]
+            # full_value = torch.cat((value,
+            #                         torch.ones(row.shape[0], device=value.device)))
             x = SparseTensor(row=full_row, col=full_col,
                              sparse_sizes=(N, N + self.in_channels)
                              ).to_torch_sparse_coo_tensor()
