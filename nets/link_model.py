@@ -101,9 +101,6 @@ class LINK_Concat(nn.Module):
             feat_row, feat_col = feat_nz
             full_row = torch.cat((feat_row, row))
             full_col = torch.cat((feat_col, col))
-            # value = x[feat_nz]
-            # full_value = torch.cat((value,
-            #                         torch.ones(row.shape[0], device=value.device)))
             x = SparseTensor(row=full_row, col=full_col,
                              sparse_sizes=(N, N + self.in_channels)
                              ).to_torch_sparse_coo_tensor()

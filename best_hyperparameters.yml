@@ -244,9 +244,17 @@ ogbn-arxiv/:
 
 
 fb100/penn94:
+  net: linkxcat
   add_selfloop: 0
   epoch: 10000
   num_split: 5
+  to_reverse_edge: 1
+  hid_dim: 32
+  layer: 1
+  NotImproved: 80
+  patience: 10
+
+
 
 
 
@@ -259,7 +267,7 @@ snap-patents/:
   BN_model: 1   # 1:74.6, 0:74.2
   lr: 0.01   # sure
   layer: 5  # sure
-#  hid_dim: 32  # sure
+  hid_dim: 32  # sure
   jk: 'max'   # sure
   normalize: 1   # sure
   dropout: 0.0  # sure
