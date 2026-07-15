@@ -42,7 +42,7 @@ def main():
     if len(data_test_maskOrigin.shape) < 2:   #WikiCS have only 1 test
         data_test_maskOrigin = data_test_maskOrigin.unsqueeze(1).repeat(1, splits)
 
-    args.num_features, args.num_classes, args.edge_index, args.num_nodes = data_x.shape[1], n_cls, edges, data_x.shape[0]
+    args.num_features, args.n_cls, args.edge_index, args.num_nodes = data_x.shape[1], n_cls, edges, data_x.shape[0]
 
     log_directory, log_file_name_with_timestamp = name_file(args, IsDirectedGraph)
     log_file_name_with_timestamp = 'lit_' + log_file_name_with_timestamp

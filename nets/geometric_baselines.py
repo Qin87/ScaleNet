@@ -1810,7 +1810,7 @@ class GNN(torch.nn.Module):     # from Rossi(LoG paper)
 
         self.coef = args.coef_agg
         self.alpha = nn.Parameter(torch.ones(1) * args.alphaDir, requires_grad=args.learn_alpha)
-        output_dim = args.hid_dim if args.jk else args.num_classes
+        output_dim = args.hid_dim if args.jk else args.n_cls
         if args.layer == 1:
             self.convs = ModuleList([get_conv(args.conv_type, args.num_features, output_dim, self.alpha, args=args)])
         else:
@@ -1821,7 +1821,7 @@ class GNN(torch.nn.Module):     # from Rossi(LoG paper)
 
         if args.jk:
             input_dim = args.hid_dim * args.layer if args.jk == "cat" else args.hid_dim
-            self.lin = Linear(input_dim, args.num_classes)
+            self.lin = Linear(input_dim, args.n_cls)
             self.jump = JumpingKnowledge(mode=args.jk, channels=args.hid_dim, num_layers=args.layer)
 
         self.num_layers = args.layer

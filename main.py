@@ -372,7 +372,7 @@ Set_exit = False
 
 num_run = args.num_split if args.num_split<splits else splits
 preprocess_time = time.time()
-args.num_features, args.num_classes, args.edge_index, args.num_nodes = data_x.shape[1], n_cls, edges, data_x.shape[0]
+args.num_features, args.n_cls, args.edge_index, args.num_nodes = data_x.shape[1], n_cls, edges, data_x.shape[0]
 
 try:
     with open(log_directory + log_file_name_with_timestamp, 'a') as logfile:
