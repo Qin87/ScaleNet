@@ -27,7 +27,6 @@ class GNN2(torch.nn.Module):
         self.conv_type = args.conv_type2
         self.lrelu_slope = args.lrelu_slope
 
-        # output_dim = args.hid_dim if args.jk else args.n_cls
         output_dim = args.hid_dim
         if args.layer == 1:
             self.convs = ModuleList([get_conv2(args.num_features, output_dim, args)])
