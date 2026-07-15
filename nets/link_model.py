@@ -18,7 +18,7 @@ class LINKX(nn.Module):
         self.mlpA = MLP(args.num_nodes, args.hid_dim, args.hid_dim, args.link_init_layers_A, dropout=args.dropout)
         self.mlpX = MLP(args.num_features , args.hid_dim, args.hid_dim, args.link_init_layers_X, dropout=args.dropout)
         self.W = nn.Linear(2 * args.hid_dim, args.hid_dim)
-        self.mlp_final = MLP(args.hid_dim, args.hid_dim, args.num_classes, args.layer, dropout=args.dropout)
+        self.mlp_final = MLP(args.hid_dim, args.hid_dim, args.n_cls, args.layer, dropout=args.dropout)
         self.in_channels = args.num_features
         self.num_nodes = args.num_nodes
         self.A = None
@@ -58,7 +58,7 @@ class LINK(nn.Module):
 
     def __init__(self, args):
         super(LINK, self).__init__()
-        self.W = nn.Linear(args.num_nodes, args.num_classes)
+        self.W = nn.Linear(args.num_nodes, args.n_cls)
         self.num_nodes = args.num_nodes
 
         self.reset_parameters()
@@ -82,7 +82,7 @@ class LINK_Concat(nn.Module):
 
     def __init__(self, args, cache=True):
         super().__init__()
-        self.mlp = MLP(args.num_features + args.num_nodes, args.hid_dim, args.num_classes, args.layer, dropout=args.dropout)
+        self.mlp = MLP(args.num_features + args.num_nodes, args.hid_dim, args.n_cls, args.layer, dropout=args.dropout)
         self.in_channels = args.num_features
         self.cache = cache
         self.x = None
@@ -123,11 +123,11 @@ class LINK_Add(nn.Module):
         self.mlpA = MLP(args.num_nodes, args.hid_dim, args.hid_dim, args.link_init_layers_A, dropout=0)
         self.mlpX = MLP(args.num_features , args.hid_dim, args.hid_dim, args.link_init_layers_X, dropout=0)
 
-        self.mlp = MLP(args.num_features  + args.num_nodes, args.hid_dim, args.num_classes, args.layer, dropout=args.dropout)
+        self.mlp = MLP(args.num_features  + args.num_nodes, args.hid_dim, args.n_cls, args.layer, dropout=args.dropout)
         self.in_channels = args.num_features
         self.cache = cache
         self.x = None
-        self.mlp_final = MLP(args.hid_dim, args.hid_dim, args.num_classes, args.layer, dropout=args.dropout)
+        self.mlp_final = MLP(args.hid_dim, args.hid_dim, args.n_cls, args.layer, dropout=args.dropout)
 
         self.reset_parameters()
 
@@ -192,7 +192,7 @@ class H2GCN(nn.Module):
 
         self.jump = JumpingKnowledge('cat')
         last_dim = args.hid_dim * (2 ** (args.layer + 1) - 1)
-        self.final_project = nn.Linear(last_dim, args.num_classes)
+        self.final_project = nn.Linear(last_dim, args.n_cls)
 
         self.num_nodes = args.num_nodes
         self.init_adj(args.edge_index)
