@@ -13,7 +13,7 @@ from torch_scatter import scatter_add
 from nets.link_model import LINK, LINK_Concat, LINKX, LINK_Add
 from nets.gat import StandGAT1BN_Qin
 from nets.gcn import ParaGCNXBN, StandGCNXBN
-from nets.geometric_baselines import GCN_JKNet, GPRGNN, get_model, Sloop_JKNet, ScaleNet, RandomNet, High_Frequent, GNN
+from nets.geometric_baselines import GCN_JKNet, GPRGNN, Sloop_JKNet, ScaleNet, RandomNet, High_Frequent, GNN
 from nets.models import JKNet, create_MLP, create_SGC, create_pgnn, GPRGNNNet1, GraphModel
 
 from nets.Signum_quaternion import QuaNet_node_prediction_one_laplacian_Qin
@@ -237,7 +237,7 @@ def get_name(args, IsDirectedGraph):
     if args.net[1:3] == 'iA' or args.net == 'GAT':
         net_to_print = net_to_print + '_Head' + str(args.heads)
     if args.BN_model:
-        net_to_print = 'BNorm_' + net_to_print
+        net_to_print = 'BN_' + net_to_print
     else:
         net_to_print = 'NoBN_' + net_to_print
 
@@ -287,27 +287,26 @@ def name_file(args, IsDirectedGraph):
     return log_directory, log_file_name_with_timestamp
 
 
-def log_file(net_to_print, dataset_to_print, args):
+def logfile(net_to_print, dataset_to_print, args):
     training_callbacks = '_lay'+str(args.layer)+'_lr'+str(args.lr)
     if args.has_scheduler:
         training_callbacks += '_Sch'+'_P'+str(args.patience)
     else:
         training_callbacks += '_NoSch'
     training_callbacks += '_NoImp'+str(args.NotImproved)
-    log_file_name = dataset_to_print+'_'+net_to_print+ training_callbacks
+    logfile_name = dataset_to_print+'_'+net_to_print+ training_callbacks
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_file_name_with_timestamp = f"{log_file_name}_{timestamp}.log"
+    logfile_name_with_timestamp = f"{logfile_name}_{timestamp}.log"
 
     log_directory = "~/Documents/Benlogs/"  # Change this to your desired directory
     log_directory = os.path.expanduser(log_directory)
 
-    return log_directory, log_file_name_with_timestamp
+    return log_directory, logfile_name_with_timestamp
 
 
 import json
 from networkx.readwrite import json_graph
 import numpy as np
-
 def get_dataset(name, path, split_type='public'):
     import torch_geometric.transforms as T
     from torch_geometric.datasets import Coauthor
@@ -435,7 +434,6 @@ def load_dataset(args):
         #     data_y = int(data_y)
         if data_y.dtype.is_floating_point:
             data_y = data_y.to(torch.long)
-            # data_y = data_y.long()
         if not hasattr(data, 'train_mask'):
             data = random_planetoid_splits(data, data_y, train_ratio=0.48, val_ratio=0.1, num_splits=10, Flag=0)
             data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin = (data.train_mask.clone(), data.val_mask.clone(), data.test_mask.clone())
@@ -455,7 +453,6 @@ def load_dataset(args):
     IsDirectedGraph = True
     # IsDirectedGraph = test_directed(edges)        # time consuming
     # print("This is directed graph: ", IsDirectedGraph)
-    # print("data_x", data_x.shape)  # [11701, 300])
 
     if IsDirectedGraph and args.to_undirected:
         edges = to_undirectedBen(edges)
@@ -472,8 +469,6 @@ def load_dataset(args):
     except:
         edge_attr = None
         data_batch = None
-
-
 
     return data_x, data_y, edges, edges_weight, dataset_num_features,data_train_maskOrigin, data_val_maskOrigin, data_test_maskOrigin, IsDirectedGraph, edge_attr, data_batch
 
