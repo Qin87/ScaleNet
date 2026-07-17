@@ -79,7 +79,6 @@ class LINK(nn.Module):
 
 class LINK_Concat(nn.Module):
     """ concate A and X as joint embeddings i.e. MLP([A;X])"""
-
     def __init__(self, args, cache=True):
         super().__init__()
         self.mlp = MLP(args.num_features + args.num_nodes, args.hid_dim, args.n_cls, args.layer, dropout=args.dropout)
