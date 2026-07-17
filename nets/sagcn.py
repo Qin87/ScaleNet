@@ -142,7 +142,6 @@ class SAGCNXBN(nn.Module):
     def forward(self, x, adj, edge_weight=None):
         edge_index = adj
         x = self.conv1(x, edge_index, edge_weight)
-        # x = self.mlp1(x)
         if self.layer == 1:
             return x
         # x = self.batch_norm1(x)

@@ -183,26 +183,13 @@ class GraphSAGEXBatNorm(nn.Module):
         self.conv2 = SAGEConv(nhid, nclass)
         if nlayer >2:
             self.convx = nn.ModuleList([SAGEConv(nhid, nhid) for _ in range(nlayer-2)])
-            # self.reg_params = list(self.conv1.parameters()) + list(self.convx.parameters())
 
         self.batch_norm1 = nn.BatchNorm1d(nhid)
         self.batch_norm2 = nn.BatchNorm1d(nclass)
         self.batch_norm3 = nn.BatchNorm1d(nhid)
 
         if nlayer==1:
-            # self.batch_norm1 = nn.BatchNorm1d(nclass)
-
             self.conv1 = SAGEConv(nfeat, nclass)
-
-            # self.conv1 = SAGEConv(nfeat, nhid)        #  delete after test Qin
-            self.mlp1 = torch.nn.Linear(nhid, nhid)
-            self.mlp2 = torch.nn.Linear(nhid, nhid)
-
-        #     self.reg_params =[]
-        #     self.non_reg_params = self.conv2.parameters()
-        # else:
-        #     self.non_reg_params = self.conv2.parameters()
-
         self.layer = nlayer
         self.BN = args.BN_model
 
