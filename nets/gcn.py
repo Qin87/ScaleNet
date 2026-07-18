@@ -286,62 +286,32 @@ class StandGCNX_noRelu(nn.Module):
         return x
 
 
-
 class GraphSAGEXBatNorm(nn.Module):
     def __init__(self,  nfeat, nclass, args):
         super().__init__()
         self.dropout_p = args.dropout
         nhid = args.hid_dim
         nlayer= args.layer
-        # self.Conv = nn.Conv1d(nhid*2 , nclass, kernel_size=1)
-        # SAGEConv(input_dim, output_dim, root_weight=False)
-        # SAGEConv = NormalizedSAGEConv  #  Qin
-        # SAGEConv= SAGEConv_SHA
-        # SAGEConv= SAGEConv_Qin
-        # SAGEConv= GCNConv
-        # SAGEConv= SAGEConv_QinNov
         self.conv1 = SAGEConv(nfeat, nhid)
-        # self.conv1_1 = SAGEConv(nfeat, nhid)
         self.conv2 = SAGEConv(nhid, nclass)
         if nlayer >2:
             self.convx = nn.ModuleList([SAGEConv(nhid, nhid) for _ in range(nlayer-2)])
-            # self.reg_params = list(self.conv1.parameters()) + list(self.convx.parameters())
 
         self.batch_norm1 = nn.BatchNorm1d(nhid)
         self.batch_norm2 = nn.BatchNorm1d(nclass)
         self.batch_norm3 = nn.BatchNorm1d(nhid)
 
         if nlayer==1:
-            # self.batch_norm1 = nn.BatchNorm1d(nclass)
-
             self.conv1 = SAGEConv(nfeat, nclass)
-
-            # self.conv1 = SAGEConv(nfeat, nhid)        #  delete after test Qin
-            self.mlp1 = torch.nn.Linear(nhid, nhid)
-            self.mlp2 = torch.nn.Linear(nhid, nhid)
-
-        #     self.reg_params =[]
-        #     self.non_reg_params = self.conv2.parameters()
-        # else:
-        #     self.non_reg_params = self.conv2.parameters()
-
         self.layer = nlayer
         self.BN = args.BN_model
 
     def forward(self, x, adj, edge_weight=None):
-        edge_index = adj
-        x = self.conv1(x, edge_index)
-        # x2 = self.conv1_1(x, edge_index, edge_weight)
-        # x= torch.cat((x1, x2), dim=-1)
-        # x = self.mlp1(x1) + self.mlp2(x2)
-        # if self.BN:
-        #     x = self.batch_norm1(x)
+        N = int(x.shape[0])
+        sparse_adj = SparseTensor.from_edge_index(adj, sparse_sizes=(N, N)).t()
+        x = self.conv1(x, sparse_adj)
+
         if self.layer == 1:
-            # x = x.unsqueeze(0)  # can't simplify, because the input of Conv1d is 3D
-            # x = x.permute((0, 2, 1))
-            # x = self.Conv(x)
-            # x = F.log_softmax(x, dim=1)  # transforms the raw output scores (logits) into log probabilities, which are more numerically stable for computation and training
-            # x = x.permute(2, 1, 0).squeeze()
             return x
 
         x = F.relu(x)
@@ -349,13 +319,14 @@ class GraphSAGEXBatNorm(nn.Module):
         if self.layer > 2:
             for iter_layer in self.convx:
                 x = F.dropout(x, p=self.dropout_p, training=self.training)
-                x = iter_layer(x, edge_index,edge_weight)
+                x = iter_layer(x, sparse_adj)
                 if self.BN:
                     x = self.batch_norm3(x)
                 x = F.relu(x)
 
         x = F.dropout(x, p=self.dropout_p, training=self.training)
-        x = self.conv2(x, edge_index,edge_weight)
+        x = self.conv2(x, sparse_adj)
+
         if self.BN:
             x = self.batch_norm2(x)
 
