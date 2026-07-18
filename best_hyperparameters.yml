@@ -282,8 +282,8 @@ CiteSeer:
 
 
 arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
-#  net: LargeScaleNet
-#  inci_norm: dir   # row is bad
+  net: LargeScaleNet
+  inci_norm: dir   # row is bad
 #  num_split: 5
   epoch: 10000
   BN_model: 1  # 0:61
@@ -292,7 +292,7 @@ arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
   has_scheduler: 0
   NotImproved: 400  # 80
   dropout: 0.5
-  jk: 'max'
+#  jk: 'max'
   l2: 0.0005
   patience: 10
   hid_dim: 128  # 64:62, 16:61
@@ -306,7 +306,8 @@ arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
   weight_penalty: 'None'  # exp:64.7
 
 snap-patents/:
-#  net: LargeScaleNet
+  net: LargeScaleNet
+  inci_norm: dir
   alphaDir: 0.5   # sure
 #  betaDir: -1    # 0.5
 #  gamaDir: 0.5   # sure
@@ -315,7 +316,7 @@ snap-patents/:
   lr: 0.01   # sure
 #  layer: 5  # sure
   hid_dim: 32  # sure
-  jk: 'max'   # sure
+#  jk: 'max'   # sure
   normalize: 1   # sure
   dropout: 0.0  # sure
 
