@@ -200,21 +200,22 @@ class StandGCNXBN(nn.Module):
 
         self.layer = nlayer
 
-    def forward(self, x, adj, args, edge_weight=None):
-        edge_index = adj
-        x = self.conv1(x, edge_index)
+    def forward(self, x, adj, args):
+        num_nodes = int(x.shape[0])
+        adj = SparseTensor.from_edge_index(adj, sparse_sizes=(num_nodes, num_nodes)).t()
+        x = self.conv1(x, adj)
         if self.layer == 1:
             return x
         x = F.relu(x)
 
         if self.layer>2:
             for iter_layer in self.convx:
-                x = iter_layer(x, edge_index)
+                x = iter_layer(x, adj)
                 x = F.relu(x)
                 if args.dropout:
                     x = F.dropout(x, p=args.dropout, training=self.training)
 
-        x = self.conv2(x, edge_index)
+        x = self.conv2(x, adj)
         return x
 
 class StandGCNX_noRelu(nn.Module):
@@ -313,7 +314,6 @@ class GraphSAGEXBatNorm(nn.Module):
 
         if self.layer == 1:
             return x
-
         x = F.relu(x)
 
         if self.layer > 2:
@@ -331,6 +331,7 @@ class GraphSAGEXBatNorm(nn.Module):
             x = self.batch_norm2(x)
 
         return x
+
 
 class GATLikeLayer(nn.Module):
     def __init__(self, in_features, out_features, num_heads, dropout, concat=True):

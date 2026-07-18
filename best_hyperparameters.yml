@@ -190,8 +190,8 @@ directed-roman-empire/:
   epoch: 10000
   l2: 0.0005
 #  inci_norm: "dir"
-  net: LargeScaleNet
-  num_split: 10  # original dataset
+#  net: LargeScaleNet
+#  num_split: 10  # original dataset
   nonlinear: 1    # must have this, or acc is 85
   has_scheduler: 1
   patience: 80
@@ -201,10 +201,10 @@ directed-roman-empire/:
   BN_model: 0  # no batch norm is better
   normalize: 0  #
   hid_dim: 256
-  layer: 6  # 5:93.4  7:93.1  8:93.0
-  jk: "cat"   # >max
+#  layer: 6  # 5:93.4  7:93.1  8:93.0
+#  jk: "cat"   # >max
   dropout: 0.2
-  alphaDir: 0.5   #
+#  alphaDir: 0.5   #
   betaDir: -1     # 0 is 88, 1 is 20
   gamaDir: -1     # all much worse
   exponent: -0.25  # 92.9 for -0.5
@@ -282,9 +282,9 @@ CiteSeer:
 
 
 arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
-  net: LargeScaleNet
+#  net: LargeScaleNet
 #  inci_norm: dir   # row is bad
-  num_split: 5
+#  num_split: 5
   epoch: 10000
   BN_model: 1  # 0:61
   add_selfloop: 1
@@ -293,13 +293,10 @@ arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
   NotImproved: 400  # 80
   dropout: 0.5
   jk: 'max'
-
   l2: 0.0005
   patience: 10
-
-
   hid_dim: 128  # 64:62, 16:61
-  layer: 6  # 6:64.4 5:64.6  8:64.1
+#  layer: 6  # 6:64.4 5:64.6  8:64.1
   lr: 0.001
 
   alphaDir: 0.5
@@ -309,14 +306,14 @@ arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
   weight_penalty: 'None'  # exp:64.7
 
 snap-patents/:
-  net: LargeScaleNet
+#  net: LargeScaleNet
   alphaDir: 0.5   # sure
 #  betaDir: -1    # 0.5
 #  gamaDir: 0.5   # sure
-  num_split: 5  # original split
+#  num_split: 5  # original split
   BN_model: 1   # 1:74.6, 0:74.2
   lr: 0.01   # sure
-  layer: 5  # sure
+#  layer: 5  # sure
   hid_dim: 32  # sure
   jk: 'max'   # sure
   normalize: 1   # sure
