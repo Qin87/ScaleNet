@@ -344,7 +344,29 @@ def get_dataset(name, path, split_type='public'):
     return dataset
 
 import os.path as osp
+from ogb.nodeproppred import PygNodePropPredDataset
 def load_dataset(args):
+    if args.Dataset in ['ogbn-proteins', 'ogbn-products', 'ogbn-arxiv', 'ogbn-papers100M', 'ogbn-mag']:
+        dataset = PygNodePropPredDataset(name=args.Dataset)
+        data = dataset[0]
+
+        # Official train/valid/test split
+        split_idx = dataset.get_idx_split()
+        train_idx = split_idx["train"]
+        valid_idx = split_idx["valid"]
+        test_idx = split_idx["test"]
+
+        IsDirectedGraph = False  #
+
+        try:
+            edge_attr = data.edge_attr
+            data_batch = data.batch
+        except:
+            edge_attr = None
+            data_batch = None
+
+        return data.x, data.y, data.edge_index, data.edge_attr, data.x.shape[1], train_idx, valid_idx, test_idx, IsDirectedGraph, edge_attr, data_batch
+
     if len(args.Dataset.split('/')) < 2:
         path = args.data_path
         path = osp.join(path, args.Dataset)
