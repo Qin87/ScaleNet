@@ -356,6 +356,23 @@ def load_dataset(args):
         valid_idx = split_idx["valid"]
         test_idx = split_idx["test"]
 
+        print(data)
+        print()
+
+        print(f"Number of nodes:      {data.num_nodes}")
+        print(f"Number of edges:      {data.edge_index.size(1)}")
+        print(f"Node labels shape:    {data.y.shape}")
+        print(f"Edge feature shape:   {data.edge_attr.shape}")
+
+        if data.x is not None:
+            print(f"Node feature shape:   {data.x.shape}")
+        else:
+            print("Node features: None")
+
+        print(f"Train nodes: {len(train_idx)}")
+        print(f"Valid nodes: {len(valid_idx)}")
+        print(f"Test nodes:  {len(test_idx)}")
+
         IsDirectedGraph = False  #
 
         try:
