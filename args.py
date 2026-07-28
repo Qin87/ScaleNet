@@ -23,10 +23,10 @@ def parse_args():
     parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', '0', 'softmax'], default='softmax')
     parser.add_argument('--num_split', type=int, default=10, help='num of run in spite of many splits')
 
-    parser.add_argument('--net', type=str, default='GAT', help='GAT, RAT, UAT, DAT, RiGib, AiGib, UiGib, DATib')
+    parser.add_argument('--net', type=str, default='GATv2', help='GAT, RAT, UAT, DAT, RiGib, AiGib, UiGib, DATib')
     parser.add_argument('--gt', type=int, default=0, help='whether graph transformer, 1 means all connected graph')
     parser.add_argument('--seed', type=int, default=1, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='dgl/reddit', help='telegram/ , cora_ml/, citeseer/,  WikiCS/'
+    parser.add_argument('--Dataset', type=str, default='telegram/', help='telegram/ , cora_ml/, citeseer/,  WikiCS/'
                 'PubMed, Coauthor-physics, Coauthor-CS, Amazon-Computers, Amazon-Photo, snap-patents/, WikipediaNetwork/filter_dir_chameleon')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout prob')
     parser.add_argument('--layer', type=int, default=2, help='number of layers (2 or 3), default: 2')

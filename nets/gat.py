@@ -76,7 +76,9 @@ class UnifiedGATRATConv(MessagePassing):
         kwargs.setdefault('aggr', 'add')
         super().__init__(node_dim=0, **kwargs)
         self.posweight = args.posweight
-        if args.net[:3] in ['GAT', 'RAT', 'UAT', 'DAT']:
+        if args.net in ["GATv2"]:
+            self.attention_mode = "gatv2"
+        elif args.net[:3] in ['GAT', 'RAT', 'UAT', 'DAT']:
             self.attention_mode = args.net.lower()[:3]
         else:
             self.attention_mode = 'gat'
@@ -111,13 +113,15 @@ class UnifiedGATRATConv(MessagePassing):
                 bias=False, weight_initializer='glorot'
             )
 
-        if self.attention_mode == "gat":
+        if self.attention_mode in ["gat"]:   # a^T
             self.att_src = Parameter(torch.empty(1, heads, out_channels))
             self.att_dst = Parameter(torch.empty(1, heads, out_channels))
+        if self.attention_mode in ["gatv2"]:  # a^T
+            self.att = Parameter(torch.empty(1, heads, out_channels))
         elif self.attention_mode == "dat":
             self.alpha_src = Parameter(torch.empty(self.num_nodes, heads))
-            inits.glorot(self.alpha_src)
             self.alpha_dst = Parameter(torch.empty(self.num_nodes, heads))
+            inits.glorot(self.alpha_src)
             inits.glorot(self.alpha_dst)
 
         if edge_dim is not None:
@@ -127,7 +131,6 @@ class UnifiedGATRATConv(MessagePassing):
         else:
             self.lin_edge = None
             self.register_parameter('att_edge', None)
-
 
         total_out_channels = out_channels * (heads if concat else 1)
 
@@ -143,6 +146,7 @@ class UnifiedGATRATConv(MessagePassing):
 
         if bias:
             self.bias = Parameter(torch.empty(total_out_channels))
+            zeros(self.bias)
         else:
             self.register_parameter('bias', None)
 
@@ -164,7 +168,6 @@ class UnifiedGATRATConv(MessagePassing):
             glorot(self.att_src)
             glorot(self.att_dst)
             glorot(self.att_edge)
-            zeros(self.bias)
 
     @overload
     def forward(
@@ -246,10 +249,12 @@ class UnifiedGATRATConv(MessagePassing):
 
         x = (x_src, x_dst)
 
-        if self.attention_mode == 'gat':
+        if self.attention_mode == 'gat':      # a^T.[W hi‖W hj]
             alpha_src = (x_src * self.att_src).sum(dim=-1)
             alpha_dst = None if x_dst is None else (x_dst * self.att_dst).sum(-1)
             alpha = (alpha_src, alpha_dst)
+        if self.attention_mode == 'gatv2':     # W.[hi‖hj]
+            alpha = (x_src, x_dst)
         elif self.attention_mode == 'dat':
             alpha = (self.alpha_src, self.alpha_dst)
 
@@ -286,8 +291,8 @@ class UnifiedGATRATConv(MessagePassing):
             ptr = edge_index.storage.rowptr()
             E = index.numel()   # total number of edges
 
-        if self.attention_mode in ['gat', 'dat']:
-            alpha = self.edge_updater(edge_index, alpha=alpha, edge_attr=edge_attr,size=size)
+        if self.attention_mode in ['gat', 'dat', "gatv2"]:
+            alpha = self.edge_updater(edge_index, alpha=alpha, edge_attr=edge_attr, size=size)
         else:
             if self.attention_mode == 'rat':   # TODO check heads
                 alpha = torch.empty((E, self.heads),  device=index.device).uniform_(1e-4, 1e4)
@@ -297,7 +302,13 @@ class UnifiedGATRATConv(MessagePassing):
                 raise NotImplementedError(f"Unknown attention_mode: {self.attention_mode}")
 
         # SAME as GAT
-        alpha = F.leaky_relu(alpha, self.negative_slope)
+        if self.attention_mode == 'gatv2':
+            alpha = F.leaky_relu(alpha, self.negative_slope)
+            alpha = (alpha * self.att).sum(dim=-1)
+        else:
+            alpha = F.leaky_relu(alpha, self.negative_slope)
+
+        # ablation of different normalization
         if self.inci_norm == 'softmax':
             alpha = softmax(alpha, index, ptr, dim_size)
         else:
