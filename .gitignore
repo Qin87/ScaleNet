@@ -10,7 +10,7 @@
 *.txt
 #*.pk
 *.pt
-*.png
+#*.png
 *.idea
 *.iml
 /data/film
