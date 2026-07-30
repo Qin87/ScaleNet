@@ -2,8 +2,8 @@
 telegram/:
   nonlinear: 0
   hid_dim: 128
-  layer: 4
-  lr: 0.01
+#  layer: 4
+#  lr: 0.01
   l2: 0
   normalize: 1
   BN_model: 1    # sure
