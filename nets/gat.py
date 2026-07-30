@@ -118,6 +118,7 @@ class UnifiedGATRATConv(MessagePassing):
             self.att_dst = Parameter(torch.empty(1, heads, out_channels))
         if self.attention_mode in ["gatv2"]:  # a^T
             self.att = Parameter(torch.empty(1, heads, out_channels))
+            glorot(self.att)
         elif self.attention_mode == "dat":
             self.alpha_src = Parameter(torch.empty(self.num_nodes, heads))
             self.alpha_dst = Parameter(torch.empty(self.num_nodes, heads))
