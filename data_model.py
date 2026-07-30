@@ -73,7 +73,7 @@ def get_name(args, IsDirectedGraph=1):
         net_to_print = args.net + str(args.W_degree) + '_'
     else:
         net_to_print = args.net
-    if args.net[:2] in ['Ai','Ri', 'Ui', 'DA'] or args.net in ['GAT', 'RAT', 'UAT', 'DAT']:
+    if args.net[:2] in ['Ai','Ri', 'Ui', 'DA'] or args.net in ['GAT', 'RAT', 'UAT', 'DAT', 'GATv2']:
         net_to_print = net_to_print + '_Head' + str(args.heads)
     if args.BN_model:
         net_to_print = 'LNorm_' + net_to_print

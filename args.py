@@ -2,7 +2,7 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--use_best_hyperparams", type=int, help="use parameters in best_hyperparameters.yml", default=1)
+    parser.add_argument("--use_best_hyperparams", type=int, help="use parameters in best_hyperparameters.yml", default=0)
     parser.add_argument('--GPU', type=int, default=0, help='device')
     parser.add_argument('--r20_per_class', type=int, default=0, help='1 train split is random 20 nodes_per_class')
 
@@ -26,8 +26,9 @@ def parse_args():
     parser.add_argument('--net', type=str, default='GATv2', help='GAT, RAT, UAT, DAT, RiGib, AiGib, UiGib, DATib')
     parser.add_argument('--gt', type=int, default=0, help='whether graph transformer, 1 means all connected graph')
     parser.add_argument('--seed', type=int, default=1, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='Coauthor-physics', help='telegram/ , cora_ml/, citeseer/,  WikiCS/'
-                'PubMed, Coauthor-physics, Coauthor-CS, Amazon-Computers, Amazon-Photo, snap-patents/, WikipediaNetwork/filter_dir_chameleon')
+    parser.add_argument('--Dataset', type=str, default='arxiv-year/', help='telegram/ , cora_ml/, citeseer/,  WikiCS/'
+                'PubMed, Coauthor-physics, Coauthor-CS, Amazon-Computers, Amazon-Photo, snap-patents/, WikipediaNetwork/filter_dir_chameleon, '
+                                                                           'arxiv-year/')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout prob')
     parser.add_argument('--layer', type=int, default=2, help='number of layers (2 or 3), default: 2')
     parser.add_argument('--alpha', type=float, default=0.1, help='alpha teleport prob')
