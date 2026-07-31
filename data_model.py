@@ -63,6 +63,7 @@ def CreatModel(args, num_features, n_cls, data_x,device):
     init_model(model)
     return model
 
+
 def get_name(args, IsDirectedGraph=1):
     dataset_to_print = args.Dataset.replace('/', '_')
     if not IsDirectedGraph:
@@ -73,7 +74,9 @@ def get_name(args, IsDirectedGraph=1):
         net_to_print = args.net + str(args.W_degree) + '_'
     else:
         net_to_print = args.net
-    if args.net[:2] in ['Ai','Ri', 'Ui', 'DA'] or args.net in ['GAT', 'RAT', 'UAT', 'DAT', 'GATv2']:
+    if args.v2:
+        net_to_print += 'v2'
+    if args.net[:2] in ['Ai', 'Ri', 'Ui', 'DA'] or args.net in ['GAT', 'RAT', 'UAT', 'DAT', 'GATv2']:
         net_to_print = net_to_print + '_Head' + str(args.heads)
     if args.BN_model:
         net_to_print = 'LNorm_' + net_to_print
