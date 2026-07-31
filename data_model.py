@@ -74,7 +74,7 @@ def get_name(args, IsDirectedGraph=1):
         net_to_print = args.net + str(args.W_degree) + '_'
     else:
         net_to_print = args.net
-    if args.v2:
+    if args.net == 'AiGib' and args.v2:
         net_to_print += 'v2'
     if args.net[:2] in ['Ai', 'Ri', 'Ui', 'DA'] or args.net in ['GAT', 'RAT', 'UAT', 'DAT', 'GATv2']:
         net_to_print = net_to_print + '_Head' + str(args.heads)
