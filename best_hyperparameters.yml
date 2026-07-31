@@ -81,3 +81,17 @@ Amazon-Computers:
 #  layer: 2 # or 1
 #  First_self_loop: 'add'
   lr: 0.005
+
+WikipediaNetwork/chameleon:
+  First_self_loop : 0
+  lr: 0.005
+  layer: 2
+  to_undirected: 1
+  nonlinear: 1
+
+WikipediaNetwork/squirrel:
+  First_self_loop : 0
+  lr: 0.005
+  layer: 2
+  to_undirected: 1
+  nonlinear: 1

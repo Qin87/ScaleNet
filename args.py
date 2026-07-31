@@ -23,17 +23,18 @@ def parse_args():
     parser.add_argument("--inci_norm", type=str, choices=["dir", "sym", 'row', '0', 'softmax'], default='0')
     parser.add_argument('--num_split', type=int, default=10, help='num of run in spite of many splits')
 
-    parser.add_argument('--net', type=str, default='GATv2', help='GAT, RAT, UAT, DAT, RiGib, AiGib, UiGib, DATib')
+    parser.add_argument('--net', type=str, default='AiGib', help='GAT, RAT, UAT, DAT,GATv2,  RiGib, AiGib, AiGibv2, UiGib, DATib')
+    parser.add_argument('--v2', type=int, default=0, help='whether attention is GATv2, 1 means GATv2')
     parser.add_argument('--gt', type=int, default=0, help='whether graph transformer, 1 means all connected graph')
     parser.add_argument('--seed', type=int, default=1, help='random seed')
-    parser.add_argument('--Dataset', type=str, default='arxiv-year/', help='telegram/ , cora_ml/, citeseer/,  WikiCS/'
+    parser.add_argument('--Dataset', type=str, default='telegram/', help='telegram/ , cora_ml/, citeseer/,  WikiCS/'
                 'PubMed, Coauthor-physics, Coauthor-CS, Amazon-Computers, Amazon-Photo, snap-patents/, WikipediaNetwork/filter_dir_chameleon, '
                                                                            'arxiv-year/')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout prob')
     parser.add_argument('--layer', type=int, default=2, help='number of layers (2 or 3), default: 2')
     parser.add_argument('--alpha', type=float, default=0.1, help='alpha teleport prob')
 
-    parser.add_argument('--hid_dim', type=int, default=64, help='feature dimension')
+    parser.add_argument('--hid_dim', type=int, default=128, help='feature dimension')
     parser.add_argument('--epoch', type=int, default=1500, help='epoch1500,')
     parser.add_argument('--NotImproved', type=int, default=810, help='consecutively Not Improved, break, 500, 450, 410, 210, 60')
     parser.add_argument('--gcn_norm', '-gcnnorm', type=int, default=1, help='GCNConv forward, normalize edge_index during training')

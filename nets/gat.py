@@ -76,7 +76,7 @@ class UnifiedGATRATConv(MessagePassing):
         kwargs.setdefault('aggr', 'add')
         super().__init__(node_dim=0, **kwargs)
         self.posweight = args.posweight
-        if args.net in ["GATv2"]:
+        if args.net[:2] in ["v2"]:
             self.attention_mode = "gatv2"
         elif args.net[:3] in ['GAT', 'RAT', 'UAT', 'DAT']:
             self.attention_mode = args.net.lower()[:3]
