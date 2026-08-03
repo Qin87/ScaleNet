@@ -85,12 +85,12 @@ WikipediaNetwork/chameleon:
   First_self_loop : 0
   lr: 0.005
   layer: 2
-  to_undirected: 1
+#  to_undirected: 1
   nonlinear: 1
 
 WikipediaNetwork/squirrel:
   First_self_loop : 0
   lr: 0.005
   layer: 2
-  to_undirected: 1
+#  to_undirected: 1
   nonlinear: 1
