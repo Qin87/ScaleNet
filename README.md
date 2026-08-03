@@ -1,7 +1,7 @@
 # Position: Attention Offers Little Benefit for Graph Node Classification
 
 
-![img.png](img.png)
+![img_4.png](img_4.png)
 ![img_1.png](img_1.png)
 
 Experiments on Heterophilic graphs:
