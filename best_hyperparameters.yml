@@ -98,3 +98,7 @@ WikipediaNetwork/squirrel:
 arxiv-year/:
   layer: 3
   lr: 0.005
+
+directed_roman_empire:
+  layer: 2
+  lr: 0.005
