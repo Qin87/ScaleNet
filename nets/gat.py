@@ -76,12 +76,18 @@ class UnifiedGATRATConv(MessagePassing):
         kwargs.setdefault('aggr', 'add')
         super().__init__(node_dim=0, **kwargs)
         self.posweight = args.posweight
-        if args.net[:2] in ["v2"]:
-            self.attention_mode = "gatv2"
+        if args.net[-2:] in ["v2"]:
+            self.attention_mode = args.net.lower()
+            print('correct code')
+
+        # print('wrong code')
+        # if args.net[:2] in ["v2"]:
+        #     self.attention_mode = "gatv2"
         elif args.net[:3] in ['GAT', 'RAT', 'UAT', 'DAT']:
             self.attention_mode = args.net.lower()[:3]
         else:
             self.attention_mode = 'gat'
+
         self.inci_norm = args.inci_norm
         self.num_nodes = args.num_nodes
 
@@ -295,18 +301,17 @@ class UnifiedGATRATConv(MessagePassing):
         if self.attention_mode in ['gat', 'dat', "gatv2"]:
             alpha = self.edge_updater(edge_index, alpha=alpha, edge_attr=edge_attr, size=size)
         else:
-            if self.attention_mode == 'rat':   # TODO check heads
+            if self.attention_mode[:3] == 'rat':   # TODO check heads
                 alpha = torch.empty((E, self.heads),  device=index.device).uniform_(1e-4, 1e4)
-            elif self.attention_mode == 'uat':
-                alpha = torch.ones((E, self.heads),device=index.device)
+            elif self.attention_mode[:3] == 'uat':
+                alpha = torch.ones((E, self.heads), device=index.device)
             else:
                 raise NotImplementedError(f"Unknown attention_mode: {self.attention_mode}")
 
-        # SAME as GAT
-        if self.attention_mode == 'gatv2':
+        if self.attention_mode in ['gatv2']:    # , 'uatv2', 'ratv2']:
             alpha = F.leaky_relu(alpha, self.negative_slope)
             alpha = (alpha * self.att).sum(dim=-1)
-        else:
+        else:  # SAME as GAT
             alpha = F.leaky_relu(alpha, self.negative_slope)
 
         # ablation of different normalization
