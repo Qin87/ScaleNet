@@ -94,3 +94,7 @@ WikipediaNetwork/squirrel:
   layer: 2
 #  to_undirected: 1
   nonlinear: 1
+
+arxiv-year/:
+  layer: 3
+  lr: 0.005
