@@ -99,6 +99,6 @@ arxiv-year/:
   layer: 3
   lr: 0.005
 
-directed_roman_empire:
+directed-roman-empire/:
   layer: 2
   lr: 0.005
