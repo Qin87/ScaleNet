@@ -40,7 +40,7 @@ WikiCS/:
   num_split: 20
 #  nonlinear: 1
 #  layer: 2
-  lr: 0.01
+#  lr: 0.005
   normalize: 1
   BN_model: 0  # 0(23), 1(73.5)
   First_self_loop : 'add'  # add(79.1±0.8),0(77.3±0.8), remove(77.4)
@@ -85,14 +85,14 @@ WikipediaNetwork/chameleon:
   First_self_loop : 0
   lr: 0.005
   layer: 2
-#  to_undirected: 1
+  to_undirected: 1
   nonlinear: 1
 
 WikipediaNetwork/squirrel:
   First_self_loop : 0
   lr: 0.005
   layer: 2
-#  to_undirected: 1
+  to_undirected: 1
   nonlinear: 1
 
 arxiv-year/:
