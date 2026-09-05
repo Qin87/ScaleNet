@@ -282,9 +282,9 @@ CiteSeer:
 
 
 arxiv-year/:  # 0.5_-1.0_1.0:64.2, 0.5_1.0_1.0:64.2,  0.5_1.0_0.5:64.3,
-  net: LargeScaleNet
+#  net: LargeScaleNet
   inci_norm: dir   # row is bad
-#  num_split: 5
+  num_split: 5
   epoch: 10000
   BN_model: 1  # 0:61
   add_selfloop: 1
