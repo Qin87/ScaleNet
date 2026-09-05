@@ -134,8 +134,6 @@ class StandGCNXBN(nn.Module):
         self.is_add_self_loops = is_add_self_loops  # Qin True is the original
         if nlayer == 1:
             self.conv1 = GCNConv(nfeat, nclass, cached= False, normalize=norm, add_self_loops=self.is_add_self_loops)
-            # self.conv1 = SAGEConv_QinNov(nfeat, nclass)      #  delete
-            # self.conv1 = SAGEConv(nfeat, nclass)      #  delete
         else:
             self.conv1 = GCNConv(nfeat, nhid, cached= False, normalize=norm, add_self_loops=self.is_add_self_loops)
 
