@@ -112,7 +112,6 @@ dgl/pubmed:
   lr: 0.01
   normalize: 0
   BN_model: 0  #
-  add_selfloop : 1
 #  jk: 'max'
   dropout: 0.0  #0.5(39), 0.0(77.5)
   alphaDir: 1   # 0.5(72.2), 0(73.2)
@@ -186,7 +185,7 @@ WikipediaNetwork/squirrel:
 
 # 91.23 ± 0.32(0.5,-1,-1), 92.0±0.4(0.5,-1,-1),
 directed-roman-empire/:
-  zero_order: 1  # dir-gcn+zero_order is dir-sage
+#  zero_order: 1  # dir-gcn+zero_order is dir-sage
   epoch: 10000
   l2: 0.0005
 #  inci_norm: "dir"
@@ -207,7 +206,7 @@ directed-roman-empire/:
 #  alphaDir: 0.5   #
   betaDir: -1     # 0 is 88, 1 is 20
   gamaDir: -1     # all much worse
-  exponent: -0.25  # 92.9 for -0.5
+#  exponent: -0.25  # 92.9 for -0.5
 
 
 

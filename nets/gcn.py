@@ -185,7 +185,8 @@ class StandGCNXBN(nn.Module):
         norm = args.gcn_norm
         self.is_add_self_loops = is_add_self_loops  # Qin True is the original
         if nlayer == 1:
-            self.conv1 = GCNConv(nfeat, nclass, cached= False, normalize=norm, add_self_loops=self.is_add_self_loops)
+            # self.conv1 = GCNConv(nfeat, nclass, cached= False, normalize=norm, add_self_loops=self.is_add_self_loops)
+            self.conv1 = GCNConv(nfeat, nhid, cached= False, normalize=norm, add_self_loops=self.is_add_self_loops)
         else:
             self.conv1 = GCNConv(nfeat, nhid, cached= False, normalize=norm, add_self_loops=self.is_add_self_loops)
 
@@ -200,15 +201,25 @@ class StandGCNXBN(nn.Module):
 
         self.layer = nlayer
 
+        self.lin = Linear(nhid, nclass)
+        self.normalize = args.normalize
+
     def forward(self, x, adj, args):
         num_nodes = int(x.shape[0])
         adj = SparseTensor.from_edge_index(adj, sparse_sizes=(num_nodes, num_nodes)).t()
         x = self.conv1(x, adj)
         if self.layer == 1:
+            x = F.relu(x)
+            x = F.dropout(x, p=self.dropout_p, training=self.training)
+            if self.normalize:
+                x = F.normalize(x, p=2, dim=1)
+
+            x = self.lin(x)
+
             return x
         x = F.relu(x)
 
-        if self.layer>2:
+        if self.layer > 2:
             for iter_layer in self.convx:
                 x = iter_layer(x, adj)
                 x = F.relu(x)
@@ -217,6 +228,7 @@ class StandGCNXBN(nn.Module):
 
         x = self.conv2(x, adj)
         return x
+
 
 class StandGCNX_noRelu(nn.Module):
     def __init__(self, nfeat, nclass, args):
