@@ -13,7 +13,7 @@ from utils import get_norm_adj
 
 def get_conv2(input_dim, output_dim, args):
     if args.conv_type2 == "gcn":
-        return GCNConv(input_dim, output_dim, add_self_loops=args.self_loops)
+        return GCNConv(input_dim, output_dim, add_self_loops=args.add_selfloop)
     elif args.conv_type2 == "faber":
         return FaberConv(input_dim, output_dim, args)
     elif args.conv_type2 == "scale":

@@ -97,7 +97,7 @@ def CreatModel(args, num_features, n_cls, data_x,device, num_edges=None):
     elif args.net == 'ScaleNet':
         model = GCN_JKNet(nfeat=num_features, nclass=n_cls, args=args)
     elif args.net.lower() == 'largescalenet':
-        args.conv_type2 = "scale"
+        # args.conv_type2 = "scale"
         model = GNN2(args).to(device)
     elif args.net == 'HFNet':
         model = High_Frequent(nfeat=num_features, nclass=n_cls, args=args)
