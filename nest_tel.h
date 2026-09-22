@@ -1,5 +1,11 @@
 #!/bin/bash
 
+while pgrep -x python3 > /dev/null; do
+  echo "Waiting for all python3 processes to finish..."
+  sleep 100
+done
+
+
 net_values="  GCN "
 # layer_values="8  "
 layer_values="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 30 40 50 60 70 "   # 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
