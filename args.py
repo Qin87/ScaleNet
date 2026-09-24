@@ -29,8 +29,7 @@ def parse_args():
     parser.add_argument("--differ_AAt", type=int, default=0,  help="Whether test AAt-A-At")
     parser.add_argument('--num_split', type=int, default=1, help='num of run in spite of many splits')
 
-    parser.add_argument('--net', type=str, default='GCN', help='mlp, Dir-GNN, ParaGCN, SimGAT, ScaleNet, SloopNet, tSNE, RandomNet, HFNet, LargeScaleNet '
-                     'Mag, Sig, QuaNet, '
+    parser.add_argument('--net', type=str, default='LargeScaleNet', help='mlp, Dir-GNN, ParaGCN, SimGAT, ScaleNet, SloopNet, tSNE, RandomNet, HFNet, LargeScaleNet '
                     'GCN, GAT, SAGE, Cheb, APPNP, GPRGNN, pgnn, mlp, sgc,'
                     'DiGib, DiGub,DiGi3, DiGi4 (1iG, RiG replace DiG)''Sym, 1ym')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
@@ -61,7 +60,7 @@ def parse_args():
     parser.add_argument("--checkpoint_directory", type=str, help="Directory to save checkpoints", default="checkpoint")
     parser.add_argument("--weight_decay", type=float, help="Weight decay", default=1e-3)
     parser.add_argument("--lrelu_slope", type=float, help="negative slope of Leaky Relu", default=-1.0)
-    parser.add_argument("--conv_type2", type=str, help="scale, faber, gcn ", default="gcn")
+    parser.add_argument("--conv_type2", type=str, help="scale, faber, gcn ", default="scale")
     parser.add_argument("--weight_penalty", type=str, choices=["exp", "lin", "None"], default="exp")
     parser.add_argument("--k_plus", type=int, help="Polynomial order", default=2)
     parser.add_argument("--exponent", type=float, help="exponent in norm, -0.25, -0.5", default=-0.5)
