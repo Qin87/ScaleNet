@@ -97,7 +97,7 @@ WikiCS/:
 #  jk: 'max'   # max(75.9),cat(75.99), 0(73.5)
   jk_inner: 0   # not cat
   dropout: 0.5  # 0.5(75.9), 0.0(73.9)
-  alphaDir: 0.5
+#  alphaDir: 0.5
 #  betaDir: 2
   gamaDir: -1   # 0(76.5)
 
