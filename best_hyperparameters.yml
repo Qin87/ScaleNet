@@ -100,6 +100,7 @@ WikiCS/:
 #  alphaDir: 0.5
 #  betaDir: 2
   gamaDir: -1   # 0(76.5)
+  num_split: 20
 
 #
 dgl/pubmed:
